@@ -50,6 +50,11 @@ bool WaveletML::setBatchSize (const unsigned& batchSize) {
     return true;
 }
 
+bool WaveletML::doWavelet (const bool& wavelet) {
+    _wavelet = wavelet;
+    return true;
+}
+
  // Print method(s).
 // -------------------------------------------------------------------
 
@@ -315,6 +320,10 @@ double WaveletML::SparseTerm (const arma::Mat<double>& Y) {
 
 double WaveletML::RegTerm    (const arma::Col<double>& a) {
     unsigned N = a.n_elem;
+    arma::Col<double> kroenecker_delta (N+1, fill::zeros);
+    kroenecker_delta(N/2) = 1;
+    
+    // C2
     arma::Mat<double> M (N+1, 3*N, fill::zeros);
     
     for (unsigned i = 0; i < N+1; i++) {
@@ -323,12 +332,47 @@ double WaveletML::RegTerm    (const arma::Col<double>& a) {
     }
     M = M.submat(span::all, span(N,2*N-1));
     
-    arma::Col<double> kroenecker_delta (N+1, fill::zeros);
-    kroenecker_delta(N/2) = 1;
+    double R = sum(square(M * a - kroenecker_delta));
     
-    double R = (_lambda/2.) * sum(square(M * a - kroenecker_delta));
+    // Wavelet part.
+    if (_wavelet) {
+        double waveletTerm = 0.;
+        arma::Col<double> b (N, fill::zeros);
+        for (unsigned i = 0; i < N; i++) {
+            b(i) = pow(-1, i) * a(N - i - 1);
+        }
+        
+        // C1
+        waveletTerm += sq(sum(a) - sqrt(2));
+
+        // C3
+        arma::Mat<double> M3 (N+1, 3*N, fill::zeros);
+        for (unsigned i = 0; i < N+1; i++) {
+            M3.submat(span(i,i), span(N,2*N-1)) = b.t();
+            M3.row(i) = rowshift(M3.row(i), 2 * (i - N/2));
+        }
+        M3 = M3.submat(span::all, span(N,2*N-1));
+        waveletTerm += sum(square(M3 * b - kroenecker_delta));
+        
+        // C4
+        waveletTerm += sq(sum(b) - 0);
+
+        // C5
+        /*
+        arma::Mat<double> M5 (N+1, 3*N, fill::zeros);
+        for (unsigned i = 0; i < N+1; i++) {
+            M5.submat(span(i,i), span(N,2*N-1)) = b.t();
+            M5.row(i) = rowshift(M5.row(i), 2 * (i - N/2));
+        }
+        M5 = M5.submat(span::all, span(N,2*N-1));
+        waveletTerm += sum(square(M5 * a - kroenecker_delta));
+         */
+        
+        // Add.
+        R += waveletTerm;
+    }
     
-    return R;
+    return (_lambda/2.) * R;
 }
 
 arma::Col<double> WaveletML::SparseTermDeriv (const arma::Col<double>& y) {
@@ -347,7 +391,7 @@ arma::Col<double> WaveletML::RegTermDeriv    (const arma::Col<double>& a) {
     //  - First term is the outer derivative.
     //  - Second term is the inner derivative.
     
-    unsigned N = a.n_elem;
+    int N = a.n_elem;
     
     // -- Get outer derivative
     arma::Mat<double> M (N+1, 3*N, fill::zeros);
@@ -380,9 +424,84 @@ arma::Col<double> WaveletML::RegTermDeriv    (const arma::Col<double>& a) {
         }
     }
     
-    arma::Col<double> D = (_lambda/2.) * (outer.t() * inner).t();
+    arma::Col<double> D = (outer.t() * inner).t();
     
-    return D;
+    // Wavelet part.
+    if (_wavelet) {
+        arma::Col<double> waveletTerm (N, fill::zeros);
+        arma::Col<double> b     (N, fill::zeros);
+        arma::Col<double> bsign (N, fill::zeros);
+        for (unsigned i = 0; i < N; i++) {
+            b    (i) = pow(-1, i) * a(N - i - 1);
+            bsign(i) = pow(-1, N - i - 1);
+        }
+        arma::Col<double> kroenecker_delta (N+1, fill::zeros);
+        kroenecker_delta(N/2) = 1;
+        
+        // C1
+        waveletTerm += 2 * (sum(a) - sqrt(2)) * arma::Col<double> (N, fill::ones);
+        
+        // C3
+
+        // -- Get outer derivative
+        arma::Mat<double> M3 (N+1, 3*N, fill::zeros);
+        for (unsigned i = 0; i < N+1; i++) {
+            M3.submat(span(i,i), span(N,2*N-1)) = b.t();
+            M3.row(i) = rowshift(M3.row(i), 2 * (i - N/2));
+        }
+        M3 = M3.submat(span::all, span(N,2*N-1));
+        arma::Col<double> outer3 = 2 * (M3 * b - kroenecker_delta);
+        
+        // -- Get inner derivative.
+        arma::Mat<double> inner3 (N + 1, N, fill::zeros);
+        for (int l = 0; l < N; l++) {
+            for (int i = 0; i < N + 1; i++) {
+                int d = 2 * abs(i - (int) N/2);
+                if (N - 1 - l + d < N) {
+                    inner3(i, l) += pow(-1, N - 1 - l) * b(N - 1 - l + d);
+                }
+                if (N - 1 - l - d >= 0) {
+                    inner3(i, l) += pow(-1, N - 1 - l) * b(N - 1 - l - d);
+                }
+            }
+        }
+        waveletTerm += (outer3.t() * inner3).t();
+        
+
+        // C4
+        waveletTerm += 2 * (sum(b) - 0) * bsign;
+        
+        // C5
+        /*
+        // -- Get outer derivative
+        arma::Mat<double> M5 (N+1, 3*N, fill::zeros);
+        for (unsigned i = 0; i < N+1; i++) {
+            M5.submat(span(i,i), span(N,2*N-1)) = b.t();
+            M5.row(i) = rowshift(M5.row(i), 2 * (i - N/2));
+        }
+        M5 = M5.submat(span::all, span(N,2*N-1));
+        arma::Col<double> outer5 = 2 * (M * b - kroenecker_delta);
+        
+        // -- Get inner derivative.
+        arma::Mat<double> inner5 (N + 1, N, fill::zeros);
+        for (int l = 0; l < N; l++) {
+            for (int i = 0; i < N + 1; i++) {
+                int d = 2 * abs(i - (int) N/2);
+                if (l + d < N) {
+                    inner5(i, l) += b(l + d);
+                }
+                if (l - d >= 0) {
+                    inner5(i, l) += b(l - d);
+                }
+            }
+        }
+        waveletTerm += (outer5.t() * inner5).t();
+        */
+        // Add.
+        D += waveletTerm;
+    }
+    
+    return (_lambda/2.) * D;
 }
 
 double WaveletML::cost (const arma::Col<double>& y) {
@@ -866,7 +985,7 @@ void WaveletML::batchTrain (arma::Mat<double> X) {
         Y.col(i) = coeffsFromActivations( Activations(i,1) );
     }
     
-    arma::Mat< double > delta = SparseTermDeriv(Y), new_delta(size(delta));
+    arma::Mat< double > delta = SparseTermDeriv(Y), new_delta(size(delta)); 
     
     arma::Col<double> Delta  (size(_filter), fill::zeros);
     arma::Col<double> weight (size(_filter), fill::zeros);

@@ -20,7 +20,7 @@ int main (int argc, char* argv[]) {
     
     
     EventMode mode = EventMode::Uniform;
-    int Nfilter = 8;
+    int Nfilter = 4;
    
     /* ----- */
     
@@ -55,10 +55,11 @@ int main (int argc, char* argv[]) {
     
     WaveletML ML;
 
-    ML.setLambda(10. * Nfilter);
+    ML.setLambda(10.);
     ML.setAlpha(0.01); // 10 -> 0.01; 100 -> 0.02
     ML.setInertia(0.0);
     ML.setBatchSize(1);
+    ML.doWavelet(true);
     
     ML.print();
     

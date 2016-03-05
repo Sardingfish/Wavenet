@@ -93,6 +93,7 @@ public:
     bool setFilter    (const arma::Col<double>& filter);
     bool setMomentum  (const arma::Col<double>& momentum);
     bool setBatchSize (const unsigned& batchSize);
+    bool doWavelet    (const bool& wavelet);
     
     // Print method(s).
     void print ();
@@ -196,6 +197,8 @@ private: // PRIVATE
     std::vector< arma::Col<double> > _batchQueue;
     std::vector< arma::Col<double> > _filterLog;
     std::vector< double >            _costLog;
+    
+    bool _wavelet = false;
     
 };
 

@@ -143,7 +143,7 @@ void Coach::run () {
                             if (totalStepSize > 1e-06) {
                                 cout << "[Adaptive learning]     Increasing batch size: " << _ML->batchSize() << " -> " << 2 * _ML->batchSize() << endl;
                                 _ML->setBatchSize(  2     * _ML->batchSize() );
-                                _ML->setAlpha    ( (2/3.) * _ML->alpha()     );
+                                _ML->setAlpha    ( (2/3.) * _ML->alpha() * (totalStepSize/meanStepSize));
                                 tail = 0;
                             } else {
                                 cout << "[Adaptive learning] Done." << endl;

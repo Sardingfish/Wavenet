@@ -30,6 +30,7 @@ int main (int argc, char* argv[]) {
     /* --- */
     
     WaveletML ML;
+    ML.doWavelet(true);
     
     // Variables.
     string outdir  = "./output/";
@@ -76,7 +77,7 @@ int main (int argc, char* argv[]) {
     //reader.open("input/Pythia.WpT500._000001.hepmc");
     
     vector< Mat<double> > examples;
-    for (unsigned i = 0; i < 50; i++) {
+    for (unsigned i = 0; i < 1; i++) {
         examples.push_back( reader.next() );
         TH2F exampleSignal = MatrixToHist(examples.at(i), 3.2);
         exampleSignal.Draw("COL Z");
@@ -153,7 +154,8 @@ int main (int argc, char* argv[]) {
         }
          */
         //costGraphs.at(m).GetXaxis()->SetRangeUser(0, 200); //maxCost);
-        costGraphs.at(m).GetYaxis()->SetRangeUser(0.3, 0.55); // Uniform : (0.4, 0.7) | Needle: (0.0, 0.5)
+        //costGraphs.at(m).GetYaxis()->SetRangeUser(0.001, 0.5); // Needle: (0.0, 0.5)
+        costGraphs.at(m).GetYaxis()->SetRangeUser(0.5, 0.7); // Uniform : (0.3, 0.55)
         costGraphs.at(m).SetLineColor(20 + m % 30);
         costGraphs.at(m).SetLineStyle(1);
         //costGraphs.at(m).Draw(m == 0 ? "LAXIS" : "L same");
@@ -170,14 +172,25 @@ int main (int argc, char* argv[]) {
     arma::Mat<double> costMap;
     std::regex re (".N(\\d+)");
     std::string costMapName = "output/costMap." + std::regex_replace(project, re, "") + ".mat";
+    std::string costMapRegName = "output/costMapReg." + std::regex_replace(project, re, "") + ".mat";
+    std::string costMapSparseName = "output/costMapSparse." + std::regex_replace(project, re, "") + ".mat";
 
+    
+    
     if (!fileExists(costMapName)) {
         arma::field< arma::Mat<double> > costs;
         
         costs = ML.costMap(examples, 1.2, 300);
+
         costMap = costs(0,0);
-        
         costMap.save(costMapName);
+        
+        costMap = costs(1,0);
+        costMap.save(costMapSparseName);
+
+        costMap = costs(2,0);
+        costMap.save(costMapRegName);
+
     } else {
         costMap.load(costMapName);
     }
@@ -188,6 +201,7 @@ int main (int argc, char* argv[]) {
     J.SetContour(30); // (104);
     gStyle->SetOptStat(0);
     J.SetMaximum(1.);
+    J.SetMinimum(0.001);
     J.Draw("CONT1 Z"); // COL / CONT1
     c.Update();
     TMarker marker;
