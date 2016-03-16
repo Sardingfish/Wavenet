@@ -69,7 +69,7 @@ void Coach::run () {
         _ML->clear();
         arma_rng::set_seed_random();
         if (rho >= 0) {
-            _ML->setFilter( PointOnNSphere(_Ncoeffs, rho, true) );
+            _ML->setFilter( PointOnNSphere(_Ncoeffs) );//, rho, true) );
         } else {
             _ML->setFilter( (arma::Col<double> ().randu(_Ncoeffs) * 2 - 1 )* 1.2 );
         }
@@ -155,10 +155,13 @@ void Coach::run () {
                     }
                     
                     
-                    //if (changed && currentCostLogSize == 20) {
-                        //_ML->setInertia(0.999);
+                    /*
+                    if (changed && currentCostLogSize == 20) {
+                        //_ML->setInertia(0.99);
+                        _ML->setBatchSize(10*_ML->batchSize());
                         //cout << "[Adaptive learning] Setting inertia to " << _ML->inertia() << endl;
-                    //}
+                    }
+                    */
                     /*
                     if (changed && currentCostLogSize % 200 == 0) {
                         _ML->setBatchSize( 2 * _ML->batchSize() );

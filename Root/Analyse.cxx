@@ -23,9 +23,9 @@ int main (int argc, char* argv[]) {
     
     cout << "Running WaveletML analysis." << endl;
 
-    EventMode mode = EventMode::Uniform;
-    const int M = 10;
-    int Nfilter = 4;
+    EventMode mode = EventMode::File;
+    const int M = 6;
+    int Nfilter = 16;
     
     /* --- */
     
@@ -74,6 +74,10 @@ int main (int argc, char* argv[]) {
     
     Reader reader;
     reader.setEventMode(mode);
+    if (mode == EventMode::File) {
+        bool stat = reader.open("input/Pythia.WpT500._000001.hepmc");
+        if (!stat) { return 1; }
+    }
     //reader.open("input/Pythia.WpT500._000001.hepmc");
     
     vector< Mat<double> > examples;
@@ -154,8 +158,8 @@ int main (int argc, char* argv[]) {
         }
          */
         //costGraphs.at(m).GetXaxis()->SetRangeUser(0, 200); //maxCost);
-        //costGraphs.at(m).GetYaxis()->SetRangeUser(0.001, 0.5); // Needle: (0.0, 0.5)
-        costGraphs.at(m).GetYaxis()->SetRangeUser(0.5, 0.7); // Uniform : (0.3, 0.55)
+        costGraphs.at(m).GetYaxis()->SetRangeUser(0.001, 0.5); // Needle: (0.0, 0.5)
+        //costGraphs.at(m).GetYaxis()->SetRangeUser(0.5, 0.7); // Uniform : (0.3, 0.55)
         costGraphs.at(m).SetLineColor(20 + m % 30);
         costGraphs.at(m).SetLineStyle(1);
         //costGraphs.at(m).Draw(m == 0 ? "LAXIS" : "L same");

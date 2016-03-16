@@ -19,8 +19,8 @@ int main (int argc, char* argv[]) {
     cout << "Running WaveletML study." << endl;
     
     
-    EventMode mode = EventMode::Uniform;
-    int Nfilter = 4;
+    EventMode mode = EventMode::File;
+    int Nfilter = 16;
    
     /* ----- */
     
@@ -56,7 +56,7 @@ int main (int argc, char* argv[]) {
     WaveletML ML;
 
     ML.setLambda(10.);
-    ML.setAlpha(0.01); // 10 -> 0.01; 100 -> 0.02
+    ML.setAlpha(0.005); // 10 -> 0.01; 100 -> 0.02
     ML.setInertia(0.0);
     ML.setBatchSize(1);
     ML.doWavelet(true);
@@ -87,8 +87,8 @@ int main (int argc, char* argv[]) {
     reader.setSize(64);
     
     Coach  coach  (project); //("Pythia.WpT500.N16");
-    coach.setNevents(100000); // (1000);
-    coach.setNepochs(1); // 4
+    coach.setNevents(25000); // (1000);
+    coach.setNepochs(5  ); // 4
     coach.setNcoeffs(Nfilter);
     coach.setNinits (10); // (10);
     coach.setUseAdaptiveLearning(true);

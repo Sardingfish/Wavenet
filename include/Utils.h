@@ -82,7 +82,7 @@ arma::Row<double> rowshift(arma::subview_row<double> row, const int& shift) {
  */
 
 // Convert arma matrix to ROOT TH2.
-TH2F MatrixToHist (const arma::Mat<double>& matrix, const double& range) {
+inline TH2F MatrixToHist (const arma::Mat<double>& matrix, const double& range) {
     
     unsigned N1 = size(matrix, 0), N2 = size(matrix, 1);
     
@@ -98,7 +98,7 @@ TH2F MatrixToHist (const arma::Mat<double>& matrix, const double& range) {
 }
 
 // Convert ROOT TH2 to arma matrix .
-arma::Mat<double> HistToMatrix (const TH2F& hist) {
+inline arma::Mat<double> HistToMatrix (const TH2F& hist) {
     
     unsigned N1 = hist.GetYaxis()->GetNbins(), N2 = hist.GetXaxis()->GetNbins();
     
@@ -114,7 +114,7 @@ arma::Mat<double> HistToMatrix (const TH2F& hist) {
 }
 
 // Randomly generate points on N-sphere.
-arma::Col<double> PointOnNSphere (const unsigned& N, const double& rho = 0., bool restrict = false) {
+inline arma::Col<double> PointOnNSphere (const unsigned& N, const double& rho = 0., bool restrict = false) {
     
     arma::Col<double> coords (N, fill::ones);
     
@@ -138,11 +138,11 @@ arma::Col<double> PointOnNSphere (const unsigned& N, const double& rho = 0., boo
     return coords;
 }
 
+
 // Check whether file exists.
 inline bool fileExists (const std::string& filename) {
-    bool exists = false;
     ifstream f(filename.c_str());
-    exists = f.good();
+    bool exists = f.good();
     f.close();
     return exists;
 }
@@ -158,12 +158,12 @@ inline bool dirExists (const std::string& dir) {
 
 // Check whether string contains only numeric characters.
 
-bool isNumber (const std::string& s)
+inline bool isNumber (const std::string& s)
 {
     return !s.empty() && std::find_if(s.begin(), s.end(), [](char c) { return !(std::isdigit(c) || strcmp(&c, ".") == 0 || (strcmp(&c, " ") == 0)); }) == s.end();
 }
 
-bool isEmpty (const std::string& s)
+inline bool isEmpty (const std::string& s)
 {
     return !s.empty() && std::find_if(s.begin(), s.end(), [](char c) { return !(strcmp(&c, " ") == 0); }) == s.end();
 }
