@@ -1,5 +1,5 @@
-#ifndef WAVELETML_MatrixOperator
-#define WAVELETML_MatrixOperator
+#ifndef WAVELETML_MATRIXOPERATOR_H
+#define WAVELETML_MATRIXOPERATOR_H
 
 /**
  * @file MatrixOperator.h

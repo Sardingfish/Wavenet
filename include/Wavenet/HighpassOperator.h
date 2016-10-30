@@ -1,5 +1,5 @@
-#ifndef WAVELETML_HighpassOperator
-#define WAVELETML_HighpassOperator
+#ifndef WAVELETML_HIGHPASSOPERATOR_H
+#define WAVELETML_HIGHPASSOPERATOR_H
 
 /**
  * @file HighpassOperator.h

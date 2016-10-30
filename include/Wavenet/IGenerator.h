@@ -1,5 +1,5 @@
-#ifndef WAVELETML_IGenerator
-#define WAVELETML_IGenerator
+#ifndef WAVELETML_IGENERATOR_H
+#define WAVELETML_IGENERATOR_H
 
 /**
  * @file IGenerator.h

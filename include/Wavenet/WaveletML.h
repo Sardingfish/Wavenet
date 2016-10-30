@@ -1,5 +1,5 @@
-#ifndef WAVELETML_WaveletML
-#define WAVELETML_WaveletML
+#ifndef WAVELETML_WAVELETML_H
+#define WAVELETML_WAVELETML_H
 
 /**
  * @file WaveletML.h

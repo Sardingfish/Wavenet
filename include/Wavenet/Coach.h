@@ -1,5 +1,5 @@
-#ifndef WAVELETML_Coach
-#define WAVELETML_Coach
+#ifndef WAVELETML_COACH_H
+#define WAVELETML_COACH_H
 
 /**
  * @file Coach.h

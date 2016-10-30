@@ -1,5 +1,5 @@
-#ifndef WAVELETML_Utils
-#define WAVELETML_Utils
+#ifndef WAVELETML_UTILS_H
+#define WAVELETML_UTILS_H
 
 // STL include(s).
 #include <cmath>

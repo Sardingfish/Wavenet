@@ -1,5 +1,5 @@
-#ifndef WAVELETML_LowpassOperator
-#define WAVELETML_LowpassOperator
+#ifndef WAVELETML_LOWPASSOPERATOR_H
+#define WAVELETML_LOWPASSOPERATOR_H
 
 /**
  * @file LowpassOperator.h

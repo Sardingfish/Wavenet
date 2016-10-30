@@ -1,5 +1,5 @@
-#ifndef WAVELETML_Snapshot
-#define WAVELETML_Snapshot
+#ifndef WAVELETML_SNAPSHOT_H
+#define WAVELETML_SNAPSHOT_H
 
 /**
  * @file Snapshot.h

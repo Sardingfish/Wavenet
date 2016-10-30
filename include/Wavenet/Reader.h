@@ -1,5 +1,5 @@
-#ifndef WAVELETML_Reader
-#define WAVELETML_Reader
+#ifndef WAVELETML_READER_H
+#define WAVELETML_READER_H
 
 /**
  * @file Reader.h
