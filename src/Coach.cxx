@@ -1,4 +1,4 @@
-#include "Coach.h"
+#include "Wavenet/Coach.h"
 
  // Set method(s).
 // -------------------------------------------------------------------

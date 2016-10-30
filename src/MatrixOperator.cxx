@@ -1,4 +1,4 @@
-#include "MatrixOperator.h"
+#include "Wavenet/MatrixOperator.h"
 
 void MatrixOperator::construct () {
     

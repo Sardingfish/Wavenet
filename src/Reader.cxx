@@ -1,4 +1,4 @@
-#include "Reader.h"
+#include "Wavenet/Reader.h"
 
 void Reader::getNextHepMCEvent () {
     

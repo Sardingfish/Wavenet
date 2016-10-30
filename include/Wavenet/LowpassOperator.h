@@ -1,8 +1,8 @@
-#ifndef WAVELETML_HighpassOperator
-#define WAVELETML_HighpassOperator
+#ifndef WAVELETML_LowpassOperator
+#define WAVELETML_LowpassOperator
 
 /**
- * @file HighpassOperator.h
+ * @file LowpassOperator.h
  * @author Andreas Sogaard
  **/
 
@@ -10,33 +10,39 @@
 #include <iostream>
 #include <cmath> /* pow */
 
+// ROOT include(s).
+// ...
+
+// HepMC include(s).
+// ...
+
 // Armadillo include(s).
 #include <armadillo>
 
 // WaveletML include(s).
-#include "MatrixOperator.h"
+#include "Wavenet/MatrixOperator.h"
 
 using namespace std;
 using namespace arma;
 
-class HighpassOperator : public MatrixOperator {
+class LowpassOperator : public MatrixOperator {
     
 public:
     
     // Constructor(s).
-    HighpassOperator () {};
+    LowpassOperator () {};
     
-    HighpassOperator (const unsigned& size)
+    LowpassOperator (const unsigned& size)
     { setSize(size); };
     
-    HighpassOperator (const arma::Col<double>& filter)
+    LowpassOperator (const arma::Col<double>& filter)
     { setFilter(filter); };
     
-    HighpassOperator (const arma::Col<double>& filter, const unsigned& size)
+    LowpassOperator (const arma::Col<double>& filter, const unsigned& size)
     { setSize(size); setFilter(filter); setComplete(true); construct(); };
     
     // Destructor.
-    ~HighpassOperator () {};
+    ~LowpassOperator () {};
     
     // Matrix operator methods.
     void setFilter (const arma::Col<double>& filter);

@@ -11,14 +11,20 @@
 #include <cmath> /* floor, round */
 #include <fstream> /* std::ifstream::goodbit*/
 
+// ROOT include(s).
+// ...
+
 // HepMC include(s).
 #include "HepMC/GenEvent.h"
 #include "HepMC/IO_GenEvent.h"
 
-// WaveletML include(s).
-#include "WaveletML.h"
-#include "Utils.h"
+// Armadillo include(s).
 #include <armadillo>
+
+// WaveletML include(s).
+#include "Wavenet/WaveletML.h"
+#include "Wavenet/Utils.h"
+
 
 using namespace std;
 using namespace arma;

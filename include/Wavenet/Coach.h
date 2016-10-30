@@ -11,10 +11,19 @@
 #include <fstream>
 #include <iostream>
 
+// ROOT include(s).
+// ...
+
+// HepMC include(s).
+// ...
+
+// Armadillo include(s).
+// ...
+
 // WaveletML include(s).
-#include "WaveletML.h"
-#include "Reader.h"
-#include "Utils.h"
+#include "Wavenet/WaveletML.h"
+#include "Wavenet/Reader.h"
+#include "Wavenet/Utils.h"
 
 using namespace std;
 

@@ -10,9 +10,18 @@
 #include <string>
 #include <cstdio> /* snprintf */
 
+// ROOT include(s).
+// ...
+
+// HepMC include(s).
+// ...
+
+// Armadillo include(s).
+// ...
+
 // WaveletML include(s).
-#include "Utils.h"
-#include "WaveletML.h"
+#include "Wavenet/Utils.h"
+#include "Wavenet/WaveletML.h"
 
 class WaveletML;
 

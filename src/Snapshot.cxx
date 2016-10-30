@@ -1,4 +1,4 @@
-#include "Snapshot.h"
+#include "Wavenet/Snapshot.h"
 
 string Snapshot::file () {
     

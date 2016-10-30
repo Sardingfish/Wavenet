@@ -6,8 +6,8 @@
 
 // WaveletML include(s).
 #include <armadillo>
-#include "WaveletML.h"
-#include "LowpassOperator.h"
+#include "Wavenet/WaveletML.h"
+#include "Wavenet/LowpassOperator.h"
 
 using namespace arma;
 

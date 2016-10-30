@@ -16,9 +16,9 @@
 #include "TLatex.h"
 
 // WaveletML include(s).
-#include "WaveletML.h"
-#include "Snapshot.h"
-#include "Reader.h"
+#include "Wavenet/WaveletML.h"
+#include "Wavenet/Snapshot.h"
+#include "Wavenet/Reader.h"
 
 using namespace std;
 using namespace arma;

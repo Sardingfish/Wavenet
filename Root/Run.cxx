@@ -11,9 +11,9 @@
 #include "TEllipse.h"
 
 // WaveletML include(s).
-#include "WaveletML.h"
-#include "Coach.h"
-#include "Reader.h"
+#include "Wavenet/WaveletML.h"
+#include "Wavenet/Coach.h"
+#include "Wavenet/Reader.h"
 
 int main (int argc, char* argv[]) {
     cout << "Running WaveletML study." << endl;
@@ -90,7 +90,7 @@ int main (int argc, char* argv[]) {
     coach.setNevents(100); // (1000); // 25000
     coach.setNepochs(5  ); // 4
     coach.setNcoeffs(Nfilter);
-    coach.setNinits (10); // (10);
+    coach.setNinits (2); // (10);
     coach.setUseAdaptiveLearning(true);
     coach.setReader(&reader);
     coach.setWaveletML(&ML);

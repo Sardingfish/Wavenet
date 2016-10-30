@@ -20,15 +20,19 @@
 #include "TH2.h"
 #include "TGraph.h"
 
+// HepMC include(s).
+// ...
+
 // Armadillo include(s).
 #include <armadillo>
 
 // WaveletML include(s).
-#include "Utils.h"
-#include "MatrixOperator.h"
-#include "LowpassOperator.h"
-#include "HighpassOperator.h"
-#include "Snapshot.h"
+#include "Wavenet/Utils.h"
+#include "Wavenet/MatrixOperator.h"
+#include "Wavenet/LowpassOperator.h"
+#include "Wavenet/HighpassOperator.h"
+#include "Wavenet/Snapshot.h"
+
 
 class Snapshot;
 
