@@ -13,10 +13,11 @@ SRCDIR = ./src
 OBJDIR = ./build
 LIBDIR = ./lib
 EXEDIR = ./bin
-PROGDIR = ./Root
+PROGDIR = ./examples
 
 # Extensions
 SRCEXT = cxx
+INCEXT = h
 
 # Collections
 SRCS := $(shell find $(SRCDIR) -name '*.$(SRCEXT)')
