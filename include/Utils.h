@@ -157,7 +157,6 @@ inline bool dirExists (const std::string& dir) {
 }
 
 // Check whether string contains only numeric characters.
-
 inline bool isNumber (const std::string& s)
 {
     return !s.empty() && std::find_if(s.begin(), s.end(), [](char c) { return !(std::isdigit(c) || strcmp(&c, ".") == 0 || (strcmp(&c, " ") == 0)); }) == s.end();

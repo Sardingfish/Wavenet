@@ -1,4 +1,4 @@
-    #ifndef WAVELETML_Reader
+#ifndef WAVELETML_Reader
 #define WAVELETML_Reader
 
 /**
@@ -8,7 +8,7 @@
 
 // STL include(s).
 #include <string>
-#include <cmath> /* floor */
+#include <cmath> /* floor, round */
 #include <fstream> /* std::ifstream::goodbit*/
 
 // HepMC include(s).

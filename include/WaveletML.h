@@ -14,6 +14,7 @@
 #include <cmath> /* log2 */
 #include <assert.h>     /* assert */
 #include <stdlib.h> /* system */
+#include <utility> /* std::move */
 
 // ROOT include(s).
 #include "TH2.h"
@@ -199,6 +200,10 @@ private: // PRIVATE
     std::vector< double >            _costLog;
     
     bool _wavelet = false;
+    
+    // RMSprop stuff.
+    double _gamma = 0.1;
+    arma::Col<double> _RMSprop;
     
 };
 
