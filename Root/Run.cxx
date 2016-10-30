@@ -20,7 +20,7 @@ int main (int argc, char* argv[]) {
     
     
     EventMode mode = EventMode::File;
-    int Nfilter = 16;
+    int Nfilter = 4;
    
     /* ----- */
     
@@ -56,10 +56,10 @@ int main (int argc, char* argv[]) {
     WaveletML ML;
 
     ML.setLambda(10.);
-    ML.setAlpha(0.005); // 10 -> 0.01; 100 -> 0.02
+    ML.setAlpha(0.001); // 10 -> 0.01; 100 -> 0.02
     ML.setInertia(0.0);
-    ML.setBatchSize(1);
-    ML.doWavelet(true);
+    ML.setBatchSize(10);
+    ML.doWavelet(true); // >>> Default: true:
     
     ML.print();
     
@@ -87,7 +87,7 @@ int main (int argc, char* argv[]) {
     reader.setSize(64);
     
     Coach  coach  (project); //("Pythia.WpT500.N16");
-    coach.setNevents(25000); // (1000);
+    coach.setNevents(100); // (1000); // 25000
     coach.setNepochs(5  ); // 4
     coach.setNcoeffs(Nfilter);
     coach.setNinits (10); // (10);

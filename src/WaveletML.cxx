@@ -29,9 +29,18 @@ bool WaveletML::setFilter (const arma::Col<double>& filter) {
     }
     _filter = filter;
     _filterLog.push_back(_filter);
-    _momentum.zeros(size(_filter));
+    //_momentum.zeros(size(_filter));
     clearCachedOperators();
     //clearCachedWeights();
+    
+    // RMSprop
+    if (_RMSprop.n_elem != _filter.n_elem) {
+        _RMSprop.zeros(size(_filter));
+    }
+    if (_momentum.n_elem != _filter.n_elem) {
+        _momentum.zeros(size(_filter));
+    }
+    
     return true;
 }
 
@@ -135,32 +144,6 @@ arma::field< arma::Col<double> > WaveletML::forward (const arma::Col<double>& x)
     
     return activations;
 }
-
-
-// Forward (2D).
-/*
-arma::Mat<double> WaveletML::forward (const arma::Mat<double>& X) {
-    
-    unsigned N1 = size(X, 0);
-    unsigned N2 = size(X, 1);
-    
-    arma::Mat<double> Y = X;
-    
-    for (unsigned i1 = 0; i1 < N1; i1++) {
-        arma::Col<double> x = Y.row(i1).t();
-        arma::field< arma::Col<double> > activations = forward(x);
-        Y.row(i1) = coeffsFromActivations(activations).t();
-    }
-    
-    for (unsigned i2 = 0; i2 < N2; i2++) {
-        arma::Col<double> x = Y.col(i2);
-        arma::field< arma::Col<double> > activations = forward(x);
-        Y.col(i2) = coeffsFromActivations(activations);
-    }
-    
-    return Y;
-}
-*/
 
 // Forward (2D) - returning activation fields.
 arma::field< arma::field< arma::Col<double> > > WaveletML::forward (const arma::Mat<double>& X) {
@@ -358,7 +341,7 @@ double WaveletML::RegTerm    (const arma::Col<double>& a) {
         waveletTerm += sq(sum(b) - 0);
 
         // C5
-        /*
+        /* This should be automatically satisfied (confirm).
         arma::Mat<double> M5 (N+1, 3*N, fill::zeros);
         for (unsigned i = 0; i < N+1; i++) {
             M5.submat(span(i,i), span(N,2*N-1)) = b.t();
@@ -472,7 +455,7 @@ arma::Col<double> WaveletML::RegTermDeriv    (const arma::Col<double>& a) {
         waveletTerm += 2 * (sum(b) - 0) * bsign;
         
         // C5
-        /*
+        /* This should be automatically satisfied (confirm).
         // -- Get outer derivative
         arma::Mat<double> M5 (N+1, 3*N, fill::zeros);
         for (unsigned i = 0; i < N+1; i++) {
@@ -601,8 +584,6 @@ TGraph WaveletML::getCostGraph (const std::vector< double >& costLog) {
 
 TGraph WaveletML::getCostGraph (const std::vector< arma::Col<double> >& filterLog, const std::vector< arma::Mat<double> >& X) {
     
-    //clearFilterLog();
-    
     const unsigned N = filterLog.size();
     double x[N], y[N];
     for (unsigned i = 0; i < N; i++) {
@@ -648,7 +629,16 @@ void WaveletML::clear () {
 }
 
 void WaveletML::update (const arma::Col<double>& gradient) {
+    
+    // RMSprop (somehow _extremely_ time consuming...)
+    //_RMSprop = _gamma * _RMSprop + (1.0 - _gamma) * square(gradient);
+    //arma::Col<double> sqrtR = sqrt(_RMSprop);
+    //arma::Col<double> newGradient = accu(sqrtR) * (gradient / sqrtR);  // Normalise to unity?
+    //arma::Col<double> newGradient = gradient % pow(_RMSprop, -0.5);
+    
+    // Update.
     scaleMomentum( _inertia );
+    //addMomentum( - _alpha * newGradient); // ... * gradient);
     addMomentum( - _alpha * gradient);
     setFilter( _filter + _momentum );
     return;
@@ -656,7 +646,6 @@ void WaveletML::update (const arma::Col<double>& gradient) {
 
 void WaveletML::cacheOperators (const unsigned& m) {
     
-    //std::cout << "Caching matrix operators (" << m << ")." << std::endl;
     clearCachedOperators();
 
     _cachedLowpassOperators .set_size(m + 1, 1);
@@ -684,7 +673,6 @@ void WaveletML::cacheWeights (const unsigned& m) {
     clearCachedWeights();
     if (!_hasCachedOperators) { cacheOperators(m); }
     
-    //const double eps = 1e-12;
     const unsigned N = _filter.n_elem;
     
     _cachedLowpassWeights .set_size(m + 1, N);
@@ -692,7 +680,6 @@ void WaveletML::cacheWeights (const unsigned& m) {
     
     for (unsigned i = 0; i <= m; i++) {
     
-        /* --------------------- */
         arma::Col<double> t (N, fill::zeros);
         
         for (unsigned k = 0; k < N; k++) {
@@ -702,177 +689,11 @@ void WaveletML::cacheWeights (const unsigned& m) {
             _cachedLowpassWeights (i, k) = LowpassOperator (t, i);
         }
         
-        /* --------------------- */
-        /*
-        arma::Col<double> t (N, fill::zeros);
-        
-        // * Lowpass
-        for (unsigned k = 0; k < N; k++) {
-            t.fill(0);
-            t(k) = 1; //abs(_filter(k));
-            arma::Mat<double> num = LowpassOperator(t, i);
-            _cachedLowpassWeights (i, k) = num; // arma::sign(num);
-        }
-        
-        
-        // * Highpass
-        for (unsigned k = 0; k < N; k++) {
-            
-            t.fill(0);
-            t(k) = 1; //abs(_filter(k));
-            arma::Mat<double> num = HighpassOperator(t, i);
-            _cachedHighpassWeights (i, k) = num; //arma::sign(num);
-            
-        }
-        */
-        /* --------------------- */
-        
-        /* If the operator is suffuciently large there will be no coefficient overlap, and we save some CPU by skipping expensive large-matrix operations. */
-        /* OLD
-        bool allUnitWeights = (N <= pow(2, i + 1)) || true;
-        
-        arma::Mat<double> mult;
-        arma::Col<double> t (N, fill::zeros);
-        
-        // * Lowpass
-        t.fill(1);
-        mult = arma::abs((Mat<double>) LowpassOperator(t, i)) + eps;
-
-        for (unsigned k = 0; k < N; k++) {
-            
-            t.fill(0);
-            t(k) = abs(_filter(k));
-            arma::Mat<double> num = LowpassOperator(t, i);
-            
-            if (!allUnitWeights) {
-                t(k) = _filter(k);
-                arma::Mat<double> numSign = arma::sign((Mat<double>) LowpassOperator(t, i));
-                arma::Mat<double> signMatch = numSign % arma::sign((Mat<double>) _cachedLowpassOperators(i));
-                
-                _cachedLowpassWeights (i, k) = (num ) % ( signMatch ); // onset(...)
-            } else {
-                _cachedLowpassWeights (i, k) = arma::sign(num);
-            }
-            
-            //_cachedLowpassWeights (i, k) /= mult;
-            
-        }
-        
-        
-        // * Highpass
-        t.fill(1);
-        mult = arma::abs((Mat<double>) HighpassOperator(t, i)) + eps;
-        for (unsigned k = 0; k < N; k++) {
-            
-            t.fill(0);
-            t(k) = abs(_filter(k));
-            arma::Mat<double> num = HighpassOperator(t, i);
-            
-            if (!allUnitWeights) {
-                t(k) = _filter(k);
-                arma::Mat<double> numSign = arma::sign((Mat<double>) HighpassOperator(t, i));
-                arma::Mat<double> signMatch = numSign % arma::sign((Mat<double>) _cachedHighpassOperators(i));
-                
-                _cachedHighpassWeights (i, k) = (num ) % ( signMatch ); // onset(...)
-            } else {
-                _cachedHighpassWeights (i, k) = arma::sign(num);
-            }
-            
-            //_cachedLowpassWeights (i, k) /= mult;
-            
-        }
-         */
-        
     }
     
     _hasCachedWeights = true;
     return;
 }
-
-/* --- REFERENCE ---
-void WaveletML::cacheWeights (const unsigned& m) {
-    
-    //std::cout << "Caching matrix weights (" << m << ")." << std::endl;
-    clearCachedWeights();
-    if (!_hasCachedOperators) { cacheOperators(m); }
-    
-    const double eps = 1e-12;
-    const unsigned N = _filter.n_elem;
-    
-    / * If the operator is suffuciently large there will be no coefficient overlap, and we save some CPU skipping expensive large-matrix operations. * /
-    bool allUnitWeights = (N <= pow(2, m + 1));
-    
-    _cachedLowpassWeights .set_size(m + 1, N);
-    _cachedHighpassWeights.set_size(m + 1, N);
-
-    for (unsigned i = 0; i <= m; i++) {
-        arma::Mat<double> denom ( size(_cachedLowpassOperators(i, 0)), fill::ones);
-        
-        // * Lowpass
-        if (!allUnitWeights) {
-            denom.fill(eps);
-            for (unsigned k = 0; k < N; k++) {
-                arma::Col<double> t (N, fill::zeros);
-                t(k) = _filter(k);
-                arma::Mat<double> op = LowpassOperator(t, i);
-                denom += abs(op);
-            }
-        }
-
-        for (unsigned k = 0; k < N; k++) {
-            
-            arma::Col<double> t (N, fill::zeros);
-            t(k) = abs(_filter(k));
-            arma::Mat<double> num = LowpassOperator(t, i);
-
-            if (!allUnitWeights) {
-                t(k) = _filter(k);
-                arma::Mat<double> numSign = sign((Mat<double>) LowpassOperator(t, i));
-                arma::Mat<double> signMatch = numSign % sign((Mat<double>) _cachedLowpassOperators(i));
-                
-                _cachedLowpassWeights (i, k) = (num / denom) % ( signMatch ); // onset(...)
-            } else {
-                _cachedLowpassWeights (i, k) = sign(num);
-            }
-            
-        }
-        
-        
-        // * Highpass
-        if (!allUnitWeights) {
-            denom.fill(eps);
-            for (unsigned k = 0; k < N; k++) {
-                arma::Col<double> t (N, fill::zeros);
-                t(k) = _filter(k);
-                arma::Mat<double> op = HighpassOperator(t, i);
-                denom += abs(op);
-            }
-        }
-        
-        for (unsigned k = 0; k < N; k++) {
-            
-            arma::Col<double> t (N, fill::zeros);
-            t(k) = abs(_filter(k));
-            arma::Mat<double> num = HighpassOperator(t, i);
-            
-            if (!allUnitWeights) {
-                t(k) = _filter(k);
-                arma::Mat<double> numSign = sign((Mat<double>) HighpassOperator(t, i));
-                arma::Mat<double> signMatch = numSign % sign((Mat<double>) _cachedHighpassOperators(i));
-                
-                _cachedHighpassWeights (i, k) = (num / denom) % ( signMatch ); // onset(...)
-            } else {
-                _cachedHighpassWeights (i, k) = sign(num);
-            }
-            
-        }
-        
-    }
-    
-    _hasCachedWeights = true;
-    return;
-}
-*/
 
 void WaveletML::clearCachedWeights () {
     _cachedLowpassWeights .reset();
@@ -925,7 +746,6 @@ arma::field< arma::Col<double> > WaveletML::ComputeDelta (const arma::Col<double
     if (!_hasCachedWeights) { cacheWeights(m); }
     
     arma::Col<double> Delta  (N, fill::zeros);
-    //arma::Col<double> weight (N, fill::zeros);
     
     arma::Col<double> delta_LP (1), delta_HP (1), delta_new_LP, delta_new_HP, activ_LP;
     delta_LP.row(0) = delta.row(0);
@@ -939,22 +759,25 @@ arma::field< arma::Col<double> > WaveletML::ComputeDelta (const arma::Col<double
         arma::Mat<double> error_LP = delta_LP * activ_LP.t();
        
         for (unsigned k = 0; k < N; k++) {
-            arma::Mat<double> weighted_errors = lowpassweight (i, k) % error_LP; // Elementwise multiplication
+            /*arma::Mat<double> weighted_errors = std::move(lowpassweight (i, k) % error_LP); // Elementwise multiplication
             Delta (k) += accu(weighted_errors);
-            //weight(k) += accu(arma::abs(lowpassweight (i, k)));
+             */
+            Delta (k) += trace( lowpassweight (i, k) * error_LP.t() );
         }
         
         // * Highpass
         arma::Mat<double> error_HP = delta_HP * activ_LP.t();
       
         for (unsigned k = 0; k < N; k++) {
-            arma::Mat<double> weighted_errors = highpassweight (i, k)  % error_HP; // Elementwise multiplication
+            /*
+            arma::Mat<double> weighted_errors = std::move(highpassweight (i, k)  % error_HP); // Elementwise multiplication
             Delta(k)  += accu(weighted_errors);
-            //weight(k) += accu(arma::abs(highpassweight (i, k)));
+             */
+            Delta (k) += trace( highpassweight (i, k) * error_HP.t() );
         }
 
         // * Next level.
-        delta_LP = inv_lowpassfilter(delta_LP) + inv_highpassfilter(delta_HP);
+        delta_LP = std::move(inv_lowpassfilter(delta_LP) + inv_highpassfilter(delta_HP));
         if (i != m - 1) {
             delta_HP = delta(span( pow(2, i + 1), pow(2, i + 2) - 1 ));
         } else {
@@ -968,13 +791,11 @@ arma::field< arma::Col<double> > WaveletML::ComputeDelta (const arma::Col<double
     
     outField(0,0) = Delta;
     outField(1,0) = delta_LP;
-    //outField(2,0) = weight;
     
     return outField;
 }
 
 void WaveletML::batchTrain (arma::Mat<double> X) {
-//arma::Col<double> WaveletML::batchTrain (arma::Mat<double> X) {
     
     unsigned N = size(X, 0);
     
@@ -993,30 +814,12 @@ void WaveletML::batchTrain (arma::Mat<double> X) {
         arma::field< arma::Col<double> > outField = ComputeDelta(delta.col(i), Activations(i,1));
         Delta += outField(0,0);
         new_delta.col(i) = outField(1,0);
-        //weight += outField(2,0);
     }
     
     for (unsigned i = 0; i < N; i++) {
         arma::field< arma::Col<double> > outField = ComputeDelta(new_delta.row(i).t(), Activations(i,0));
         Delta += outField(0,0);
-        //weight += outField(2,0);
     }
-    
-    /* --- */
-    /**
-     * The output of computeDelta has been weighted by 1/mult., and here we scale the result up to the equivalent
-     * value if all deltas contributed with a weight of 1, in order to remove any bias causing the sparsity-
-     * gradient to be disfavoured over the regularisation-gradient for large numbers of filter coefficients.
-     **/
-    /*
-    double totalNumDeltas = 0;
-    for (unsigned i = 0; i < log2(N); i++) {
-        totalNumDeltas += pow(2, i);
-    }
-    totalNumDeltas *= N * 2;
-    Delta = totalNumDeltas * (Delta / weight);
-    */
-    /* --- */
     
     arma::Col<double> regularisation = RegTermDeriv(_filter);
     

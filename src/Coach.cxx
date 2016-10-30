@@ -74,6 +74,8 @@ void Coach::run () {
             _ML->setFilter( (arma::Col<double> ().randu(_Ncoeffs) * 2 - 1 )* 1.2 );
         }
         
+        const double lambdaBare = _ML->lambda();
+        
         // -- Stuff for adapetive learning.
         bool done = false;
         int tail = 0;
@@ -106,6 +108,15 @@ void Coach::run () {
                         eventPrint *= 10;
                     }
                 }
+                /* ~ Simulated annealing.
+                double frac = (event / float(_Nevents)) / float(_Nepochs - 1) + epoch / float(_Nepochs - 1); / * Current fraction of events processed * /
+                _ML->setLambda( exp(log(lambdaBare) * (frac - 0.1) / frac) );
+                */
+                /*
+                cout << "  frac:       " << frac << endl;
+                cout << "  lambdaBare: " << lambdaBare << endl;
+                cout << "  lambda:     " << exp(log(lambdaBare) * (frac - 0.1) / frac) << endl;
+                */
                 
                 /* Main call. */
                 _ML->batchTrain( _reader->next() );
@@ -140,10 +151,14 @@ void Coach::run () {
                         
                         if (totalStepSize < meanStepSize) {
                             cout << "[Adaptive learning]   Total step size (" << totalStepSize << ") is smaller than mean step size (" << meanStepSize << ")." << endl;
-                            if (totalStepSize > 1e-06) {
+                            if (totalStepSize > 1e-07) {
                                 cout << "[Adaptive learning]     Increasing batch size: " << _ML->batchSize() << " -> " << 2 * _ML->batchSize() << endl;
                                 _ML->setBatchSize(  2     * _ML->batchSize() );
                                 _ML->setAlpha    ( (2/3.) * _ML->alpha() * (totalStepSize/meanStepSize));
+                                // _ML->setInertia  ( (2/3.) * _ML->inertia() );
+                                if (meanStepSize < 1.0e-03) {
+                                    _ML->setInertia ( 0.9 ); // << TEST
+                                }
                                 tail = 0;
                             } else {
                                 cout << "[Adaptive learning] Done." << endl;

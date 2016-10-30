@@ -113,33 +113,41 @@ Mat<double> Reader::nextNeedle () {
 
 Mat<double> Reader::nextGaussian () {
     
-    Mat<double> shiftX (_size, _size, fill::zeros);
-    Mat<double> shiftY (_size, _size, fill::zeros);
+    const unsigned N = 1 + int(arma::as_scalar(randu<mat>(1,1)) * 3); // [1, 2, 3]
     
-    int shiftIndX = int(2 * (arma::as_scalar(randu<mat>(1,1)) - 0.5) * (double)_size);
-    int shiftIndY = int(2 * (arma::as_scalar(randu<mat>(1,1)) - 0.5) * (double)_size);
+    Mat<double> X (_size, _size, fill::zeros);
     
-    shiftX.diag( shiftIndX ) += 1;
-    shiftY.diag( shiftIndY ) += 1;
-    
-    if      (shiftIndX < 0) { shiftX.diag( _size + shiftIndX ) += 1; }
-    else if (shiftIndX > 0) { shiftX.diag( _size - shiftIndX ) += 1; }
-    if      (shiftIndY < 0) { shiftY.diag( _size + shiftIndY ) += 1; }
-    else if (shiftIndY > 0) { shiftY.diag( _size - shiftIndY ) += 1; }
-    
-    // ... Gaussian blur
-    
-    Mat<double> h = linspace<mat>(-((double)_size-1)/2, ((double)_size-1)/2, _size);
-    h = repmat(h, 1, _size);
-    double sigma = 4;
-    Mat<double> gauss = exp( - (square(h) + square(h.t())) / (2*sq(sigma)));
-    gauss /= accu(gauss); // Unit integral.
-    gauss *= max(max(gauss));
-    
-    // ...
-    
-    Mat<double> X = shiftX * gauss * shiftY;
-    
+    for (unsigned i = 0; i < N; i++) {
+        
+        Mat<double> shiftX (_size, _size, fill::zeros);
+        Mat<double> shiftY (_size, _size, fill::zeros);
+        
+        int shiftIndX = int(2 * (arma::as_scalar(randu<mat>(1,1)) - 0.5) * (double)_size);
+        int shiftIndY = int(2 * (arma::as_scalar(randu<mat>(1,1)) - 0.5) * (double)_size);
+        
+        shiftX.diag( shiftIndX ) += 1;
+        shiftY.diag( shiftIndY ) += 1;
+        
+        if      (shiftIndX < 0) { shiftX.diag( _size + shiftIndX ) += 1; }
+        else if (shiftIndX > 0) { shiftX.diag( _size - shiftIndX ) += 1; }
+        if      (shiftIndY < 0) { shiftY.diag( _size + shiftIndY ) += 1; }
+        else if (shiftIndY > 0) { shiftY.diag( _size - shiftIndY ) += 1; }
+        
+        // * Gaussian blur
+        
+        Mat<double> h = linspace<mat>(-((double)_size-1)/2, ((double)_size-1)/2, _size);
+        h = repmat(h, 1, _size);
+        double sigma = max(arma::as_scalar(randn<mat>(1,1))*0.5 + 4., 2.); // 4;
+        Mat<double> gauss = exp( - (square(h) + square(h.t())) / (2*sq(sigma)));
+        gauss /= accu(gauss); // Unit integral.
+        gauss *= max(max(gauss));
+        
+        // * END: Gaussian
+        
+        X = X + shiftX * gauss * shiftY;
+        
+    }
+
     return X;
 }
 
