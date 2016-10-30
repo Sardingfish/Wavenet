@@ -1,5 +1,5 @@
-#ifndef WAVELETML_LOWPASSOPERATOR_H
-#define WAVELETML_LOWPASSOPERATOR_H
+#ifndef WAVENET_LOWPASSOPERATOR_H
+#define WAVENET_LOWPASSOPERATOR_H
 
 /**
  * @file LowpassOperator.h
@@ -19,7 +19,7 @@
 // Armadillo include(s).
 #include <armadillo>
 
-// WaveletML include(s).
+// Wavenet include(s).
 #include "Wavenet/MatrixOperator.h"
 
 using namespace std;

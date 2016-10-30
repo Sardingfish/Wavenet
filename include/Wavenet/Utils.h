@@ -1,5 +1,5 @@
-#ifndef WAVELETML_UTILS_H
-#define WAVELETML_UTILS_H
+#ifndef WAVENET_UTILS_H
+#define WAVENET_UTILS_H
 
 // STL include(s).
 #include <cmath>

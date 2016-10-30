@@ -1,5 +1,5 @@
-#ifndef WAVELETML_COACH_H
-#define WAVELETML_COACH_H
+#ifndef WAVENET_COACH_H
+#define WAVENET_COACH_H
 
 /**
  * @file Coach.h
@@ -20,7 +20,7 @@
 // Armadillo include(s).
 // ...
 
-// WaveletML include(s).
+// Wavenet include(s).
 #include "Wavenet/WaveletML.h"
 #include "Wavenet/Reader.h"
 #include "Wavenet/Utils.h"

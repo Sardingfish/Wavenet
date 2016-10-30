@@ -1,5 +1,5 @@
-#ifndef WAVELETML_SNAPSHOT_H
-#define WAVELETML_SNAPSHOT_H
+#ifndef WAVENET_SNAPSHOT_H
+#define WAVENET_SNAPSHOT_H
 
 /**
  * @file Snapshot.h
@@ -19,7 +19,7 @@
 // Armadillo include(s).
 // ...
 
-// WaveletML include(s).
+// Wavenet include(s).
 #include "Wavenet/Utils.h"
 #include "Wavenet/WaveletML.h"
 

@@ -1,5 +1,5 @@
-#ifndef WAVELETML_WAVELETML_H
-#define WAVELETML_WAVELETML_H
+#ifndef WAVENET_WAVELETML_H
+#define WAVENET_WAVELETML_H
 
 /**
  * @file WaveletML.h
@@ -26,7 +26,7 @@
 // Armadillo include(s).
 #include <armadillo>
 
-// WaveletML include(s).
+// Wavenet include(s).
 #include "Wavenet/Utils.h"
 #include "Wavenet/MatrixOperator.h"
 #include "Wavenet/LowpassOperator.h"

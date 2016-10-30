@@ -1,5 +1,5 @@
-#ifndef WAVELETML_READER_H
-#define WAVELETML_READER_H
+#ifndef WAVENET_READER_H
+#define WAVENET_READER_H
 
 /**
  * @file Reader.h
@@ -21,7 +21,7 @@
 // Armadillo include(s).
 #include <armadillo>
 
-// WaveletML include(s).
+// Wavenet include(s).
 #include "Wavenet/WaveletML.h"
 #include "Wavenet/Utils.h"
 
