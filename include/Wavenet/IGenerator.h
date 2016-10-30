@@ -9,17 +9,8 @@
 // STL include(s).
 #include <string>
 
-// ROOT include(s).
-// ...
-
-// HepMC include(s).
-// ...
- 
-// Armadillo include(s).
-#include <armadillo>
-
 // Wavenet include(s).
-// ...
+#include <armadillo>
 
 
 class IGenerator {
