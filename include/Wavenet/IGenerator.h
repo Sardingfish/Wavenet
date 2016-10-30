@@ -4,7 +4,7 @@
 /**
  * @file IGenerator.h
  * @author Andreas Sogaard
- **/
+**/
 
 // STL include(s).
 #include <string>
@@ -28,24 +28,23 @@ class IGenerator {
      * Interface class for input generators. 
      *
      * Define derived classes to yield e.g. uniform, needle, gaussian, HepMC, or other custom input.
-     **/
+    **/
 
 public:
 
-    // Constructor(s).
-    virtual void  IGenerator () {};
-
     // Destructor.
-    virtual void ~IGenerator () = 0;
+    virtual ~IGenerator () {}
 
     // Method(s).
-    virtual bool open  (const std::string& filename) = 0;
     virtual bool next  (arma::Mat<double>& input) = 0;
+    virtual bool open  () = 0;
     virtual bool close () = 0;
+    virtual bool good  () = 0;
+    virtual bool reset () = 0;
 
 private:
 
-    // Data memeber(s).
+    // Data member(s).
     // ...
 
 };
