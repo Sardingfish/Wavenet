@@ -9,15 +9,25 @@
 // STL include(s).
 #include <string>
 
-// Wavenet include(s).
+// ROOT include(s).
+// ...
+
+// HepMC include(s).
+// ...
+ 
+// Armadillo include(s).
 #include <armadillo>
+
+// Wavenet include(s).
+// ...
 
 
 class IGenerator {
 
     /**
      * Interface class for input generators. 
-     * Defined derived classes to yield e.g. uniform, needle, gaussian, HepMC, or other custom input.
+     *
+     * Define derived classes to yield e.g. uniform, needle, gaussian, HepMC, or other custom input.
      **/
 
 public:
