@@ -4,6 +4,7 @@
 // STL include(s).
 #include <cmath>
 #include <sys/stat.h> /* struct stat */
+#include <cassert> /* assert */
 
 // ROOT include(s).
 #include "TH2.h"
@@ -21,10 +22,13 @@
 using namespace arma;
 
 const double EPS = 1e-12;
-const double PI = 3.14159265359;
+const double PI  = 3.14159265359;
 
-// Determine wether the given number is radix 2, i.e. satisfies:y 2^x in Naturals
-inline bool isRadix2(const unsigned& x) { return (unsigned(log2(x)) % 1) == 0; }
+// Determine wether the given number is radix 2, i.e. satisfies: y = 2^x in Naturals
+inline bool isRadix2(const unsigned& x) { 
+    double l2 = log2(x);
+    return (l2 - int(l2)) == 0;
+}
 
 // Square of number.
 template<class T>
@@ -88,20 +92,52 @@ arma::Row<double> rowshift(arma::subview_row<double> row, const int& shift) {
 }
  */
 
-// Convert arma matrix to ROOT TH2.
-inline TH2F MatrixToHist (const arma::Mat<double>& matrix, const double& range) {
-    
+// Convert arma matrix to ROOT histogram.
+inline TH1* MatrixToHist2D (const arma::Mat<double>& matrix, const double& range) {
+    /**
+     * Return a pointer to a ROOT TH2F filled with the content of the arma matrix 'matrix'.
+    **/
+     
     unsigned N1 = size(matrix, 0), N2 = size(matrix, 1);
     
-    TH2F hist ("hist", "", N1, -range, range, N2, -range, range);
+    TH2F* hist = new TH2F ("hist", "", N1, -range, range, N2, -range, range);
     
     for (unsigned i = 0; i < N1; i++) {
         for (unsigned j = 0; j < N2; j++) {
-            hist.SetBinContent(j + 1, i + 1, matrix(i,j));
+            hist->SetBinContent(i + 1, j + 1, matrix(i,j));
         }
     }
     
     return hist;
+}
+
+inline TH1* MatrixToHist1D (const arma::Mat<double>& matrix, const double& range) {
+    /**
+     * Return a pointer to a ROOT TH1F filled with the content of the arma matrix 'matrix'.
+    **/
+
+    unsigned N1 = size(matrix, 0);
+    
+    TH1F* hist = new TH1F("hist", "", N1, -range, range);
+    
+    for (unsigned i = 0; i < N1; i++) {
+        hist->SetBinContent(i + 1, matrix(i,0));
+    }
+    
+    return hist;
+}
+
+inline TH1* MatrixToHist (const arma::Mat<double>& matrix, const double& range) {
+    /**
+     * Determine the appropriate dimension of data, and return TH1 pointer (either to a TH1F or a TH2F object).
+    **/
+
+    if (size(matrix,1) == 1) {
+        return MatrixToHist1D(matrix, range);
+    } else {
+        return MatrixToHist2D(matrix, range);
+    }
+    return nullptr;
 }
 
 // Convert ROOT TH2 to arma matrix .
@@ -115,6 +151,39 @@ inline arma::Mat<double> HistToMatrix (const TH2F& hist) {
         for (unsigned j = 0; j < N2; j++) {
             matrix (i,j) = hist.GetBinContent(j + 1, i + 1);
         }
+    }
+    
+    return matrix;
+}
+
+
+inline arma::Mat<double> HistFillMatrix (const TH2F& hist, arma::Mat<double>& matrix) {
+    
+    unsigned N1 = hist.GetYaxis()->GetNbins(), N2 = hist.GetXaxis()->GetNbins();
+    
+    assert(N1 = size(matrix,0));
+    assert(N2 = size(matrix,1));
+
+    matrix.zeros();
+    
+    for (unsigned i = 0; i < N1; i++) {
+        for (unsigned j = 0; j < N2; j++) {
+            matrix (i,j) = hist.GetBinContent(i + 1, j + 1);
+        }
+    }
+    
+    return matrix;
+}
+
+
+inline arma::Mat<double> HistToMatrix1D (const TH1F& hist) {
+    
+    unsigned N1 = hist.GetXaxis()->GetNbins();
+    
+    arma::Mat<double> matrix (N1, 1, fill::zeros);
+    
+    for (unsigned i = 0; i < N1; i++) {
+        matrix (i,0) = hist.GetBinContent(i + 1);
     }
     
     return matrix;
