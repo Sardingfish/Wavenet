@@ -10,12 +10,6 @@
 #include <iostream>
 #include <cmath> /* pow */
 
-// ROOT include(s).
-// ...
-
-// HepMC include(s).
-// ...
-
 // Armadillo include(s).
 #include <armadillo>
 

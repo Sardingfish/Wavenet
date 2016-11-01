@@ -10,12 +10,6 @@
 #include <string>
 #include <cstdio> /* snprintf */
 
-// ROOT include(s).
-// ...
-
-// HepMC include(s).
-// ...
-
 // Armadillo include(s).
 // ...
 

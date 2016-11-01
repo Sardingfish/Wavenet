@@ -12,12 +12,6 @@
 #include <cstdlib> /* abs */
 #include <algorithm> /* for_each, rotate */
 
-// ROOT include(s).
-// ...
-
-// HepMC include(s).
-// ...
-
 // Armadillo include(s).
 #include <armadillo>
 

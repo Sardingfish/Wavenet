@@ -9,9 +9,6 @@
 // ROOT include(s).
 #include "TH2.h"
 
-// HepMC include(s).
-// ...
-
 // Armadillo include(s).
 #include <armadillo>
 

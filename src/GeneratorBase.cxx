@@ -17,6 +17,7 @@ bool GeneratorBase::reset () {
 }
 
 bool GeneratorBase::setShape (const std::vector<unsigned int>& shape) {
+    DEBUG("Entering.");
     _initialised = true;
     bool compress = false;
 
@@ -36,15 +37,13 @@ bool GeneratorBase::setShape (const std::vector<unsigned int>& shape) {
     if (!_initialised) {
 
         // Produce warning if the dimension size were problematic.
-        std::cout << "<GeneratorBase::setShape> WARNING: Requested shape {"; 
+        std::string shapeString = "";
         unsigned int i = 0;
         for (const auto& size : shape) {
-            if (i++ > 0) {
-                std::cout << ", ";
-            }
-            std::cout << size;
+            if (i++ > 0) { shapeString += ", "; }
+            shapeString += std::to_string(size);
         }
-        std::cout << "} is no good." << std::endl;
+        WARNING("Reguested shape {%s} is no good.", shapeString.c_str());
         _shape = {};
         _resize();
         
@@ -56,13 +55,13 @@ bool GeneratorBase::setShape (const std::vector<unsigned int>& shape) {
     } else {
 
         // Otherwise, store accepted shape dimensions.
-        if (shape.size() == 1) { _shape = {shape[0], 1}; }
-
         _shape = shape;
+        if (_shape.size() == 1)  {_shape.push_back(1); }
+        
         _resize();
 
     } 
-
+    DEBUG("Exiting.");
     return _initialised;
 }
 
@@ -80,6 +79,12 @@ bool GeneratorBase::initialised () {
 }
 
 bool GeneratorBase::_resize () {
+    DEBUG("Entering.");
+    if (!initialised()) {
+        WARNING("Cannot resize generator which isn't properly initialised.")
+        return false;
+    }
     _data.resize(_shape[0], _shape[1]);
+    DEBUG("Exiting.");
     return true;
 }

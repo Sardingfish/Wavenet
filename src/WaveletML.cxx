@@ -669,7 +669,8 @@ void WaveletML::clearCachedOperators () {
 
 void WaveletML::cacheWeights (const unsigned& m) {
     
-    std::cout << "Caching matrix weights (" << m << ")." << std::endl;
+    INFO("Caching matrix weights (%d).", m);
+    
     clearCachedWeights();
     if (!_hasCachedOperators) { cacheOperators(m); }
     

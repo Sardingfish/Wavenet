@@ -11,7 +11,7 @@ void Coach::setBasedir (const string& basedir) {
 
 void Coach::setNevents (const int& Nevents) {
     if (Nevents < -1) {
-        cout << "<Coach::setNevents> WARNING: Input number of events (" << Nevents << ") not supported." << endl;
+        WARNING("Input number of events (%d) not supported.", Nevents);
         return;
     }
     _Nevents = Nevents;
@@ -20,7 +20,7 @@ void Coach::setNevents (const int& Nevents) {
 
 void Coach::setNcoeffs (const unsigned& Ncoeffs) {
     if (!isRadix2(Ncoeffs)) {
-        cout << "<Coach::setNevents> WARNING: Input number of coefficients (" << Ncoeffs << ") is not radix 2." << endl;
+        WARNING("Input number of coefficients (%d) is not radix 2.", Ncoeffs);
         return;
     }
     _Ncoeffs = Ncoeffs;
@@ -32,25 +32,27 @@ void Coach::setNcoeffs (const unsigned& Ncoeffs) {
 // -------------------------------------------------------------------
 
 void Coach::run () {
-    
+    DEBUG("Entering.");
+
     // Performing checks.
     if (!_ML) {
-        cout << "<Coach::run> ERROR: WaveletML object not set." << endl;
+        ERROR("WaveletML object not set.Exiting.");
         return;
     }
 
     if (!_reader) {
-        cout << "<Coach::run> ERROR: Input reader not set." << endl;
+        ERROR("Input reader not set. Exiting.");
         return;
     }
 
     if (!_name.size()) {
-        cout << "<Coach::run> ERROR: Coach name not set." << endl;
+        ERROR("Coach name not set. Exiting.");
         return;
     }
     
     // Run.
-    cout << "Start training, using coach '" << _name << "'"<< endl;
+    INFO("Start training, using coach '%s'.", _name.c_str());
+    
     // -- Save base snapshot, to step back from adaptive learning.
     _ML->save(_basedir + _name + "/snapshots/tmp.snap");
     
@@ -64,7 +66,8 @@ void Coach::run () {
     double rho = (_ML->lambda() > 0 ? 1. / (_ML->lambda()) : -1);
     for (unsigned init = 0; init < _Ninits; init++) {
         if (_printLevel > 0) {
-            cout << "  Initialisation " << init + 1 << "/" << _Ninits << endl; }
+            INFO("Initialisation %d/%d.", init + 1, _Ninits);
+        }
         _ML->load(_basedir + _name + "/snapshots/tmp.snap");
         _ML->clear();
         arma_rng::set_seed_random();
@@ -94,16 +97,14 @@ void Coach::run () {
             _reader->reset();
             
             if (_printLevel > 1) {
-                cout << "    Epoch " << epoch + 1 << "/" << _Nepochs << endl;
+                INFO("  Epoch %d/%d.", epoch + 1, _Nepochs);
             }
 
             int event = 0;
             int eventPrint = 100;
             do {
-                if (_printLevel > 2) {
-                    cout << "      Event " << event + 1 << "/" << _Nevents << endl;
-                } else if ((event + 1) % eventPrint == 0) {
-                    cout << "      Event " << event + 1 << "/" << _Nevents << endl;
+                if (_printLevel > 2 || (event + 1) % eventPrint == 0) {
+                    INFO("    Event %d/%d.", event + 1, _Nevents);
                     if ((event + 1) == 10 * eventPrint) {
                         eventPrint *= 10;
                     }

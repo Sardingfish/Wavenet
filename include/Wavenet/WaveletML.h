@@ -20,9 +20,6 @@
 #include "TH2.h"
 #include "TGraph.h"
 
-// HepMC include(s).
-// ...
-
 // Armadillo include(s).
 #include <armadillo>
 

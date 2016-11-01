@@ -13,23 +13,20 @@ string Snapshot::file () {
 
 void Snapshot::save (WaveletML* ML) {
     
-    cout << "Saving snapshot '" << file() << "'." << endl;
+    INFO("Saving snapshot '%s'.", file().c_str());
     
     if (strcmp(file().substr(0,1).c_str(), "/") == 0) {
-        //cout << "WARNING: File '" << file() << "' not accepted. Only accepting realtive paths." << endl;
         WARNING("File '%s' not accepted. Only accepting realtive paths.", file().c_str());
         return;
     }
     
     if (exists()) {
-        //cout << "WARNING: File '" << file() << "' already exists. Overwriting." << endl;
         WARNING("File '%s' already exists. Overwriting.", file().c_str());
     }
     
     if (file().find("/") != string::npos) {
         string dir = file().substr(0,file().find_last_of("/")); // ...
         if (!dirExists(dir)) {
-            //cout << "WARNING: Directory '" << dir << "' does not exist. Creating it." << endl;
             WARNING("Directory '%s' does not exist. Creating it.", dir.c_str());
             system(("mkdir -p " + dir).c_str());
         }
@@ -65,10 +62,9 @@ void Snapshot::save (WaveletML* ML) {
 void Snapshot::load (WaveletML* ML) {
     
     INFO("Loading snapshot '%s'.", file().c_str())
-    //cout << "Loading snapshot '" << file() << "'." << endl;
     
     if (!fileExists(file())) {
-        cout << "WARNING: File '" << file() << "' doesn't exists." << endl;
+        WARNING("File '%s' doesn't exists.", file().c_str());
         return;
     }
     

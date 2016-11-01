@@ -109,13 +109,14 @@ public:
     // Method(s).
     inline const arma::Mat<double>& next () {
         // Check whether generator is properly initialised.
+        DEBUG("Entering");
         if (!initialised()) {
-            WARNING("Generator not properly initialised.");
+            ERROR("Generator not properly initialised. Exiting.");
             return _data;
         }
 
         // Generate next input matrix.
-         _data.zeros();
+        _data.zeros();
         
         const unsigned int sizex = shape()[0];
         const unsigned int sizey = shape()[1];
@@ -135,7 +136,7 @@ public:
             
             hx = repmat(hx, 1, sizey).t();
             hy = repmat(hy, 1, sizex);
-            
+
             // -- Widths.
             double sx = max(arma::as_scalar(randn<mat>(1,1))*0.5 + sizex / 4., 2.); 
             double sy = max(arma::as_scalar(randn<mat>(1,1))*0.5 + sizey / 4., 2.); 
@@ -148,7 +149,7 @@ public:
             _data = _data + gauss.t();
             
         }
-
+        DEBUG("Exiting.");
        return _data;
     }
 
@@ -178,6 +179,7 @@ public:
 
     // Method(s).
     inline const arma::Mat<double>& next () {
+        DEBUG("Entering.");
         // Check whether generator is properly initialised.
         if (!initialised()) { /* @TODO: To be done externally, for GeneratorBase? */
             WARNING("Generator not properly initialised.");
@@ -209,24 +211,29 @@ public:
         }
 
         // Fill '_data' matrix with content from 'hist'.
+        DEBUG("Calling HistFillMatrix.");
         HistFillMatrix(hist, _data);
-        
+        DEBUG("Done.");
+
         // -- Get next HepMC event.
         /**
          * This is done here, such that when HepMCGenerator::good is called, we're checking the *next* event, and therefore we don't risk generating a bad event.
         **/
         getNextHepMCEvent();
-        
+        DEBUG("Exiting.");
         return _data;
     }
     
     inline bool open  (const std::string& filename) { 
+        DEBUG("Entering.");
         _filename = filename;
         open();
+        DEBUG("Exiting.");
         return true; 
     }
 
     inline bool open  () { 
+        DEBUG("Entering.");
         if (_filename == "") {
             ERROR("Filename not set. Exiting.");
             return false;
@@ -238,28 +245,35 @@ public:
         
         _input = new std::fstream(_filename.c_str(), std::ios::in);
         _IO    = new HepMC::IO_GenEvent(*_input);
+        DEBUG("Exiting.");
         return getNextHepMCEvent(); 
     }
 
     inline bool close () { 
+        DEBUG("Entering.");
         if (_IO    != NULL) { delete _IO;    _IO    = NULL; }
         if (_input != NULL) { delete _input; _input = NULL; }
+        DEBUG("Exiting.");
         return true; 
     }
 
     inline bool good  () { 
-
+        DEBUG("Entering.");
         if (!_IO)    { INFO("Member object '_IO' is null."); }
         if (!_event) { INFO("Member object '_event' is null."); }
+        DEBUG("Exiting.");
         return _IO && _event; 
      }
 
     inline bool getNextHepMCEvent () {
+        DEBUG("Entering.");
         if (_event) { delete _event; _event = 0; }
         if (_IO)    { _event = _IO->read_next_event(); } else {
             WARNING("Member object '_IO' is null.");
+            DEBUG("Exiting.");
             return false;
         }
+        DEBUG("Exiting.");
         return true;
     }
     

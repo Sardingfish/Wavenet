@@ -3,7 +3,7 @@
 void MatrixOperator::construct () {
     
     if (!complete()) {
-        std::cout << "<MatrixOperator::construct> WARNING: Trying to construct incomplete operator." << std::endl;
+        WARNING("Trying to construct incomplete operator.");
         return;
     }
     

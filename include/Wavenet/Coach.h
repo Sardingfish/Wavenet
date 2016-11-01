@@ -11,12 +11,6 @@
 #include <fstream>
 #include <iostream>
 
-// ROOT include(s).
-// ...
-
-// HepMC include(s).
-// ...
-
 // Armadillo include(s).
 // ...
 
@@ -25,7 +19,7 @@
 #include "Wavenet/Logger.h"
 #include "Wavenet/WaveletML.h"
 #include "Wavenet/Reader.h"
- 
+
 using namespace std;
 
 class Coach : Logger  {

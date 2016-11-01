@@ -10,12 +10,6 @@
 #include <string> /* std::string */
 #include <vector> /* std::vector */
 
-// ROOT include(s).
-// ...
-
-// HepMC include(s).
-// ...
- 
 // Armadillo include(s).
 #include <armadillo>
 
