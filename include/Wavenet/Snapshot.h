@@ -8,7 +8,7 @@
 
 // STL include(s).
 #include <string> /* std::string */
-#include <vector> /* std::vector*/
+#include <vector> /* std::vector */
 #include <cstdio> /* snprintf */
 
 // Wavenet include(s).
@@ -38,25 +38,27 @@ public:
     // Destructor(s).
     ~Snapshot () {};
     
-    // High-level management method(s).
-    void        next   ();
-    bool        exists () { return fileExists(file()); }
-    std::string file   ();
+    // Set method(s).
+    inline void setPattern (const std::string& pattern) { _pattern = pattern; return; }
+    inline void setNumber  (const int&         number)  { _number  = number;  return; }
     
-    void load (Wavenet* ML);
-    void save (Wavenet* ML);
-    
+    // Get method(s).
     inline int         number  () { return _number; }
     inline std::string pattern () { return _pattern; }
     
-    Snapshot& operator++ ()    { ++_number; return *this; }
-    Snapshot& operator-- ()    { --_number; return *this; }
-    Snapshot  operator++ (int) { _number++; return *this; }
-    Snapshot  operator-- (int) { _number--; return *this; }
+    // High-level management method(s).
+           void        next   ();
+    inline bool        exists () { return fileExists(file()); }
+           std::string file   ();
     
-    // Set method(s).
-    void setPattern (const std::string& pattern) { _pattern = pattern; return; }
-    void setNumber  (const int&         number)  { _number  = number;  return; }
+    void load (Wavenet* wavenet);
+    void save (Wavenet* wavenet);
+    
+    inline Snapshot& operator++ ()    { ++_number; return *this; }
+    inline Snapshot& operator-- ()    { --_number; return *this; }
+    inline Snapshot  operator++ (int) { _number++; return *this; }
+    inline Snapshot  operator-- (int) { _number--; return *this; }
+    
     
 private:
     

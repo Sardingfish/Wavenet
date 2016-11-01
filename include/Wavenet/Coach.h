@@ -34,7 +34,7 @@ public:
     ~Coach () {;};
     
     // Set method(s).
-    inline void setName    (const std::string& name)      { _name    = name; return; }
+    inline void setName    (const std::string& name) { _name    = name; return; }
     inline void setBasedir (const std::string& basedir);
 
     inline void setWavenet   (Wavenet* wavenet)          { _wavenet   = wavenet;   return; }

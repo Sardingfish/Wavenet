@@ -8,7 +8,7 @@
 
 // STL include(s).
 #include <string>
-//#include <fstream> /* std::ifstream::goodbit */
+#include <algorithm> /* std::max */
 
 // ROOT include(s).
 // ...
@@ -24,6 +24,14 @@
 // Wavenet include(s).
 #include "Wavenet/GeneratorBase.h"
 
+
+
+enum class GeneratorMode {
+   File     = 0,
+   Uniform  = 1,
+   Needle   = 2,
+   Gaussian = 3
+};
 
 class NeedleGenerator : public GeneratorBase {
 
@@ -122,25 +130,25 @@ public:
         const unsigned int sizey = shape()[1];
         
         // -- Number of gaussian bumps to overlay
-        const unsigned N = 1 + int(arma::as_scalar(randu<mat>(1,1)) * 3); // [1, 2, 3]
+        const unsigned N = 1 + int(arma::as_scalar(arma::randu<arma::mat>(1,1)) * 3); // [1, 2, 3]
         
         for (unsigned i = 0; i < N; i++) {
             
             // -- Mean coordinates.
-            int mux = int((arma::as_scalar(randu<mat>(1,1)) - 0.5) * (double)sizex);
-            int muy = int((arma::as_scalar(randu<mat>(1,1)) - 0.5) * (double)sizey);
+            int mux = int((arma::as_scalar(arma::randu<arma::mat>(1,1)) - 0.5) * (double)sizex);
+            int muy = int((arma::as_scalar(arma::randu<arma::mat>(1,1)) - 0.5) * (double)sizey);
 
             // -- Axis coordinates.
-            Mat<double> hx = linspace<mat>(-((double)sizex-1)/2, ((double)sizex-1)/2, sizex);
-            Mat<double> hy = linspace<mat>(-((double)sizey-1)/2, ((double)sizey-1)/2, sizey);
+            arma::Mat<double> hx = arma::linspace<arma::mat>(-((double)sizex-1)/2, ((double)sizex-1)/2, sizex);
+            arma::Mat<double> hy = arma::linspace<arma::mat>(-((double)sizey-1)/2, ((double)sizey-1)/2, sizey);
             
             hx = repmat(hx, 1, sizey).t();
             hy = repmat(hy, 1, sizex);
 
             // -- Widths.
-            double sx = max(arma::as_scalar(randn<mat>(1,1))*0.5 + sizex / 4., 2.); 
-            double sy = max(arma::as_scalar(randn<mat>(1,1))*0.5 + sizey / 4., 2.); 
-            Mat<double> gauss = exp( - square(hx - mux) / (2*sq(sx)) - square(hy - mux) / (2*sq(sy)));
+            double sx = std::max(arma::as_scalar(arma::randn<arma::mat>(1,1))*0.5 + sizex / 4., 2.); 
+            double sy = std::max(arma::as_scalar(arma::randn<arma::mat>(1,1))*0.5 + sizey / 4., 2.); 
+            arma::Mat<double> gauss = exp( - square(hx - mux) / (2*sq(sx)) - square(hy - mux) / (2*sq(sy)));
             
             // -- Normalise.
             gauss /= accu(gauss); // Unit integral.

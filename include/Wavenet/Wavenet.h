@@ -10,7 +10,8 @@
 #include <fstream>
 #include <iostream>
 #include <stdio.h> /* printf */
-#include <vector>
+#include <vector> /* std::vector */
+#include <string> /* std::string */
 #include <cmath> /* log2 */
 #include <assert.h> /* assert */
 #include <stdlib.h> /* system */
@@ -33,9 +34,6 @@
 
 
 class Snapshot;
-
-using namespace std;
-using namespace arma;
 
 class Wavenet : Logger {
     
@@ -102,9 +100,9 @@ public:
     void print ();
 
     // Storage method(s).
-    inline void saveAs (const string& filename) { save(filename); return; };
-    void        save   (const string& filename);
-    void        load   (const string& filename);
+    inline void saveAs (const std::string& filename) { save(filename); return; };
+    void        save   (const std::string& filename);
+    void        load   (const std::string& filename);
     
     // High-level learning methods(s).
     // -- 1D.

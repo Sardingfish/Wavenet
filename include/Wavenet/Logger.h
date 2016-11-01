@@ -31,6 +31,7 @@
 #define INFO(...)                   {this->_print(type(*this), __FUNCTION__, "INFO",    __VA_ARGS__);}
 #define DEBUG(...)   if (debug())   {this->_print(type(*this), __FUNCTION__, "DEBUG",   __VA_ARGS__);}
 #define VERBOSE(...) if (verbose()) {this->_print(type(*this), __FUNCTION__, "VERBOSE", __VA_ARGS__);}
+#define FCTINFO(...)                {Logger::_fctprint(__FUNCTION__, "INFO",    __VA_ARGS__);}
 
 
 class Logger {
@@ -60,6 +61,8 @@ public:
     inline bool debug   () { return _debug; }
     inline bool verbose () { return _verbose; }
     
+    // Public print method(s).
+    static void _fctprint (std::string fun, std::string type, std::string format, ...);
 
 protected:
     

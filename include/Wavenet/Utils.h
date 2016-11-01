@@ -2,7 +2,7 @@
 #define WAVENET_UTILS_H
 
 // STL include(s).
-#include <cmath>
+#include <cmath> /* log2 */
 #include <sys/stat.h> /* struct stat */
 #include <cassert> /* assert */
 
@@ -13,12 +13,10 @@
 #include <armadillo>
 
 // Wavenet include(s).
-// ...
+#include "Wavenet/Logger.h"
 
 
-using namespace arma;
-
-const double EPS = 1e-12;
+const double EPS = 1.0e-12;
 const double PI  = 3.14159265359;
 
 // Determine wether the given number is radix 2, i.e. satisfies: y = 2^x in Naturals
@@ -142,7 +140,7 @@ inline arma::Mat<double> HistToMatrix (const TH2F& hist) {
     
     unsigned N1 = hist.GetYaxis()->GetNbins(), N2 = hist.GetXaxis()->GetNbins();
     
-    arma::Mat<double> matrix (N1, N2, fill::zeros);
+    arma::Mat<double> matrix (N1, N2, arma::fill::zeros);
     
     for (unsigned i = 0; i < N1; i++) {
         for (unsigned j = 0; j < N2; j++) {
@@ -177,7 +175,7 @@ inline arma::Mat<double> HistToMatrix1D (const TH1F& hist) {
     
     unsigned N1 = hist.GetXaxis()->GetNbins();
     
-    arma::Mat<double> matrix (N1, 1, fill::zeros);
+    arma::Mat<double> matrix (N1, 1, arma::fill::zeros);
     
     for (unsigned i = 0; i < N1; i++) {
         matrix (i,0) = hist.GetBinContent(i + 1);
@@ -187,25 +185,28 @@ inline arma::Mat<double> HistToMatrix1D (const TH1F& hist) {
 }
 
 // Randomly generate points on N-sphere.
-inline arma::Col<double> PointOnNSphere (const unsigned& N, const double& rho = 0., bool restrict = false) {
+inline arma::Col<double> PointOnNSphere (const unsigned& N, const double& rho = 0.5, bool restrict = false) {
     
-    arma::Col<double> coords (N, fill::ones);
+    arma::Col<double> coords (N, arma::fill::ones);
     
-    coords = randn< arma::Col<double> > (N);
+    coords = arma::randn< arma::Col<double> > (N);
     
-    coords *= (1 + arma::as_scalar(randn(1)) * rho) / arma::norm(coords);
+    coords *= (1 + arma::as_scalar(arma::randn(1)) * rho) / arma::norm(coords);
     
     if (restrict) { // Require first coordinate to be the largest one, and positive.
-        cout << "<PointOnNSphere> Starting from:" << endl << coords;
+        FCTINFO("Starting from:");
+        std::cout << coords << std::endl;
         if (std::abs(coords.at(0)) < std::abs(coords.at(N - 1))) {
             coords = arma::flipud(coords);
-            cout << "<PointOnNSphere> Flipping to:" << endl << coords;
+            FCTINFO("Flipping to:");
+            std::cout << coords << std::endl;
         }
         if (coords.at(0) < 0) {
             coords *= -1;
-            cout << "<PointOnNSphere> Changing sign to:" << endl << coords;
+            FCTINFO("Changing sign to:");
+            std::cout << coords << std::endl;
         }
-        cout << "<PointOnNSphere> Done:" << endl;
+        FCTINFO("Done");
     }
     
     return coords;

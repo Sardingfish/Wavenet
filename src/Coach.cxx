@@ -3,7 +3,7 @@
  // Set method(s).
 // -------------------------------------------------------------------
 
-void Coach::setBasedir (const string& basedir) {
+void Coach::setBasedir (const std::string& basedir) {
     _basedir = basedir;
     if (strcmp(&_basedir.back(), "/") == 0) { _basedir.append("/"); }
     return;
@@ -66,11 +66,11 @@ void Coach::run () {
     double rho = (_wavenet->lambda() > 0 ? 1. / (_wavenet->lambda()) : -1);
     for (unsigned init = 0; init < _Ninits; init++) {
         if (_printLevel > 0) {
-            INFO("Initialisation %d/%d.", init + 1, _Ninits);
+            INFO("Initialisation %d/%d", init + 1, _Ninits);
         }
         _wavenet->load(_basedir + _name + "/snapshots/tmp.snap");
         _wavenet->clear();
-        arma_rng::set_seed_random();
+        arma::arma_rng::set_seed_random();
         if (rho >= 0) {
             _wavenet->setFilter( PointOnNSphere(_Ncoeffs) );//, rho, true) );
         } else {
@@ -97,14 +97,14 @@ void Coach::run () {
             _generator->reset();
             
             if (_printLevel > 1) {
-                INFO("  Epoch %d/%d.", epoch + 1, _Nepochs);
+                INFO("  Epoch %d/%d", epoch + 1, _Nepochs);
             }
 
             int event = 0;
             int eventPrint = 100;
             do {
                 if (_printLevel > 2 || (event + 1) % eventPrint == 0) {
-                    INFO("    Event %d/%d.", event + 1, _Nevents);
+                    INFO("    Event %d/%d", event + 1, _Nevents);
                     if ((event + 1) == 10 * eventPrint) {
                         eventPrint *= 10;
                     }
@@ -131,13 +131,13 @@ void Coach::run () {
                     
                     if (changed && ++tail > useLastN) {
                         
-                        vector< Col<double> > lastNsteps(useLastN);
+                        std::vector< arma::Col<double> > lastNsteps(useLastN);
                         unsigned filterLogSize = _wavenet->filterLog().size();
                         for (unsigned i = 0; i < useLastN; i++) {
                             lastNsteps.at(i) = _wavenet->filterLog().at(filterLogSize - useLastN + i) - _wavenet->filterLog().at(filterLogSize - useLastN + i - 1);
                         }
                         
-                        Col<double> totalStep (size(lastNsteps.at(0)), fill::zeros);
+                        arma::Col<double> totalStep (size(lastNsteps.at(0)), arma::fill::zeros);
                         
                         double meanStepSize  = 0;
                         double totalStepSize = 0;
@@ -151,9 +151,9 @@ void Coach::run () {
                         meanStepSize  /= (double) useLastN;
                         
                         if (totalStepSize < meanStepSize) {
-                            cout << "[Adaptive learning]   Total step size (" << totalStepSize << ") is smaller than mean step size (" << meanStepSize << ")." << endl;
+                            INFO("[Adaptive learning] Total step size (%f) is smaller than mean step size (%f).", totalStepSize, meanStepSize);
                             if (totalStepSize > 1e-07) {
-                                cout << "[Adaptive learning]     Increasing batch size: " << _wavenet->batchSize() << " -> " << 2 * _wavenet->batchSize() << endl;
+                                INFO("[Adaptive learning]   Increasing batch size from %d to %d.", _wavenet->batchSize(), 2 * _wavenet->batchSize());
                                 _wavenet->setBatchSize(  2     * _wavenet->batchSize() );
                                 _wavenet->setAlpha    ( (2/3.) * _wavenet->alpha() * (totalStepSize/meanStepSize));
                                 // _wavenet->setInertia  ( (2/3.) * _wavenet->inertia() );
@@ -162,7 +162,7 @@ void Coach::run () {
                                 }
                                 tail = 0;
                             } else {
-                                cout << "[Adaptive learning] Done." << endl;
+                                INFO("[Adaptive learning] Step size is smaller than 1e-07. Done.");
                                 done = true;
                             }
                         }

@@ -11,7 +11,7 @@ std::string Snapshot::file () {
     
 }
 
-void Snapshot::save (Wavenet* ML) {
+void Snapshot::save (Wavenet* wavenet) {
     
     INFO("Saving snapshot '%s'.", file().c_str());
     
@@ -34,23 +34,23 @@ void Snapshot::save (Wavenet* ML) {
     
     ofstream outFileStream (file());
     
-    outFileStream << ML->_lambda << "\n";
-    outFileStream << ML->_alpha << "\n";
-    outFileStream << ML->_inertia << "\n";
-    outFileStream << ML->_filter << "\n#\n";
-    outFileStream << ML->_momentum << "\n#\n";
+    outFileStream << wavenet->_lambda << "\n";
+    outFileStream << wavenet->_alpha << "\n";
+    outFileStream << wavenet->_inertia << "\n";
+    outFileStream << wavenet->_filter << "\n#\n";
+    outFileStream << wavenet->_momentum << "\n#\n";
     
-    outFileStream << ML->_batchSize << "\n";
+    outFileStream << wavenet->_batchSize << "\n";
     outFileStream << "BATCHQUEUE" << "\n";
-    for (const auto& q : ML->_batchQueue) {
+    for (const auto& q : wavenet->_batchQueue) {
         outFileStream << q << "\n#\n";
     }
     outFileStream << "FILTERLOG" << "\n";
-    for (const auto& f : ML->_filterLog) {
+    for (const auto& f : wavenet->_filterLog) {
         outFileStream << f << "\n#\n";
     }
     outFileStream << "COSTLOG" << "\n";
-    for (const auto& f : ML->_costLog) {
+    for (const auto& f : wavenet->_costLog) {
         outFileStream << f << "\n";
     }
     
@@ -59,7 +59,7 @@ void Snapshot::save (Wavenet* ML) {
     return;
 }
 
-void Snapshot::load (Wavenet* ML) {
+void Snapshot::load (Wavenet* wavenet) {
     
     INFO("Loading snapshot '%s'.", file().c_str())
     
@@ -71,9 +71,9 @@ void Snapshot::load (Wavenet* ML) {
     ifstream inFileStream (file());
     std::string tmp; // To stream in values and check for delimeters.
     
-    inFileStream >> ML->_lambda;
-    inFileStream >> ML->_alpha;
-    inFileStream >> ML->_inertia;
+    inFileStream >> wavenet->_lambda;
+    inFileStream >> wavenet->_alpha;
+    inFileStream >> wavenet->_inertia;
     
     // Read filter.
     std::vector<double> vec_filter;
@@ -82,7 +82,7 @@ void Snapshot::load (Wavenet* ML) {
             vec_filter.push_back( stod(tmp) );
         } catch (const std::invalid_argument& ia) {;}
     }
-    ML->_filter = arma::conv_to< arma::Col<double> >::from(vec_filter);
+    wavenet->_filter = arma::conv_to< arma::Col<double> >::from(vec_filter);
     
     // Read momentum.
     std::vector<double> vec_momentum;
@@ -91,13 +91,13 @@ void Snapshot::load (Wavenet* ML) {
             vec_momentum.push_back( stod(tmp) );
         } catch (const std::invalid_argument& ia) {;}
     }
-    ML->_momentum = arma::conv_to< arma::Col<double> >::from(vec_momentum);
+    wavenet->_momentum = arma::conv_to< arma::Col<double> >::from(vec_momentum);
     
-    inFileStream >> ML->_batchSize;
+    inFileStream >> wavenet->_batchSize;
     
     // Read batch queue.
     inFileStream >> tmp;
-    ML->_batchQueue.clear();
+    wavenet->_batchQueue.clear();
     while (tmp.find("FILTERLOG") == std::string::npos) {
         std::vector<double> vec_momentum;
         while (inFileStream >> tmp) {
@@ -106,11 +106,11 @@ void Snapshot::load (Wavenet* ML) {
             } catch (const std::invalid_argument& ia) { break; }
         }
         if (!vec_momentum.size()) { break; }
-        ML->_batchQueue.push_back( arma::conv_to< arma::Col<double> >::from(vec_momentum) );
+        wavenet->_batchQueue.push_back( arma::conv_to< arma::Col<double> >::from(vec_momentum) );
     }
     
     // Read filter log.
-    ML->_filterLog.clear();
+    wavenet->_filterLog.clear();
     while (tmp.find("COSTLOG") == std::string::npos) {
         std::vector<double> vec_filter;
         while (inFileStream >> tmp) {
@@ -119,15 +119,15 @@ void Snapshot::load (Wavenet* ML) {
             } catch (const std::invalid_argument& ia) { break; }
         }
         if (!vec_filter.size()) { break; }
-        ML->_filterLog.push_back( arma::conv_to< arma::Col<double> >::from(vec_filter) );
+        wavenet->_filterLog.push_back( arma::conv_to< arma::Col<double> >::from(vec_filter) );
     }
     
     // Read cost log.
-    ML->_costLog.clear();
+    wavenet->_costLog.clear();
     while (!inFileStream.fail()) {
         while (inFileStream >> tmp) {
             try {
-                ML->_costLog.push_back( stod(tmp) );
+                wavenet->_costLog.push_back( stod(tmp) );
             } catch (const std::invalid_argument& ia) { break; }
         }
     }

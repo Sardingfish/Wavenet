@@ -34,7 +34,7 @@ void MatrixOperator::construct () {
     
     
     // METHOD 2
-    arma::Row<double> v (nCols, fill::zeros);
+    arma::Row<double> v (nCols, arma::fill::zeros);
     for (unsigned i = 0; i < N; i++) {
         v( (i - N/2 + 1) % nCols ) += _filter(N - i - 1);
     }
