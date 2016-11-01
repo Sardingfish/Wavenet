@@ -1,12 +1,12 @@
 #include "Wavenet/Snapshot.h"
 
-string Snapshot::file () {
+std::string Snapshot::file () {
     
-    if (_pattern.find("%") == string::npos) { return _pattern; }
+    if (_pattern.find("%") == std::string::npos) { return _pattern; }
     
     char buff[100];
     snprintf(buff, sizeof(buff), _pattern.c_str(), _number);
-    string filename = buff;
+    std::string filename = buff;
     return filename;
     
 }
@@ -24,8 +24,8 @@ void Snapshot::save (Wavenet* ML) {
         WARNING("File '%s' already exists. Overwriting.", file().c_str());
     }
     
-    if (file().find("/") != string::npos) {
-        string dir = file().substr(0,file().find_last_of("/")); // ...
+    if (file().find("/") != std::string::npos) {
+        std::string dir = file().substr(0,file().find_last_of("/")); // ...
         if (!dirExists(dir)) {
             WARNING("Directory '%s' does not exist. Creating it.", dir.c_str());
             system(("mkdir -p " + dir).c_str());
@@ -76,8 +76,8 @@ void Snapshot::load (Wavenet* ML) {
     inFileStream >> ML->_inertia;
     
     // Read filter.
-    vector<double> vec_filter;
-    while (inFileStream >> tmp && tmp.find("#") == string::npos) {
+    std::vector<double> vec_filter;
+    while (inFileStream >> tmp && tmp.find("#") == std::string::npos) {
         try {
             vec_filter.push_back( stod(tmp) );
         } catch (const std::invalid_argument& ia) {;}
@@ -85,8 +85,8 @@ void Snapshot::load (Wavenet* ML) {
     ML->_filter = arma::conv_to< arma::Col<double> >::from(vec_filter);
     
     // Read momentum.
-    vector<double> vec_momentum;
-    while (inFileStream >> tmp && tmp.find("#") == string::npos) {
+    std::vector<double> vec_momentum;
+    while (inFileStream >> tmp && tmp.find("#") == std::string::npos) {
         try {
             vec_momentum.push_back( stod(tmp) );
         } catch (const std::invalid_argument& ia) {;}
@@ -98,8 +98,8 @@ void Snapshot::load (Wavenet* ML) {
     // Read batch queue.
     inFileStream >> tmp;
     ML->_batchQueue.clear();
-    while (tmp.find("FILTERLOG") == string::npos) {
-        vector<double> vec_momentum;
+    while (tmp.find("FILTERLOG") == std::string::npos) {
+        std::vector<double> vec_momentum;
         while (inFileStream >> tmp) {
             try {
                 vec_momentum.push_back( stod(tmp) );
@@ -111,8 +111,8 @@ void Snapshot::load (Wavenet* ML) {
     
     // Read filter log.
     ML->_filterLog.clear();
-    while (tmp.find("COSTLOG") == string::npos) {
-        vector<double> vec_filter;
+    while (tmp.find("COSTLOG") == std::string::npos) {
+        std::vector<double> vec_filter;
         while (inFileStream >> tmp) {
             try {
                 vec_filter.push_back( stod(tmp) );

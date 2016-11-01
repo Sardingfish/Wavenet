@@ -16,8 +16,6 @@
 // Wavenet include(s).
 #include "Wavenet/MatrixOperator.h"
 
-using namespace std;
-using namespace arma;
 
 class HighpassOperator : public MatrixOperator {
     
@@ -40,8 +38,6 @@ public:
     
     // Matrix operator methods.
     void setFilter (const arma::Col<double>& filter);
-    
-private:
     
 };
 

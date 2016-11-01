@@ -40,6 +40,7 @@ int main (int argc, char* argv[]) {
     
     return 0;
     */
+
     EventMode mode = EventMode::File;
     int Nfilter = 4;
    
@@ -74,15 +75,15 @@ int main (int argc, char* argv[]) {
     }
     project += ".N" + to_string(Nfilter);
     
-    Wavenet ML;
+    Wavenet wavenet;
 
-    ML.setLambda(10.);
-    ML.setAlpha(0.001); // 10 -> 0.01; 100 -> 0.02
-    ML.setInertia(0.0);
-    ML.setBatchSize(10);
-    ML.doWavelet(true); // >>> Default: true:
+    wavenet.setLambda(10.);
+    wavenet.setAlpha(0.001); // 10 -> 0.01; 100 -> 0.02
+    wavenet.setInertia(0.0);
+    wavenet.setBatchSize(10);
+    wavenet.doWavelet(true); // >>> Default: true:
     
-    ML.print();
+    wavenet.print();
     
     // * Get cost map(s).
     /*
@@ -99,6 +100,7 @@ int main (int argc, char* argv[]) {
     
  
     // Coached training.
+    /*
     Reader reader;
     reader.setEventMode(mode);
     if (mode == EventMode::File) {
@@ -106,19 +108,23 @@ int main (int argc, char* argv[]) {
         if (!stat) { return 1; }
     }
     reader.setSize(64);
+    */
     
+    HepMCGenerator hg ("input/Pythia.WpT500._000001.hepmc");
+    hg.setShape({32,32});
+
     Coach  coach  (project); //("Pythia.WpT500.N16");
     coach.setNevents(100); // (1000); // 25000
     coach.setNepochs(5  ); // 4
     coach.setNcoeffs(Nfilter);
     coach.setNinits (2); // (10);
     coach.setUseAdaptiveLearning(true);
-    coach.setReader(&reader);
-    coach.setWavenet(&ML);
+    coach.setGenerator(&hg);
+    coach.setWavenet(&wavenet);
     
     coach.run();
     
-    reader.close();
+    hg.close();
     
     cout << "Done." << endl;
     

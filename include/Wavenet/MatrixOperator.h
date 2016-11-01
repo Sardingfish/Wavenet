@@ -19,9 +19,6 @@
 #include "Wavenet/Utils.h"
 #include "Wavenet/Logger.h"
 
-using namespace std;
-using namespace arma;
-
 
 class MatrixOperator : public arma::Mat<double>, public Logger {
     

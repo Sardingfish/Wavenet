@@ -7,35 +7,31 @@
  **/
 
 // STL include(s).
-#include <string>
+#include <string> /* std::string */
+#include <vector> /* std::vector*/
 #include <cstdio> /* snprintf */
-
-// Armadillo include(s).
-// ...
 
 // Wavenet include(s).
 #include "Wavenet/Utils.h"
 #include "Wavenet/Logger.h"
 #include "Wavenet/Wavenet.h"
 
+
 class Wavenet;
 
-using namespace std;
-
-//template< class T>
 class Snapshot : public Logger {
     
 public:
     
     // Constructor(s).
     Snapshot () {};
-    Snapshot (const string& pattern) :
+    Snapshot (const std::string& pattern) :
         _pattern(pattern)
     {};
     Snapshot (const int& number) :
         _number(number)
     {};
-    Snapshot (const string& pattern, const int& number) :
+    Snapshot (const std::string& pattern, const int& number) :
         _pattern(pattern), _number(number)
     {};
     
@@ -43,15 +39,15 @@ public:
     ~Snapshot () {};
     
     // High-level management method(s).
-    void   next   ();
-    bool   exists () { return fileExists(file()); }
-    string file   ();
+    void        next   ();
+    bool        exists () { return fileExists(file()); }
+    std::string file   ();
     
     void load (Wavenet* ML);
     void save (Wavenet* ML);
     
-    inline int    number  () { return _number; }
-    inline string pattern () { return _pattern; }
+    inline int         number  () { return _number; }
+    inline std::string pattern () { return _pattern; }
     
     Snapshot& operator++ ()    { ++_number; return *this; }
     Snapshot& operator-- ()    { --_number; return *this; }
@@ -59,13 +55,13 @@ public:
     Snapshot  operator-- (int) { _number--; return *this; }
     
     // Set method(s).
-    void setPattern (const string& pattern) { _pattern = pattern; return; }
-    void setNumber  (const int&    number)  { _number  = number;  return; }
+    void setPattern (const std::string& pattern) { _pattern = pattern; return; }
+    void setNumber  (const int&         number)  { _number  = number;  return; }
     
 private:
     
-    string _pattern = "";
-    int    _number  = 1;
+    std::string _pattern = "";
+    int         _number  = 1;
     
 };
 

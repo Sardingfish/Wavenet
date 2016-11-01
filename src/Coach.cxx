@@ -10,7 +10,7 @@ void Coach::setBasedir (const string& basedir) {
 }
 
 void Coach::setNevents (const int& Nevents) {
-    if (Nevents < -1) {
+    if (Nevents < 0 and Nevents != -1) {
         WARNING("Input number of events (%d) not supported.", Nevents);
         return;
     }
@@ -35,13 +35,13 @@ void Coach::run () {
     DEBUG("Entering.");
 
     // Performing checks.
-    if (!_ML) {
+    if (!_wavenet) {
         ERROR("WaveletML object not set.Exiting.");
         return;
     }
 
-    if (!_reader) {
-        ERROR("Input reader not set. Exiting.");
+    if (!_generator) {
+        ERROR("Input generator not set. Exiting.");
         return;
     }
 
@@ -54,7 +54,7 @@ void Coach::run () {
     INFO("Start training, using coach '%s'.", _name.c_str());
     
     // -- Save base snapshot, to step back from adaptive learning.
-    _ML->save(_basedir + _name + "/snapshots/tmp.snap");
+    _wavenet->save(_basedir + _name + "/snapshots/tmp.snap");
     
     // -- Stuff for adaptive learning.
     /*
@@ -63,21 +63,21 @@ void Coach::run () {
      */
     const unsigned useLastN = 10;
     
-    double rho = (_ML->lambda() > 0 ? 1. / (_ML->lambda()) : -1);
+    double rho = (_wavenet->lambda() > 0 ? 1. / (_wavenet->lambda()) : -1);
     for (unsigned init = 0; init < _Ninits; init++) {
         if (_printLevel > 0) {
             INFO("Initialisation %d/%d.", init + 1, _Ninits);
         }
-        _ML->load(_basedir + _name + "/snapshots/tmp.snap");
-        _ML->clear();
+        _wavenet->load(_basedir + _name + "/snapshots/tmp.snap");
+        _wavenet->clear();
         arma_rng::set_seed_random();
         if (rho >= 0) {
-            _ML->setFilter( PointOnNSphere(_Ncoeffs) );//, rho, true) );
+            _wavenet->setFilter( PointOnNSphere(_Ncoeffs) );//, rho, true) );
         } else {
-            _ML->setFilter( (arma::Col<double> ().randu(_Ncoeffs) * 2 - 1 )* 1.2 );
+            _wavenet->setFilter( (arma::Col<double> ().randu(_Ncoeffs) * 2 - 1 )* 1.2 );
         }
         
-        const double lambdaBare = _ML->lambda();
+        const double lambdaBare = _wavenet->lambda();
         
         // -- Stuff for adapetive learning.
         bool done = false;
@@ -94,7 +94,7 @@ void Coach::run () {
         
         // * Perform training.
         for (unsigned epoch = 0; epoch < _Nepochs; epoch++) {
-            _reader->reset();
+            _generator->reset();
             
             if (_printLevel > 1) {
                 INFO("  Epoch %d/%d.", epoch + 1, _Nepochs);
@@ -111,7 +111,7 @@ void Coach::run () {
                 }
                 /* ~ Simulated annealing.
                 double frac = (event / float(_Nevents)) / float(_Nepochs - 1) + epoch / float(_Nepochs - 1); / * Current fraction of events processed * /
-                _ML->setLambda( exp(log(lambdaBare) * (frac - 0.1) / frac) );
+                _wavenet->setLambda( exp(log(lambdaBare) * (frac - 0.1) / frac) );
                 */
                 /*
                 cout << "  frac:       " << frac << endl;
@@ -120,21 +120,21 @@ void Coach::run () {
                 */
                 
                 /* Main call. */
-                _ML->batchTrain( _reader->next() );
+                _wavenet->batchTrain( _generator->next() );
                 
 
                 /* [BEGIN] Adaptive learning. */
                 if (_useAdaptiveLearning) {
                     previousCostLogSize = currentCostLogSize;
-                    currentCostLogSize  = _ML->costLog().size();
+                    currentCostLogSize  = _wavenet->costLog().size();
                     bool changed = (currentCostLogSize != previousCostLogSize);
                     
                     if (changed && ++tail > useLastN) {
                         
                         vector< Col<double> > lastNsteps(useLastN);
-                        unsigned filterLogSize = _ML->filterLog().size();
+                        unsigned filterLogSize = _wavenet->filterLog().size();
                         for (unsigned i = 0; i < useLastN; i++) {
-                            lastNsteps.at(i) = _ML->filterLog().at(filterLogSize - useLastN + i) - _ML->filterLog().at(filterLogSize - useLastN + i - 1);
+                            lastNsteps.at(i) = _wavenet->filterLog().at(filterLogSize - useLastN + i) - _wavenet->filterLog().at(filterLogSize - useLastN + i - 1);
                         }
                         
                         Col<double> totalStep (size(lastNsteps.at(0)), fill::zeros);
@@ -153,12 +153,12 @@ void Coach::run () {
                         if (totalStepSize < meanStepSize) {
                             cout << "[Adaptive learning]   Total step size (" << totalStepSize << ") is smaller than mean step size (" << meanStepSize << ")." << endl;
                             if (totalStepSize > 1e-07) {
-                                cout << "[Adaptive learning]     Increasing batch size: " << _ML->batchSize() << " -> " << 2 * _ML->batchSize() << endl;
-                                _ML->setBatchSize(  2     * _ML->batchSize() );
-                                _ML->setAlpha    ( (2/3.) * _ML->alpha() * (totalStepSize/meanStepSize));
-                                // _ML->setInertia  ( (2/3.) * _ML->inertia() );
+                                cout << "[Adaptive learning]     Increasing batch size: " << _wavenet->batchSize() << " -> " << 2 * _wavenet->batchSize() << endl;
+                                _wavenet->setBatchSize(  2     * _wavenet->batchSize() );
+                                _wavenet->setAlpha    ( (2/3.) * _wavenet->alpha() * (totalStepSize/meanStepSize));
+                                // _wavenet->setInertia  ( (2/3.) * _wavenet->inertia() );
                                 if (meanStepSize < 1.0e-03) {
-                                    _ML->setInertia ( 0.9 ); // << TEST
+                                    _wavenet->setInertia ( 0.9 ); // << TEST
                                 }
                                 tail = 0;
                             } else {
@@ -173,15 +173,15 @@ void Coach::run () {
                     
                     /*
                     if (changed && currentCostLogSize == 20) {
-                        //_ML->setInertia(0.99);
-                        _ML->setBatchSize(10*_ML->batchSize());
-                        //cout << "[Adaptive learning] Setting inertia to " << _ML->inertia() << endl;
+                        //_wavenet->setInertia(0.99);
+                        _wavenet->setBatchSize(10*_wavenet->batchSize());
+                        //cout << "[Adaptive learning] Setting inertia to " << _wavenet->inertia() << endl;
                     }
                     */
                     /*
                     if (changed && currentCostLogSize % 200 == 0) {
-                        _ML->setBatchSize( 2 * _ML->batchSize() );
-                        //cout << "[Adaptive learning] Setting batch size to " << _ML->batchSize() << endl;
+                        _wavenet->setBatchSize( 2 * _wavenet->batchSize() );
+                        //cout << "[Adaptive learning] Setting batch size to " << _wavenet->batchSize() << endl;
                     }
                     */
                     
@@ -195,7 +195,7 @@ void Coach::run () {
                     if (changed && currentCostLogSize > 1) {
                         
                         // ... append the new cost to the buffer of last N costs...
-                        double lastCost = _ML->costLog().at(previousCostLogSize - 1);
+                        double lastCost = _wavenet->costLog().at(previousCostLogSize - 1);
                         lastNcosts.push_back( lastCost );
                         
                         // ... and make sure that we only have at most N.
@@ -234,19 +234,19 @@ void Coach::run () {
                             if (slope > 0.0005) {
                                 
                                 cout << "   -> Reducing alpha by factor 2." << endl;
-                                _ML->setAlpha( _ML->alpha() / 2.0 );
+                                _wavenet->setAlpha( _wavenet->alpha() / 2.0 );
                                 adapt |= true;
                                 
                             } else if (NE/meanCost > 0.2) {
                                 
                                 cout << "   -> Increasing batch size by factor 2." << endl;
-                                _ML->setBatchSize( _ML->batchSize() * 2.0 );
+                                _wavenet->setBatchSize( _wavenet->batchSize() * 2.0 );
                                 adapt |= true;
                                 
                             } else if (slope > -0.01 && slope < -0.000001) {
                                 
                                 cout << "   -> Increasing alpha by factor 1.2." << endl;
-                                _ML->setAlpha( _ML->alpha() * 1.2 );
+                                _wavenet->setAlpha( _wavenet->alpha() * 1.2 );
                                 adapt |= true;
                                 
                             } else if (slope < 0 && slope > -0.000001) {
@@ -256,7 +256,7 @@ void Coach::run () {
                                     done = true;
                                 } else {
                                     cout << "   -> Increasing batch size by factor 2." << endl;
-                                    _ML->setBatchSize( _ML->batchSize() * 2.0 );
+                                    _wavenet->setBatchSize( _wavenet->batchSize() * 2.0 );
                                     adapt |= true;
                                 }
                                 
@@ -285,10 +285,10 @@ void Coach::run () {
                     double slope, corr;
                     
                     previousCostLogSize = currentCostLogSize;
-                    currentCostLogSize  = _ML->costLog().size();
+                    currentCostLogSize  = _wavenet->costLog().size();
                     if (currentCostLogSize > previousCostLogSize && currectCostLogSize > 1) {
                         
-                        double lastCost = _ML->costLog().at(previousCostLogSize - 1);
+                        double lastCost = _wavenet->costLog().at(previousCostLogSize - 1);
                         lastNcosts.push_back( lastCost );
                         
                         while (lastNcosts.size() > useLastNcosts) {
@@ -359,13 +359,13 @@ void Coach::run () {
                         cout << "[Adaptive learning] Changing parameters with strategy " << strat << " (event: " << event << ", slope: " << slope << ", corr: " << corr << ")." << endl;
                         switch (abs(strat)) {
                             case 0:
-                                _ML->setBatchSize( 2 * _ML->batchSize() );
+                                _wavenet->setBatchSize( 2 * _wavenet->batchSize() );
                                 break;
                             case 1:
                                 if (strat > 0) {
-                                    _ML->setAlpha( 2 * _ML->alpha() );
+                                    _wavenet->setAlpha( 2 * _wavenet->alpha() );
                                 } else {
-                                    _ML->setAlpha( 0.5 * _ML->alpha() );
+                                    _wavenet->setAlpha( 0.5 * _wavenet->alpha() );
                                 }
                                 break;
                             default:
@@ -386,18 +386,18 @@ void Coach::run () {
                 } /* [END] Adaptive learning. */
                      
                 
-            } while (!done && (_Nevents < 0 || (++event < _Nevents && _reader->good())));
+            } while (!done && (_Nevents < 0 || (++event < _Nevents && _generator->good())));
             
             if (done) { break; }
         }
         
-        //_ML->flushBatchQueue(); // <<< Might bias!
+        //_wavenet->flushBatchQueue(); // <<< Might bias!
         
         // * Saving snapshot to file.
         char buff[100];
         snprintf(buff, sizeof(buff), "%s.%06u.snap", _name.c_str(), init + 1);
         std::string filename = buff;
-        _ML->save(_basedir + _name + "/snapshots/" + filename);
+        _wavenet->save(_basedir + _name + "/snapshots/" + filename);
     }
     
     std::ofstream outFileStream (_basedir + _name + "/README" );
@@ -409,7 +409,7 @@ void Coach::run () {
     
     outFileStream.close();
     
-    _ML->clear();
+    _wavenet->clear();
     
     return;
     

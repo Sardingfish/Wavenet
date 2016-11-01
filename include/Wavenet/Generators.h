@@ -167,7 +167,7 @@ class HepMCGenerator : public GeneratorBase {
 public:
 
     // Constructor(s).
-    HepMCGenerator () {}
+    //HepMCGenerator () {} // No empty constructor. 'filename' *must* be specified for this generator to make sense.
     HepMCGenerator (const std::string& filename) { open(filename); }
 
     // Destructor.

@@ -32,12 +32,14 @@ public:
     virtual ~GeneratorBase () {}
 
     // Method(s).
+    // -- Lifetime management methods. Can be overwritten for derived generators.
     virtual const arma::Mat<double>& next  () = 0;
     virtual bool open  ();
     virtual bool close ();
     virtual bool good  ();
-    inline  bool reset ();
+            bool reset ();
 
+    // -- Shape method(s).
     bool setShape (const std::vector<unsigned int>& shape);
 
     std::vector<unsigned int> shape ();
