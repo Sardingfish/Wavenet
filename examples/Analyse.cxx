@@ -15,8 +15,8 @@
 #include "TColor.h"
 #include "TLatex.h"
 
-// WaveletML include(s).
-#include "Wavenet/WaveletML.h"
+// Wavenet include(s).
+#include "Wavenet/Wavenet.h"
 #include "Wavenet/Snapshot.h"
 #include "Wavenet/Reader.h"
 
@@ -25,7 +25,7 @@ using namespace arma;
 
 int main (int argc, char* argv[]) {
     
-    cout << "Running WaveletML analysis." << endl;
+    cout << "Running Wavenet analysis." << endl;
 
     EventMode mode = EventMode::File;
     const int M = 10;
@@ -33,7 +33,7 @@ int main (int argc, char* argv[]) {
     
     /* --- */
     
-    WaveletML ML;
+    Wavenet ML;
     ML.doWavelet(true);
     
     // Variables.
@@ -87,9 +87,10 @@ int main (int argc, char* argv[]) {
     vector< Mat<double> > examples;
     for (unsigned i = 0; i < 10; i++) {
         examples.push_back( reader.next() );
-        TH2F exampleSignal = MatrixToHist(examples.at(i), 3.2);
-        exampleSignal.Draw("COL Z");
+        TH1* exampleSignal = MatrixToHist(examples.at(i), 3.2);
+        exampleSignal->Draw("COL Z");
         c.SaveAs((outdir + "exampleSignal." + to_string(i + 1) +"." + project + ".pdf").c_str());
+        delete exampleSignal;
     }
     reader.close();
 
@@ -224,20 +225,20 @@ int main (int argc, char* argv[]) {
     
     
     c.SetLogz(true);
-    TH2F J = MatrixToHist(costMap, 1.2);
-    J.SetContour(104); // (104);
+    TH1* J = MatrixToHist(costMap, 1.2);
+    J->SetContour(104); // (104);
     gStyle->SetOptStat(0);
-    J.SetMaximum(100.); // 100.
-    //J.SetMinimum(0.001); // 0.033
+    J->SetMaximum(100.); // 100.
+    //J->SetMinimum(0.001); // 0.033
     
     // * Styling.
-    J.GetXaxis()->SetTitle("Filter coeff. a_{1}");
-    J.GetYaxis()->SetTitle("Filter coeff. a_{2}");
-    J.GetZaxis()->SetTitle("Cost (sparsity + regularisation) [a.u.]");
+    J->GetXaxis()->SetTitle("Filter coeff. a_{1}");
+    J->GetYaxis()->SetTitle("Filter coeff. a_{2}");
+    J->GetZaxis()->SetTitle("Cost (sparsity + regularisation) [a.u.]");
     
-    J.GetXaxis()->SetTitleOffset(1.2);
-    J.GetYaxis()->SetTitleOffset(1.3);
-    J.GetZaxis()->SetTitleOffset(1.4);
+    J->GetXaxis()->SetTitleOffset(1.2);
+    J->GetYaxis()->SetTitleOffset(1.3);
+    J->GetZaxis()->SetTitleOffset(1.4);
     
     c.SetTopMargin   (0.09);
     c.SetBottomMargin(0.11);
@@ -247,7 +248,7 @@ int main (int argc, char* argv[]) {
     c.SetTickx();
     c.SetTicky();
     
-    J.Draw("CONT1 Z"); // COL / CONT1
+    J->Draw("CONT1 Z"); // COL / CONT1
     c.Update();
     
     // * Lines etc.
@@ -301,12 +302,13 @@ int main (int argc, char* argv[]) {
     
     c.SaveAs((outdir + "CostMap.pdf").c_str());
     c.SetLogz(false);
+    delete J;
     
      // * Basis function.
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     snap.setNumber(bestBasis + 1);
     ML.load(snap.file());
-    TH2F basisFct;
+    TH1* basisFct;
     
     
     cout << "Checking orthonormality (best snap):" << endl;
@@ -364,17 +366,17 @@ int main (int argc, char* argv[]) {
                 
                 basisFct = MatrixToHist(ML.basisFct(16, i, j), 3.2);
                 
-                basisFct.GetZaxis()->SetRangeUser(-zmax, zmax);
-                basisFct.SetContour(nb);
+                basisFct->GetZaxis()->SetRangeUser(-zmax, zmax);
+                basisFct->SetContour(nb);
                 
-                basisFct.GetXaxis()->SetTickLength(0.);
-                basisFct.GetYaxis()->SetTickLength(0.);
-                basisFct.GetXaxis()->SetTitleOffset(9999.);
-                basisFct.GetYaxis()->SetTitleOffset(9999.);
-                basisFct.GetXaxis()->SetLabelOffset(9999.);
-                basisFct.GetYaxis()->SetLabelOffset(9999.);
+                basisFct->GetXaxis()->SetTickLength(0.);
+                basisFct->GetYaxis()->SetTickLength(0.);
+                basisFct->GetXaxis()->SetTitleOffset(9999.);
+                basisFct->GetYaxis()->SetTitleOffset(9999.);
+                basisFct->GetXaxis()->SetLabelOffset(9999.);
+                basisFct->GetYaxis()->SetLabelOffset(9999.);
                 
-                basisFct.DrawCopy("COL");
+                basisFct->DrawCopy("COL");
                 
             }
         }
@@ -393,6 +395,8 @@ int main (int argc, char* argv[]) {
         }
     }
 
+
+    delete basisFct;
 
     /* -- */
 

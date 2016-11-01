@@ -11,7 +11,7 @@ string Snapshot::file () {
     
 }
 
-void Snapshot::save (WaveletML* ML) {
+void Snapshot::save (Wavenet* ML) {
     
     INFO("Saving snapshot '%s'.", file().c_str());
     
@@ -59,7 +59,7 @@ void Snapshot::save (WaveletML* ML) {
     return;
 }
 
-void Snapshot::load (WaveletML* ML) {
+void Snapshot::load (Wavenet* ML) {
     
     INFO("Loading snapshot '%s'.", file().c_str())
     

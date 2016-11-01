@@ -1,6 +1,8 @@
 // STL include(s).
-#include <string>
-#include <vector>
+#include <string> /* std::string */
+#include <vector> /* std::vector */
+#include <cmath> /* log2 */
+#include <chrono>
 
 // ROOT include(s).
 #include "TStyle.h"
@@ -10,15 +12,34 @@
 #include "TMarker.h"
 #include "TEllipse.h"
 
-// WaveletML include(s).
-#include "Wavenet/WaveletML.h"
+// Wavenet include(s).
+#include "Wavenet/Wavenet.h"
 #include "Wavenet/Coach.h"
 #include "Wavenet/Reader.h"
+#include "Wavenet/Generators.h"
+#include "Wavenet/Utils.h"
+
 
 int main (int argc, char* argv[]) {
-    cout << "Running WaveletML study." << endl;
+    cout << "Running Wavenet study." << endl;    
+    /*
+    arma::Mat<double> M;
+
+    //HepMCGenerator hg;
+    GaussianGenerator hg;
+    //hg.open("input/Pythia.WpT500._000001.hepmc");
+    hg.setShape({64,16});
     
+
+    M = hg.next();
+ 
+    TCanvas c1 ("c1", "", 600, 600);
+    TH1* h1 = MatrixToHist(M, 3.2);
+    h1->Draw("COL Z");
+    c1.SaveAs("TEMPTEMPTEMP.pdf");
     
+    return 0;
+    */
     EventMode mode = EventMode::File;
     int Nfilter = 4;
    
@@ -53,7 +74,7 @@ int main (int argc, char* argv[]) {
     }
     project += ".N" + to_string(Nfilter);
     
-    WaveletML ML;
+    Wavenet ML;
 
     ML.setLambda(10.);
     ML.setAlpha(0.001); // 10 -> 0.01; 100 -> 0.02
@@ -93,7 +114,7 @@ int main (int argc, char* argv[]) {
     coach.setNinits (2); // (10);
     coach.setUseAdaptiveLearning(true);
     coach.setReader(&reader);
-    coach.setWaveletML(&ML);
+    coach.setWavenet(&ML);
     
     coach.run();
     

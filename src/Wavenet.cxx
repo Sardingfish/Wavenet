@@ -1,30 +1,30 @@
-#include "Wavenet/WaveletML.h"
+#include "Wavenet/Wavenet.h"
 
  // Set method(s).
 // -------------------------------------------------------------------
 
-bool WaveletML::setLambda (const double& lambda) {
+bool Wavenet::setLambda (const double& lambda) {
     _lambda = lambda;
     return true;
 }
 
-bool WaveletML::setAlpha (const double& alpha) {
+bool Wavenet::setAlpha (const double& alpha) {
     _alpha = alpha;
     return true;
 }
 
-bool WaveletML::setInertia (const double& inertia) {
+bool Wavenet::setInertia (const double& inertia) {
     _inertia = inertia;
     return true;
 }
 
-bool WaveletML::setFilter (const arma::Col<double>& filter) {
+bool Wavenet::setFilter (const arma::Col<double>& filter) {
     if (filter.is_empty()) {
-        std::cout << "<WaveletML::setFilter> WARNING: Input filter is empty." << std::endl;
+        std::cout << "<Wavenet::setFilter> WARNING: Input filter is empty." << std::endl;
         return false;
     }
     if (filter.n_rows % 2) {
-        std::cout << "<WaveletML::setFilter> WARNING: Input filter length is not a multiple of 2." << std::endl;
+        std::cout << "<Wavenet::setFilter> WARNING: Input filter length is not a multiple of 2." << std::endl;
         return false;
     }
     _filter = filter;
@@ -44,9 +44,9 @@ bool WaveletML::setFilter (const arma::Col<double>& filter) {
     return true;
 }
 
-bool WaveletML::setMomentum (const arma::Col<double>& momentum) {
+bool Wavenet::setMomentum (const arma::Col<double>& momentum) {
     if (momentum.size() != _filter.size()) {
-        std::cout << "<WaveletML::setMomentum> WARNING: Input momentum is not same size as stored filter." << std::endl;
+        std::cout << "<Wavenet::setMomentum> WARNING: Input momentum is not same size as stored filter." << std::endl;
         return false;
     }
     _momentum = momentum;
@@ -54,12 +54,12 @@ bool WaveletML::setMomentum (const arma::Col<double>& momentum) {
 }
 
 
-bool WaveletML::setBatchSize (const unsigned& batchSize) {
+bool Wavenet::setBatchSize (const unsigned& batchSize) {
     _batchSize = batchSize;
     return true;
 }
 
-bool WaveletML::doWavelet (const bool& wavelet) {
+bool Wavenet::doWavelet (const bool& wavelet) {
     _wavelet = wavelet;
     return true;
 }
@@ -67,9 +67,9 @@ bool WaveletML::doWavelet (const bool& wavelet) {
  // Print method(s).
 // -------------------------------------------------------------------
 
-void WaveletML::print () {
+void Wavenet::print () {
     printf("\n");
-    printf("This WaveletML instance has the following properties:\n");
+    printf("This Wavenet instance has the following properties:\n");
     printf("  lambda   : %4.1f  \n", _lambda);
     printf("  alpha    :  %4.2f \n", _alpha);
     printf("  inertia  :  %4.2f \n", _inertia);
@@ -103,13 +103,13 @@ void WaveletML::print () {
 // Storage methods(s).
 // -------------------------------------------------------------------
 
-void WaveletML::save (const string& filename) {
+void Wavenet::save (const string& filename) {
     Snapshot snap (filename);
     snap.save(this);
     return;
 }
 
-void WaveletML::load (const string& filename) {
+void Wavenet::load (const string& filename) {
     Snapshot snap (filename);
     snap.load(this);
     return;
@@ -120,7 +120,7 @@ void WaveletML::load (const string& filename) {
 // -------------------------------------------------------------------
 
 // Forward (1D).
-arma::field< arma::Col<double> > WaveletML::forward (const arma::Col<double>& x) {
+arma::field< arma::Col<double> > Wavenet::forward (const arma::Col<double>& x) {
 
     unsigned m = log2(x.n_elem);
     
@@ -146,12 +146,12 @@ arma::field< arma::Col<double> > WaveletML::forward (const arma::Col<double>& x)
 }
 
 // Forward (2D) - returning activation fields.
-arma::field< arma::field< arma::Col<double> > > WaveletML::forward (const arma::Mat<double>& X) {
+arma::field< arma::field< arma::Col<double> > > Wavenet::forward (const arma::Mat<double>& X) {
     
     unsigned N = size(X,0);
     
     if (N != size(X, 1)) {
-        std::cout << "<WaveletML::forward> WARNING: Input signal is not square." << std::endl;
+        std::cout << "<Wavenet::forward> WARNING: Input signal is not square." << std::endl;
         return arma::field< arma::field< arma::Col<double> > >();
     }
     
@@ -176,7 +176,7 @@ arma::field< arma::field< arma::Col<double> > > WaveletML::forward (const arma::
 }
 
 // Inverse (2D).
-arma::Mat<double> WaveletML::inverse (const arma::Mat<double>& Y) {
+arma::Mat<double> Wavenet::inverse (const arma::Mat<double>& Y) {
     
     unsigned N1 = size(Y, 0);
     unsigned N2 = size(Y, 1);
@@ -196,7 +196,7 @@ arma::Mat<double> WaveletML::inverse (const arma::Mat<double>& Y) {
 }
 
 // Inverse (1D) – using activation fields.
-arma::Col<double> WaveletML::inverse (const arma::field< arma::Col<double> >& activations) {
+arma::Col<double> Wavenet::inverse (const arma::field< arma::Col<double> >& activations) {
     
     unsigned m = log2(size(activations, 0));
     
@@ -211,7 +211,7 @@ arma::Col<double> WaveletML::inverse (const arma::field< arma::Col<double> >& ac
 }
 
 // Inverse (1D) – using coefficients.
-arma::Col<double> WaveletML::inverse (const arma::Col<double>& y) {
+arma::Col<double> Wavenet::inverse (const arma::Col<double>& y) {
     unsigned m = log2(y.n_elem);
     
     arma::Col<double> x (1, fill::ones);
@@ -228,7 +228,7 @@ arma::Col<double> WaveletML::inverse (const arma::Col<double>& y) {
 
  // High-level cost method(s).
 // -------------------------------------------------------------------
-double WaveletML::GiniCoeff (const arma::Col<double>& y) {
+double Wavenet::GiniCoeff (const arma::Col<double>& y) {
     unsigned N = y.n_elem;
     
     arma::Col<double> ySortAbs = sort(abs(y));
@@ -240,13 +240,13 @@ double WaveletML::GiniCoeff (const arma::Col<double>& y) {
     return f/g + 1;
 }
 
-double WaveletML::GiniCoeff (const arma::Mat<double>& Y) {
+double Wavenet::GiniCoeff (const arma::Mat<double>& Y) {
     const arma::Col<double> y = vectorise(Y);
     return GiniCoeff(y);
 }
 
 
-arma::Col<double> WaveletML::GiniCoeffDeriv (const arma::Col<double>& y) {
+arma::Col<double> Wavenet::GiniCoeffDeriv (const arma::Col<double>& y) {
    
     /**
      * Gini coefficient is written as: G({a}) = f({a})/g({a}) with :
@@ -287,21 +287,21 @@ arma::Col<double> WaveletML::GiniCoeffDeriv (const arma::Col<double>& y) {
     return D;
 }
 
-arma::Mat<double> WaveletML::GiniCoeffDeriv (const arma::Mat<double>& Y) {
+arma::Mat<double> Wavenet::GiniCoeffDeriv (const arma::Mat<double>& Y) {
     arma::Col<double> y = vectorise(Y);
     arma::Col<double> D = GiniCoeffDeriv(y);
     return reshape(D, size(Y));
 }
 
-double WaveletML::SparseTerm (const arma::Col<double>& y) {
+double Wavenet::SparseTerm (const arma::Col<double>& y) {
     return GiniCoeff(y);
 }
 
-double WaveletML::SparseTerm (const arma::Mat<double>& Y) {
+double Wavenet::SparseTerm (const arma::Mat<double>& Y) {
     return GiniCoeff(Y);
 }
 
-double WaveletML::RegTerm    (const arma::Col<double>& a) {
+double Wavenet::RegTerm    (const arma::Col<double>& a) {
     unsigned N = a.n_elem;
     arma::Col<double> kroenecker_delta (N+1, fill::zeros);
     kroenecker_delta(N/2) = 1;
@@ -358,15 +358,15 @@ double WaveletML::RegTerm    (const arma::Col<double>& a) {
     return (_lambda/2.) * R;
 }
 
-arma::Col<double> WaveletML::SparseTermDeriv (const arma::Col<double>& y) {
+arma::Col<double> Wavenet::SparseTermDeriv (const arma::Col<double>& y) {
     return GiniCoeffDeriv(y);
 }
 
-arma::Mat<double> WaveletML::SparseTermDeriv (const arma::Mat<double>& Y) {
+arma::Mat<double> Wavenet::SparseTermDeriv (const arma::Mat<double>& Y) {
     return GiniCoeffDeriv(Y);
 }
 
-arma::Col<double> WaveletML::RegTermDeriv    (const arma::Col<double>& a) {
+arma::Col<double> Wavenet::RegTermDeriv    (const arma::Col<double>& a) {
     
     // Taking the derivative of each term in the sum of squared
     // deviations from the Kroeneker deltea, in the regularion term
@@ -487,7 +487,7 @@ arma::Col<double> WaveletML::RegTermDeriv    (const arma::Col<double>& a) {
     return (_lambda/2.) * D;
 }
 
-double WaveletML::cost (const arma::Col<double>& y) {
+double Wavenet::cost (const arma::Col<double>& y) {
     // Sparsity term: Gini coefficient.
     double S = SparseTerm(y);
     
@@ -500,17 +500,17 @@ double WaveletML::cost (const arma::Col<double>& y) {
     return J;
 }
 
-double WaveletML::cost (const arma::Mat<double>& Y) {
+double Wavenet::cost (const arma::Mat<double>& Y) {
     arma::Col<double> y = vectorise(Y);
     return cost(y);
 }
 
-arma::field< arma::Mat<double> > WaveletML::costMap (const arma::Mat<double>& X, const double& range, const unsigned& Ndiv) {
+arma::field< arma::Mat<double> > Wavenet::costMap (const arma::Mat<double>& X, const double& range, const unsigned& Ndiv) {
 
     return costMap(vector< Mat<double> > ({X}), range, Ndiv);
 }
 
-arma::field< arma::Mat<double> > WaveletML::costMap (const std::vector< arma::Mat<double> >& X, const double& range, const unsigned& Ndiv) {
+arma::field< arma::Mat<double> > Wavenet::costMap (const std::vector< arma::Mat<double> >& X, const double& range, const unsigned& Ndiv) {
     
     arma::field< arma::Mat<double> > costs (3,1); // { J, S, R }
     costs.for_each( [Ndiv](arma::Mat<double>& m) { m.zeros(Ndiv, Ndiv); } );
@@ -548,7 +548,7 @@ arma::field< arma::Mat<double> > WaveletML::costMap (const std::vector< arma::Ma
 // High-level learnings method(s).
 // -------------------------------------------------------------------
 
-arma::Col<double> WaveletML::basisFct (const unsigned& N, const unsigned& i) {
+arma::Col<double> Wavenet::basisFct (const unsigned& N, const unsigned& i) {
     unsigned m = log2(N);
     if (!_hasCachedOperators || size(_cachedLowpassOperators, 0) < m) { cacheOperators(m - 1); }
     arma::Col<double> y (N, fill::zeros);
@@ -556,7 +556,7 @@ arma::Col<double> WaveletML::basisFct (const unsigned& N, const unsigned& i) {
     return inverse(y);
 }
 
-arma::Mat<double> WaveletML::basisFct (const unsigned& N, const unsigned& i, const unsigned& j) {
+arma::Mat<double> Wavenet::basisFct (const unsigned& N, const unsigned& i, const unsigned& j) {
     unsigned m = log2(N);
     if (!_hasCachedOperators || size(_cachedLowpassOperators, 0) < m) { cacheOperators(m - 1); }
     arma::Mat<double> Y (N, N, fill::zeros);
@@ -566,7 +566,7 @@ arma::Mat<double> WaveletML::basisFct (const unsigned& N, const unsigned& i, con
 
 
 
-TGraph WaveletML::getCostGraph (const std::vector< double >& costLog) {
+TGraph Wavenet::getCostGraph (const std::vector< double >& costLog) {
     
     const unsigned N = costLog.size();
     double x[N], y[N];
@@ -582,7 +582,7 @@ TGraph WaveletML::getCostGraph (const std::vector< double >& costLog) {
 }
 
 
-TGraph WaveletML::getCostGraph (const std::vector< arma::Col<double> >& filterLog, const std::vector< arma::Mat<double> >& X) {
+TGraph Wavenet::getCostGraph (const std::vector< arma::Col<double> >& filterLog, const std::vector< arma::Mat<double> >& X) {
     
     const unsigned N = filterLog.size();
     double x[N], y[N];
@@ -607,7 +607,7 @@ TGraph WaveletML::getCostGraph (const std::vector< arma::Col<double> >& filterLo
  // Low-level learnings method(s).
 // -------------------------------------------------------------------
 
-void WaveletML::addMomentum   (const arma::Col<double>& momentum) {
+void Wavenet::addMomentum   (const arma::Col<double>& momentum) {
     if (_momentum.n_elem > 0) {
         _momentum += momentum;
     } else {
@@ -616,11 +616,11 @@ void WaveletML::addMomentum   (const arma::Col<double>& momentum) {
     return;
 }
 
-void WaveletML::scaleMomentum (const double& factor) {
+void Wavenet::scaleMomentum (const double& factor) {
     _momentum = _momentum * factor;
     return;
 }
-void WaveletML::clear () {
+void Wavenet::clear () {
     scaleMomentum(0.);
     clearFilterLog();
     clearCostLog();
@@ -628,7 +628,7 @@ void WaveletML::clear () {
     return;
 }
 
-void WaveletML::update (const arma::Col<double>& gradient) {
+void Wavenet::update (const arma::Col<double>& gradient) {
     
     // RMSprop (somehow _extremely_ time consuming...)
     //_RMSprop = _gamma * _RMSprop + (1.0 - _gamma) * square(gradient);
@@ -644,7 +644,7 @@ void WaveletML::update (const arma::Col<double>& gradient) {
     return;
 }
 
-void WaveletML::cacheOperators (const unsigned& m) {
+void Wavenet::cacheOperators (const unsigned& m) {
     
     clearCachedOperators();
 
@@ -660,14 +660,14 @@ void WaveletML::cacheOperators (const unsigned& m) {
     return;
 }
 
-void WaveletML::clearCachedOperators () {
+void Wavenet::clearCachedOperators () {
     _cachedLowpassOperators .reset();
     _cachedHighpassOperators.reset();
     _hasCachedOperators = false;
     return;
 }
 
-void WaveletML::cacheWeights (const unsigned& m) {
+void Wavenet::cacheWeights (const unsigned& m) {
     
     INFO("Caching matrix weights (%d).", m);
     
@@ -696,50 +696,50 @@ void WaveletML::cacheWeights (const unsigned& m) {
     return;
 }
 
-void WaveletML::clearCachedWeights () {
+void Wavenet::clearCachedWeights () {
     _cachedLowpassWeights .reset();
     _cachedHighpassWeights.reset();
     _hasCachedWeights = false;
     return;
 }
 
-arma::Col<double> WaveletML::lowpassfilter      (const arma::Col<double>& x) {
+arma::Col<double> Wavenet::lowpassfilter      (const arma::Col<double>& x) {
     unsigned m = log2(x.n_elem);
     if (!_hasCachedOperators || size(_cachedLowpassOperators, 0) < m) { cacheOperators(m); }
     assert(m > 0);
     return _cachedLowpassOperators(m - 1, 0) * x;
 }
 
-arma::Col<double> WaveletML::highpassfilter     (const arma::Col<double>& x) {
+arma::Col<double> Wavenet::highpassfilter     (const arma::Col<double>& x) {
     unsigned m = log2(x.n_elem);
     if (!_hasCachedOperators || size(_cachedHighpassOperators, 0) < m) { cacheOperators(m); }
     assert(m > 0);
     return _cachedHighpassOperators(m - 1, 0) * x;
 }
 
-arma::Col<double> WaveletML::inv_lowpassfilter  (const arma::Col<double>& y) {
+arma::Col<double> Wavenet::inv_lowpassfilter  (const arma::Col<double>& y) {
     unsigned m = log2(y.n_elem);
     if (!_hasCachedOperators || size(_cachedLowpassOperators, 0) <= m) { cacheOperators(m); }
     return _cachedLowpassOperators(m, 0).t() * y;
 }
 
-arma::Col<double> WaveletML::inv_highpassfilter (const arma::Col<double>& y) {
+arma::Col<double> Wavenet::inv_highpassfilter (const arma::Col<double>& y) {
     unsigned m = log2(y.n_elem);
     if (!_hasCachedOperators || size(_cachedHighpassOperators, 0) <= m) { cacheOperators(m); }
     return _cachedHighpassOperators(m, 0).t() * y;
 }
 
-const arma::Mat<double>& WaveletML::lowpassweight (const unsigned& level, const unsigned& filt) {
+const arma::Mat<double>& Wavenet::lowpassweight (const unsigned& level, const unsigned& filt) {
     if (!_hasCachedWeights || size(_cachedLowpassWeights, 0) <= level) { cacheWeights(level); }
     return _cachedLowpassWeights(level, filt);
 }
 
-const arma::Mat<double>& WaveletML::highpassweight (const unsigned& level, const unsigned& filt) {
+const arma::Mat<double>& Wavenet::highpassweight (const unsigned& level, const unsigned& filt) {
     if (!_hasCachedWeights || size(_cachedHighpassWeights, 0) <= level) { cacheWeights(level); }
     return _cachedHighpassWeights(level, filt);
 }
 
-arma::field< arma::Col<double> > WaveletML::ComputeDelta (const arma::Col<double>& delta, arma::field< arma::Col<double> > activations) {
+arma::field< arma::Col<double> > Wavenet::ComputeDelta (const arma::Col<double>& delta, arma::field< arma::Col<double> > activations) {
     
     unsigned N = _filter.n_elem;
     unsigned m = size(activations, 0) - 1;
@@ -796,7 +796,7 @@ arma::field< arma::Col<double> > WaveletML::ComputeDelta (const arma::Col<double
     return outField;
 }
 
-void WaveletML::batchTrain (arma::Mat<double> X) {
+void Wavenet::batchTrain (arma::Mat<double> X) {
     
     unsigned N = size(X, 0);
     
@@ -832,7 +832,7 @@ void WaveletML::batchTrain (arma::Mat<double> X) {
 }
 
 
-void WaveletML::flushBatchQueue () {
+void Wavenet::flushBatchQueue () {
     
     if (!_batchQueue.size()) { return; }
 
@@ -856,7 +856,7 @@ void WaveletML::flushBatchQueue () {
 
  // Miscellaneous.
 // -------------------------------------------------------------------
-arma::Col<double> WaveletML::coeffsFromActivations (const arma::field< arma::Col<double> >& activations) {
+arma::Col<double> Wavenet::coeffsFromActivations (const arma::field< arma::Col<double> >& activations) {
     
     unsigned m = size(activations, 0) - 1;
     
@@ -871,7 +871,7 @@ arma::Col<double> WaveletML::coeffsFromActivations (const arma::field< arma::Col
     
 }
 
-arma::Mat<double> WaveletML::coeffsFromActivations (const arma::field< arma::field< arma::Col<double> > >& Activations) {
+arma::Mat<double> Wavenet::coeffsFromActivations (const arma::field< arma::field< arma::Col<double> > >& Activations) {
     
     unsigned N = size(Activations, 0); // nRows or nCols
     

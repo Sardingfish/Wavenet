@@ -17,7 +17,7 @@
 // Wavenet include(s).
 #include "Wavenet/Utils.h"
 #include "Wavenet/Logger.h"
-#include "Wavenet/WaveletML.h"
+#include "Wavenet/Wavenet.h"
 #include "Wavenet/Reader.h"
 
 using namespace std;
@@ -38,8 +38,8 @@ public:
     inline void setName    (const string& name)      { _name    = name; return; }
     inline void setBasedir (const string& basedir);
 
-    inline void setWaveletML (WaveletML* ML)         { _ML = ML; return; }
-    inline void setReader    (Reader* reader)        { _reader = reader; return; }
+    inline void setWavenet (Wavenet* ML)             { _ML = ML; return; }
+    inline void setReader  (Reader*  reader)         { _reader = reader; return; }
     
     inline void setEvents  (const int&  events)      { setNevents(events); return; };
            void setNevents (const int& Nevents);
@@ -65,8 +65,8 @@ public:
     inline string getBasedir () { return _basedir; }
     inline string    basedir () { return getBasedir(); }
     
-    inline WaveletML* getWaveletML () { return _ML; }
-    inline WaveletML*    waveletML () { return getWaveletML(); }
+    inline Wavenet* getWavenet () { return _ML; }
+    inline Wavenet*    wavenet () { return getWavenet(); }
 
     inline Reader* getReader () { return _reader; }
     inline Reader*    reader () { return getReader(); }
@@ -104,7 +104,7 @@ private:
     string _name = "";
     string _basedir = "./output/";
     
-    WaveletML* _ML    = NULL;
+    Wavenet* _ML    = NULL;
     Reader*    _reader = NULL;
     
     int      _Nevents = -1;

@@ -16,9 +16,9 @@
 // Wavenet include(s).
 #include "Wavenet/Utils.h"
 #include "Wavenet/Logger.h"
-#include "Wavenet/WaveletML.h"
+#include "Wavenet/Wavenet.h"
 
-class WaveletML;
+class Wavenet;
 
 using namespace std;
 
@@ -47,8 +47,8 @@ public:
     bool   exists () { return fileExists(file()); }
     string file   ();
     
-    void load (WaveletML* ML);
-    void save (WaveletML* ML);
+    void load (Wavenet* ML);
+    void save (Wavenet* ML);
     
     inline int    number  () { return _number; }
     inline string pattern () { return _pattern; }

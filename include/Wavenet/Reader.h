@@ -22,7 +22,7 @@
 #include <armadillo>
 
 // Wavenet include(s).
-#include "Wavenet/WaveletML.h"
+#include "Wavenet/Wavenet.h"
 #include "Wavenet/Utils.h"
 
 

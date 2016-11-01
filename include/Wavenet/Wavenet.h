@@ -1,8 +1,8 @@
-#ifndef WAVENET_WAVELETML_H
-#define WAVENET_WAVELETML_H
+#ifndef WAVENET_WAVENET_H
+#define WAVENET_WAVENET_H
 
 /**
- * @file WaveletML.h
+ * @file Wavenet.h
  * @author Andreas Sogaard
 **/
 
@@ -37,29 +37,29 @@ class Snapshot;
 using namespace std;
 using namespace arma;
 
-class WaveletML : Logger {
+class Wavenet : Logger {
     
     friend class Snapshot;
     
 public:
     
     // Constructor(s).
-    WaveletML () {};
-    WaveletML (const double& lambda) :
+    Wavenet () {};
+    Wavenet (const double& lambda) :
         _lambda(lambda)
     {};
-    WaveletML (const double& lambda, const double& alpha) :
+    Wavenet (const double& lambda, const double& alpha) :
         _lambda(lambda), _alpha(alpha)
     {};
-    WaveletML (const double& lambda, const double& alpha, const double& inertia) :
+    Wavenet (const double& lambda, const double& alpha, const double& inertia) :
         _lambda(lambda), _alpha(alpha), _inertia(inertia)
     {};
-    WaveletML (const WaveletML& other) :
+    Wavenet (const Wavenet& other) :
         _lambda(other._lambda), _alpha(other._alpha), _inertia(other._inertia), _filter(other._filter)
     {};
     
     // Destructor.
-    ~WaveletML () {};
+    ~Wavenet () {};
     
     // Get method(s).
     inline double getLambda () { return _lambda; }
