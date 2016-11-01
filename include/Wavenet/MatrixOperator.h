@@ -18,18 +18,18 @@
 // HepMC include(s).
 // ...
 
-
 // Armadillo include(s).
 #include <armadillo>
 
 // Wavenet include(s).
 #include "Wavenet/Utils.h"
+#include "Wavenet/Logger.h"
 
 using namespace std;
 using namespace arma;
 
 
-class MatrixOperator : public arma::Mat<double> {
+class MatrixOperator : public arma::Mat<double>, public Logger {
     
 public:
     
@@ -39,7 +39,7 @@ public:
     // Destructor.
     ~MatrixOperator () {};
     
-    // Set methods(s).
+    // Set method(s).
     inline void setSize (const unsigned& size) {
         _size = size;
         if (_filter.n_elem) { setComplete(true); }
@@ -51,7 +51,7 @@ public:
         return;
     }
     
-    // Get methods(s).
+    // Get method(s).
     inline unsigned size () { return _size; }
     inline bool complete () { return _complete; }
     

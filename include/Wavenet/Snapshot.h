@@ -21,6 +21,7 @@
 
 // Wavenet include(s).
 #include "Wavenet/Utils.h"
+#include "Wavenet/Logger.h"
 #include "Wavenet/WaveletML.h"
 
 class WaveletML;
@@ -28,7 +29,7 @@ class WaveletML;
 using namespace std;
 
 //template< class T>
-class Snapshot {
+class Snapshot : public Logger {
     
 public:
     

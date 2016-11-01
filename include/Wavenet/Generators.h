@@ -43,7 +43,7 @@ public:
     inline const arma::Mat<double>& next () {
         // Check whether generator is properly initialised.
         if (!initialised()) {
-            std::cout << "<NeedleGenerator::next> WARNING: Generator not properly initialised." << std::endl;
+            WARNING("Generator not properly initialised.");
             return _data;
         }
 
@@ -77,7 +77,7 @@ public:
     inline const arma::Mat<double>& next () {
         // Check whether generator is properly initialised.
         if (!initialised()) {
-            std::cout << "<UniformGenerator::next> WARNING: Generator not properly initialised." << std::endl;
+            WARNING("Generator not properly initialised.");
             return _data;
         }
         
@@ -110,7 +110,7 @@ public:
     inline const arma::Mat<double>& next () {
         // Check whether generator is properly initialised.
         if (!initialised()) {
-            std::cout << "<GaussianGenerator::next> WARNING: Generator not properly initialised." << std::endl;
+            WARNING("Generator not properly initialised.");
             return _data;
         }
 
@@ -166,6 +166,7 @@ class HepMCGenerator : public GeneratorBase {
 public:
 
     // Constructor(s).
+    HepMCGenerator () {}
     HepMCGenerator (const std::string& filename) { open(filename); }
 
     // Destructor.
@@ -179,7 +180,7 @@ public:
     inline const arma::Mat<double>& next () {
         // Check whether generator is properly initialised.
         if (!initialised()) { /* @TODO: To be done externally, for GeneratorBase? */
-            std::cout << "<HepMCGenerator::next> WARNING: Generator not properly initialised." << std::endl;
+            WARNING("Generator not properly initialised.");
             return _data;
         }
 
@@ -187,7 +188,7 @@ public:
         _data.zeros();
 
         if (!good()) { /* @TODO: To be done externally, for GeneratorBase? */
-            std::cout << "<HepMCGenerator::next> ERROR: Reader not good. Exiting." << std::endl;
+            ERROR("Reader not good. Exiting.");
             return _data;
         }
 
@@ -227,11 +228,11 @@ public:
 
     inline bool open  () { 
         if (_filename == "") {
-            std::cout << "<HepMCGenerator::open>: ERROR: Filename not set. Exiting." << std::endl;
+            ERROR("Filename not set. Exiting.");
             return false;
         }
         if (!fileExists(_filename)) {
-            std::cout << "<HepMCGenerator::open>: ERROR: File '" << _filename << "' does not exist. Exiting." << std::endl;
+            ERROR("File '%s' does not exist. Exiting.", _filename.c_str());
             return false;
         }
         
@@ -247,15 +248,16 @@ public:
     }
 
     inline bool good  () { 
-        if (!_IO)    { std::cout << "<HepMCGenerator::good>: Member object '_IO' is null."    << std::endl; }
-        if (!_event) { std::cout << "<HepMCGenerator::good>: Member object '_event' is null." << std::endl; }
+
+        if (!_IO)    { INFO("Member object '_IO' is null."); }
+        if (!_event) { INFO("Member object '_event' is null."); }
         return _IO && _event; 
      }
 
     inline bool getNextHepMCEvent () {
         if (_event) { delete _event; _event = 0; }
         if (_IO)    { _event = _IO->read_next_event(); } else {
-            std::cout << "<HepMCGenerator::next>: ERROR: Member object '_IO' is null." << std::endl;
+            WARNING("Member object '_IO' is null.");
             return false;
         }
         return true;

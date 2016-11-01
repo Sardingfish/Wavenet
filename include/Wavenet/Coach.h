@@ -21,13 +21,14 @@
 // ...
 
 // Wavenet include(s).
+#include "Wavenet/Utils.h"
+#include "Wavenet/Logger.h"
 #include "Wavenet/WaveletML.h"
 #include "Wavenet/Reader.h"
-#include "Wavenet/Utils.h"
-
+ 
 using namespace std;
 
-class Coach {
+class Coach : Logger  {
     
 public:
     

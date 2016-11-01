@@ -140,7 +140,7 @@ inline TH1* MatrixToHist (const arma::Mat<double>& matrix, const double& range) 
     return nullptr;
 }
 
-// Convert ROOT TH2 to arma matrix .
+// Convert ROOT TH2 to arma matrix.
 inline arma::Mat<double> HistToMatrix (const TH2F& hist) {
     
     unsigned N1 = hist.GetYaxis()->GetNbins(), N2 = hist.GetXaxis()->GetNbins();

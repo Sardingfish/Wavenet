@@ -12,7 +12,7 @@
 #include <stdio.h> /* printf */
 #include <vector>
 #include <cmath> /* log2 */
-#include <assert.h>     /* assert */
+#include <assert.h> /* assert */
 #include <stdlib.h> /* system */
 #include <utility> /* std::move */
 
@@ -28,6 +28,7 @@
 
 // Wavenet include(s).
 #include "Wavenet/Utils.h"
+#include "Wavenet/Logger.h"
 #include "Wavenet/MatrixOperator.h"
 #include "Wavenet/LowpassOperator.h"
 #include "Wavenet/HighpassOperator.h"
@@ -39,7 +40,7 @@ class Snapshot;
 using namespace std;
 using namespace arma;
 
-class WaveletML {
+class WaveletML : Logger {
     
     friend class Snapshot;
     
@@ -149,7 +150,8 @@ public:
     TGraph getCostGraph (const std::vector< double >& costLog);
     TGraph getCostGraph (const std::vector< arma::Col<double> >& filterLog, const std::vector< arma::Mat<double> >& X);
     
-public: // PROTECTED
+
+public: 
     
     // Low-level learning method(s).
     void addMomentum   (const arma::Col<double>& momentum);
@@ -182,7 +184,8 @@ public: // PROTECTED
     arma::Col<double> coeffsFromActivations (const arma::field< arma::Col<double> >& activations);
     arma::Mat<double> coeffsFromActivations (const arma::field< arma::field< arma::Col<double> > >& Activations);
     
-private: // PRIVATE
+
+private: 
     
     double _lambda  = 10.0;
     double _alpha   =  0.05;
