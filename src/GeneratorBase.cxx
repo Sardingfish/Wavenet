@@ -17,7 +17,6 @@ bool GeneratorBase::reset () {
 }
 
 bool GeneratorBase::setShape (const std::vector<unsigned int>& shape) {
-    DEBUG("Entering.");
     _initialised = true;
     bool compress = false;
 
@@ -61,7 +60,6 @@ bool GeneratorBase::setShape (const std::vector<unsigned int>& shape) {
         _resize();
 
     } 
-    DEBUG("Exiting.");
     return _initialised;
 }
 
@@ -79,12 +77,10 @@ bool GeneratorBase::initialised () {
 }
 
 bool GeneratorBase::_resize () {
-    DEBUG("Entering.");
     if (!initialised()) {
         WARNING("Cannot resize generator which isn't properly initialised.")
         return false;
     }
     _data.resize(_shape[0], _shape[1]);
-    DEBUG("Exiting.");
     return true;
 }

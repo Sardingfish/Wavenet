@@ -13,7 +13,7 @@ std::string Snapshot::file () {
 
 void Snapshot::save (Wavenet* wavenet) {
     
-    INFO("Saving snapshot '%s'.", file().c_str());
+    DEBUG("Saving snapshot '%s'.", file().c_str());
     
     if (strcmp(file().substr(0,1).c_str(), "/") == 0) {
         WARNING("File '%s' not accepted. Only accepting realtive paths.", file().c_str());
@@ -21,7 +21,7 @@ void Snapshot::save (Wavenet* wavenet) {
     }
     
     if (exists()) {
-        WARNING("File '%s' already exists. Overwriting.", file().c_str());
+        DEBUG("File '%s' already exists. Overwriting.", file().c_str()); // WARNING(...
     }
     
     if (file().find("/") != std::string::npos) {
@@ -61,7 +61,7 @@ void Snapshot::save (Wavenet* wavenet) {
 
 void Snapshot::load (Wavenet* wavenet) {
     
-    INFO("Loading snapshot '%s'.", file().c_str())
+    DEBUG("Loading snapshot '%s'.", file().c_str())
     
     if (!fileExists(file())) {
         WARNING("File '%s' doesn't exists.", file().c_str());

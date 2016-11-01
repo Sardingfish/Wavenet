@@ -185,7 +185,7 @@ inline arma::Mat<double> HistToMatrix1D (const TH1F& hist) {
 }
 
 // Randomly generate points on N-sphere.
-inline arma::Col<double> PointOnNSphere (const unsigned& N, const double& rho = 0.5, bool restrict = false) {
+inline arma::Col<double> PointOnNSphere (const unsigned& N, const double& rho = 0., bool restrict = false) {
     
     arma::Col<double> coords (N, arma::fill::ones);
     
