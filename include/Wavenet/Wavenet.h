@@ -16,9 +16,9 @@
 #include <assert.h> /* assert */
 #include <stdlib.h> /* system */
 #include <utility> /* std::move */
+#include <algorithm> /* std::max */
 
 // ROOT include(s).
-#include "TH2.h"
 #include "TGraph.h"
 
 // Armadillo include(s).
@@ -27,7 +27,6 @@
 // Wavenet include(s).
 #include "Wavenet/Utils.h"
 #include "Wavenet/Logger.h"
-#include "Wavenet/MatrixOperator.h"
 #include "Wavenet/LowpassOperator.h"
 #include "Wavenet/HighpassOperator.h"
 #include "Wavenet/Snapshot.h"
@@ -107,14 +106,13 @@ public:
     // High-level learning methods(s).
     // -- 1D.
     arma::field< arma::Col<double> > forward (const arma::Col<double>& x);
-
+    
     arma::Col<double>                inverse (const arma::field< arma::Col<double> >& activations);
     arma::Col<double>                inverse (const arma::Col<double>& y);
 
     // -- 2D.
-    /*arma::Mat<double>                               forward (const arma::Mat<double>& X);*/
-    arma::field< arma::field< arma::Col<double> > > forward (const arma::Mat<double>& X);
-    arma::Mat<double>                               inverse (const arma::Mat<double>& Y);
+    std::vector< std::vector< arma::field< arma::Col<double> > > > forward (const arma::Mat<double>& X);
+    arma::Mat<double>                                              inverse (const arma::Mat<double>& Y);
 
     
     // High-level cost method(s).
@@ -139,8 +137,9 @@ public:
     arma::field< arma::Mat<double> > costMap (const std::vector< arma::Mat<double> >& X, const double& range, const unsigned& Ndiv);
     
     // High-level basis method(s).
-    arma::Col<double> basisFct (const unsigned& N, const unsigned& i);
-    arma::Mat<double> basisFct (const unsigned& N, const unsigned& i, const unsigned& j);
+    arma::Col<double> basisFct (const unsigned& nRows, const unsigned& irow);
+    //arma::Mat<double> basisFct (const unsigned& N, const unsigned& i, const unsigned& j);
+    arma::Mat<double> basisFct (const unsigned& nRows, const unsigned& nCols, const unsigned& irow, const unsigned& icol);
     
     TGraph getCostGraph (const std::vector< double >& costLog);
     TGraph getCostGraph (const std::vector< arma::Col<double> >& filterLog, const std::vector< arma::Mat<double> >& X);
@@ -151,13 +150,14 @@ public:
     // Low-level learning method(s).
     void addMomentum   (const arma::Col<double>& momentum);
     void scaleMomentum (const double& factor);
+
     void clear ();
     void update (const arma::Col<double>& gradient);
     
-    void cacheOperators (const unsigned& m);
+    void cacheOperators       (const unsigned& m);
     void clearCachedOperators ();
     
-    void cacheWeights (const unsigned& m);
+    void cacheWeights       (const unsigned& m);
     void clearCachedWeights ();
     
     arma::Col<double> lowpassfilter      (const arma::Col<double>& x);
@@ -165,19 +165,17 @@ public:
     arma::Col<double> inv_lowpassfilter  (const arma::Col<double>& y);
     arma::Col<double> inv_highpassfilter (const arma::Col<double>& y);
 
-    const arma::Mat<double>& lowpassweight      (const unsigned& level, const unsigned& filt);
-    const arma::Mat<double>& highpassweight     (const unsigned& level, const unsigned& filt);
+    const arma::Mat<double>& lowpassweight  (const unsigned& level, const unsigned& filt);
+    const arma::Mat<double>& highpassweight (const unsigned& level, const unsigned& filt);
 
-    
     arma::field< arma::Col<double> >  ComputeDelta (const arma::Col<double>& delta, arma::field< arma::Col<double> > activations);
     
     void batchTrain (arma::Mat<double> X);
     void flushBatchQueue ();
     
-    
     // Miscellaneous.
     arma::Col<double> coeffsFromActivations (const arma::field< arma::Col<double> >& activations);
-    arma::Mat<double> coeffsFromActivations (const arma::field< arma::field< arma::Col<double> > >& Activations);
+    arma::Mat<double> coeffsFromActivations (const std::vector< std::vector< arma::field< arma::Col<double> > > >& Activations);
     
 
 private: 
@@ -206,6 +204,7 @@ private:
     // RMSprop stuff.
     double _gamma = 0.1;
     arma::Col<double> _RMSprop;
+    arma::Mat<double> _AdaGrad;
     
 };
 

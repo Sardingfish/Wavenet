@@ -119,6 +119,12 @@ void Coach::run () {
                 cout << "  lambda:     " << exp(log(lambdaBare) * (frac - 0.1) / frac) << endl;
                 */
                 
+                // Check initialisation.
+                if (!_generator->initialised()) {
+                    ERROR("Wavenet was not properly initialised. Exiting.");
+                    return;
+                }
+
                 /* Main call. */
                 _wavenet->batchTrain( _generator->next() );
                 

@@ -46,6 +46,7 @@ public:
            void setNcoeffs (const unsigned& Ncoeffs);
 
     inline void setUseAdaptiveLearning  (const unsigned& useAdaptiveLearning) { _useAdaptiveLearning = useAdaptiveLearning; return; };
+    inline void setUseAdaGrad           (const unsigned& useAdaGrad)          { _useAdaGrad          = useAdaGrad;          return; };
     
     inline void setPrintLevel  (const bool& printLevel) { _printLevel = printLevel; return; };
 
@@ -63,6 +64,7 @@ public:
     inline unsigned int coeffs  () { return _Ncoeffs; }
     
     inline bool useAdaptiveLearning () { return _useAdaptiveLearning; }
+    inline bool useAdaGrad ()          { return _useAdaGrad; }
     
     inline unsigned printLevel () { return _printLevel; }
     
@@ -81,7 +83,9 @@ private:
     unsigned int _Nepochs =  1;
     unsigned int _Ninits  =  1;
     unsigned int _Ncoeffs =  2;
-    bool         _useAdaptiveLearning = false;
+
+    bool _useAdaptiveLearning = false;
+    bool _useAdaGrad          = false;
     
     unsigned _printLevel = 2;
     
