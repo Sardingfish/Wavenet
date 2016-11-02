@@ -55,8 +55,10 @@ public:
         }
 
         // Generate next input matrix.
-        _data.randu();
-        _data.elem( find(_data < 0.995) ) *= 0;
+        do {
+            _data.randu();
+            _data.elem( find(_data < 0.995) ) *= 0;
+        } while (arma::accu(_data) == 0);
 
         return _data;
     }
