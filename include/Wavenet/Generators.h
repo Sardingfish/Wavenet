@@ -149,7 +149,7 @@ public:
             // -- Widths.
             double sx = std::max(arma::as_scalar(arma::randn<arma::mat>(1,1))*0.5 + sizex / 4., 2.); 
             double sy = std::max(arma::as_scalar(arma::randn<arma::mat>(1,1))*0.5 + sizey / 4., 2.); 
-            arma::Mat<double> gauss = exp( - square(hx - mux) / (2*sq(sx)) - square(hy - mux) / (2*sq(sy)));
+            arma::Mat<double> gauss = exp( - square(hx - mux) / (2*sq(sx)) - square(hy - muy) / (2*sq(sy)));
             
             // -- Normalise.
             gauss /= accu(gauss); // Unit integral.
