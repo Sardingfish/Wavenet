@@ -43,15 +43,15 @@ public:
     inline void setGenerator (GeneratorBase*  generator) { _generator = generator; return; }
     
            void setNevents (const int&      Nevents);
-    inline void setNepochs (const unsigned& Nepochs) { _Nepochs = Nepochs; return; };
+    inline void setNepochs (const unsigned& Nepochs) { _Nepochs = Nepochs; return; }
     inline void setNinits  (const unsigned& Ninits)  { _Ninits  = Ninits;  return; }
            void setNcoeffs (const unsigned& Ncoeffs);
 
-    inline void setUseAdaptiveLearning  (const unsigned& useAdaptiveLearning) { _useAdaptiveLearning = useAdaptiveLearning; return; };
-    inline void setUseAdaGrad           (const unsigned& useAdaGrad)          { _useAdaGrad          = useAdaGrad;          return; };
+    inline void setUseAdaptiveLearningRate (const unsigned& useAdaptiveLearningRate = true) { _useAdaptiveLearningRate = useAdaptiveLearningRate; return; }
+    inline void setUseSimulatedAnnealing   (const unsigned& useSimulatedAnnealing   = true) { _useSimulatedAnnealing   = useSimulatedAnnealing;   return; }
+           void setTargetPrecision         (const double&   targetPrecision);
     
-    inline void setPrintLevel  (const bool& printLevel) { _printLevel = printLevel; return; };
-
+    inline void setPrintLevel  (const bool& printLevel) { _printLevel = printLevel; return; }
     
     // Get method(s).
     inline std::string name ()    { return _name; }
@@ -65,14 +65,16 @@ public:
     inline unsigned int inits   () { return _Ninits; }
     inline unsigned int coeffs  () { return _Ncoeffs; }
     
-    inline bool useAdaptiveLearning () { return _useAdaptiveLearning; }
-    inline bool useAdaGrad ()          { return _useAdaGrad; }
+    inline bool   useAdaptiveLearningRate () { return _useAdaptiveLearningRate; }
+    inline bool   useSimulatedAnnealing ()   { return _useSimulatedAnnealing; }
+    inline double targetPrecision ()         { return _targetPrecision; }
     
     inline unsigned printLevel () { return _printLevel; }
     
     // High-level management info.
     void run ();
     
+
 private:
     
     std::string _name    = "";
@@ -86,10 +88,11 @@ private:
     unsigned int _Ninits  =  1;
     unsigned int _Ncoeffs =  2;
 
-    bool _useAdaptiveLearning = false;
-    bool _useAdaGrad          = false;
+    bool   _useAdaptiveLearningRate = false;
+    bool   _useSimulatedAnnealing   = false;
+    double _targetPrecision = -1;
     
-    unsigned _printLevel = 2;
+    unsigned _printLevel = 3;
     
 };
 
