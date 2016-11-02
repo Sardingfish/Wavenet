@@ -193,7 +193,7 @@ private:
     std::vector< arma::Col<double> > _filterLog;
     std::vector< double >            _costLog;
     
-    bool _wavelet = false;
+    bool _wavelet = true;
     
     // RMSprop stuff.
     double _gamma = 0.1;

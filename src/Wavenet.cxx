@@ -515,7 +515,7 @@ double Wavenet::cost (const arma::Col<double>& y) {
     double S = SparseTerm(y);
     
     // Regularisation term.
-    double R = RegTerm(_filter);
+    double R = RegTerm(filter());
     
     // Sum.
     double J = S + R;
@@ -670,22 +670,16 @@ void Wavenet::clear () {
 
 void Wavenet::update (const arma::Col<double>& gradient) {
     
-    // RMSprop (somehow _extremely_ time consuming...)
-    //_RMSprop = _gamma * _RMSprop + (1.0 - _gamma) * square(gradient);
-    //arma::Col<double> sqrtR = sqrt(_RMSprop);
-    //arma::Col<double> newGradient = accu(sqrtR) * (gradient / sqrtR);  // Normalise to unity?
-    //arma::Col<double> newGradient = gradient % pow(_RMSprop, -0.5);
-    
     /**
      * @TODO: Add numerical guard against diverging solution.
      **/
-
-    // Update.
+    
+    // Compute effective inertia, if necessary, depending on set inertia time scale.
     const unsigned int steps = _costLog.size();
     double effectiveInertita = (_inertiaTimeScale > 0. ? _inertia * _inertiaTimeScale / (_inertiaTimeScale + float(steps)): _inertia);
-    //scaleMomentum( _inertia );
-    scaleMomentum( effectiveInertita );
-    //addMomentum( - _alpha * newGradient); // ... * gradient);
+    
+    // Update.
+    scaleMomentum( effectiveInertita ); /* scaleMomentum( _inertia ); */
     addMomentum( - _alpha * gradient);
     setFilter( _filter + _momentum );
     return;
@@ -883,14 +877,6 @@ void Wavenet::batchTrain (arma::Mat<double> X) {
     // Compute combined errror
     Delta += regularisation;
 
-    // AdaGrad
-    /*
-    if (_costLog.size() > 20) {
-        _AdaGrad.diag() += arma::square(Delta);
-    }    
-    */
-    // end: AdaGrad
-
     // Add current combined (back-propagated sparsity and regularisation) errors to batch queue.
     _batchQueue.push_back(Delta);
     _costLog.back() += cost(Y);
@@ -903,37 +889,24 @@ void Wavenet::batchTrain (arma::Mat<double> X) {
 
 
 void Wavenet::flushBatchQueue () {
+    // If batch is empty, exit.
     if (!_batchQueue.size()) { return; }
 
+    // Compute batch-averaged gradient.
     arma::Col<double> gradient (size(_filter), arma::fill::zeros);
-    
     for (unsigned i = 0; i < _batchQueue.size(); i++) {
         gradient += _batchQueue.at(i);
     }
     gradient /= float(_batchQueue.size());
     
-    // AdaGrad
-    /*
-    if (_costLog.size() > 20) {
-        arma::Mat<double> G (size(_AdaGrad), arma::fill::zeros);
-        G.diag() = arma::pow(_AdaGrad.diag() + EPS, -0.5);
-        G.diag() /= arma::sum(G.diag());
-        gradient = G * gradient;
-        _AdaGrad *= 0.95;
-    }
-    */
-    // end: AdaGrad
-
-    /** /
-    const unsigned int steps (_costLog.size());
-    this->setInertia(steps/float(20. + steps));
-    / **/
-
+    // Update with batch-averaged gradient.
     this->update(gradient);
 
+    // Update cost log.
     _costLog.back() /= float(_batchQueue.size());
     _costLog.push_back(0);
     
+    // Clear batch queue.
     _batchQueue.clear();
     
     return;
@@ -957,21 +930,15 @@ arma::Col<double> Wavenet::coeffsFromActivations (const arma::field< arma::Col<d
     
 }
 
-//arma::Mat<double> Wavenet::coeffsFromActivations (const arma::field< arma::field< arma::Col<double> > >& Activations) {
 arma::Mat<double> Wavenet::coeffsFromActivations (const std::vector< std::vector< arma::field< arma::Col<double> > > >& Activations) {
     
-    //unsigned N = size(Activations, 0); // nRows or nCols
-    const unsigned int N1 = Activations.at(0).size(); // Rows.
-    const unsigned int N2 = Activations.at(1).size(); // Columns.
+    const unsigned int nRows = Activations.at(0).size();
+    const unsigned int nCols = Activations.at(1).size();
     
-    //arma::Mat<double> Y (N, N, arma::fill::zeros);
-    arma::Mat<double> Y (N1, N2, arma::fill::zeros);
+    arma::Mat<double> Y (nRows, nCols, arma::fill::zeros);
     
-    /*for (unsigned i = 0; i < N; i++) {
-        Y.col(i) = coeffsFromActivations(Activations(i, 1));
-    }*/
-    for (unsigned i2 = 0; i2 < N2; i2++) {
-        Y.col(i2) = coeffsFromActivations(Activations.at(1).at(i2));
+    for (unsigned icol = 0; icol < nCols; icol++) {
+        Y.col(icol) = coeffsFromActivations(Activations.at(1).at(icol));
     }
     
     return Y;
