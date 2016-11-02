@@ -10,7 +10,7 @@ void Logger::_print (std::string cls, std::string fun, std::string type, std::st
     else if (type == "WARNING") { col = "\033[1;31m"; }
     else if (type == "INFO")    { col = "\033[1;34m"; }
 
-    std::cout << "\033[1m" << std::left << std::setw(25) << ("<" + cls + "::" + fun + "> ") << col << std::setw(7) << type << "\033[0m ";
+    std::cout << "\033[1m" << std::left << std::setw(34) << ("<" + cls + "::" + fun + "> ") << col << std::setw(7) << type << "\033[0m ";
     va_list args;
     va_start (args, format);
     vprintf (format.c_str(), args);
@@ -26,7 +26,7 @@ void Logger::_fctprint (std::string fun, std::string type, std::string format, .
     else if (type == "WARNING") { col = "\033[1;31m"; }
     else if (type == "INFO")    { col = "\033[1;34m"; }
 
-    std::cout << "\033[1m" << std::left << std::setw(25) << ("<" + fun + "> ") << col << std::setw(7) << type << "\033[0m ";
+    std::cout << "\033[1m" << std::left << std::setw(34) << ("<" + fun + "> ") << col << std::setw(7) << type << "\033[0m ";
     va_list args;
     va_start (args, format);
     vprintf (format.c_str(), args);
