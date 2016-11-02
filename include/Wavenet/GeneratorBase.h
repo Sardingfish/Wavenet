@@ -18,6 +18,8 @@
 #include "Wavenet/Logger.h"
 
 
+namespace Wavenet {
+
 class GeneratorBase : public Logger {
 
     /**
@@ -64,4 +66,6 @@ protected:
 
 };
 
-#endif
+} // namespace
+
+#endif // WAVENET_GENERATORBASE_H

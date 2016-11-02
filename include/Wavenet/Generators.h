@@ -10,9 +10,6 @@
 #include <string>
 #include <algorithm> /* std::max */
 
-// ROOT include(s).
-// ...
-
 // HepMC include(s).
 /* @TODO: Make dependent on installation */
 #include "HepMC/GenEvent.h"
@@ -25,6 +22,8 @@
 #include "Wavenet/GeneratorBase.h"
 
 
+
+namespace Wavenet {
 
 enum class GeneratorMode {
    File     = 0,
@@ -295,4 +294,6 @@ private:
     
 };
 
-#endif
+} // namespace
+
+#endif // WAVENET_GENERATORS_H

@@ -1,5 +1,8 @@
 #include "Wavenet/GeneratorBase.h"
 
+
+namespace Wavenet {
+    
 bool GeneratorBase::open () {
     return true; 
 }
@@ -84,3 +87,5 @@ bool GeneratorBase::_resize () {
     _data.resize(_shape[0], _shape[1]);
     return true;
 }
+
+} // namespace

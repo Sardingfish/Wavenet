@@ -14,10 +14,11 @@
 // Wavenet include(s).
 #include "Wavenet/Utils.h"
 #include "Wavenet/Logger.h"
-#include "Wavenet/Wavenet.h"
 
 
-class Wavenet;
+namespace Wavenet {
+
+class Wavenet; /* To resolve circular dependence. */
 
 class Snapshot : public Logger {
     
@@ -67,4 +68,6 @@ private:
     
 };
 
-#endif
+} // namespace
+
+#endif // WAVENET_SNAPSHOT_H

@@ -4,6 +4,8 @@
 #include <memory>
 #include <cxxabi.h>
 
+namespace Wavenet {
+
 std::string demangle(const char* name) {
 
     int status = -4; // some arbitrary value to eliminate the compiler warning
@@ -17,11 +19,17 @@ std::string demangle(const char* name) {
     return (status==0) ? res.get() : name ;
 }
 
+} // namespace
+
 #else
+
+namespace Wavenet {
 
 // does nothing if not g++
 std::string demangle(const char* name) {
     return name;
 }
+
+} // namespace
 
 #endif

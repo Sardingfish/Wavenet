@@ -20,6 +20,8 @@
 #include "Wavenet/Logger.h"
 
 
+namespace Wavenet {
+
 class MatrixOperator : public arma::Mat<double>, public Logger {
     
 public:
@@ -72,5 +74,6 @@ inline arma::Row<double> rowshift(arma::subview_row<double> row, const int& shif
     return newRow;
 }
 
-#endif
+} // namespace
 
+#endif // WAVENET_MATRIXOPERATOR_H

@@ -8,11 +8,15 @@
  * Taken from here: http://stackoverflow.com/a/4541470
  **/
 
+namespace Wavenet {
+
 std::string demangle(const char* name);
 
 template <class T>
 std::string type(const T& t) {
     return demangle(typeid(t).name());
 }
+
+} // namespace
 
 #endif

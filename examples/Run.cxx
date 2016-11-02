@@ -13,15 +13,15 @@
 #include "TEllipse.h"
 
 // Wavenet include(s).
+#include "Wavenet/Utils.h"
+#include "Wavenet/Logger.h"
+#include "Wavenet/Generators.h"
 #include "Wavenet/Wavenet.h"
 #include "Wavenet/Coach.h"
-#include "Wavenet/Reader.h"
-#include "Wavenet/Generators.h"
-#include "Wavenet/Utils.h"
 
 
 int main (int argc, char* argv[]) {
-    cout << "Running Wavenet study." << endl;    
+    FCTINFO("Running Wavenet study.");
     /*
     arma::Mat<double> M;
 
@@ -41,46 +41,49 @@ int main (int argc, char* argv[]) {
     return 0;
     */
 
-    EventMode mode = EventMode::File;
-    int Nfilter = 4;
+
+
+    Wavenet::GeneratorMode mode = Wavenet::GeneratorMode::Gaussian;
+    int Nfilter = 8;
    
     /* ----- */
     
     // Variables.
     std::string outdir = "./output/";
     
-    string project = "Run.";
+    std::string project = "Run.";
     switch (mode) {
-        case EventMode::File:
+        case Wavenet::GeneratorMode::File:
             // ...
             project += "File";
             break;
             
-        case EventMode::Uniform:
+        case Wavenet::GeneratorMode::Uniform:
             project += "Uniform";
             break;
             
-        case EventMode::Needle:
+        case Wavenet::GeneratorMode::Needle:
             project += "Needle";
             break;
             
-        case EventMode::Gaussian:
+        case Wavenet::GeneratorMode::Gaussian:
             project += "Gaussian";
             break;
             
         default:
-            cout << "Event mode not recognised." << endl;
+            FCTINFO("Event mode not recognised. Exiting.");
             return 0;
             break;
     }
-    project += ".N" + to_string(Nfilter);
+    project += ".N" + std::to_string(Nfilter);
     
-    Wavenet wavenet;
+    Wavenet::Wavenet wavenet;
 
     wavenet.setLambda(10.);
-    wavenet.setAlpha(0.001); // 10 -> 0.01; 100 -> 0.02
-    wavenet.setInertia(0.0);
-    wavenet.setBatchSize(10);
+    wavenet.setAlpha(0.002); // 10 -> 0.01; 100 -> 0.02
+    wavenet.setInertia(0.9);
+    wavenet.setInertiaTimeScale(20.);
+    wavenet.setBatchSize(20);
     wavenet.doWavelet(true); // >>> Default: true:
     
     wavenet.print();
@@ -102,31 +105,33 @@ int main (int argc, char* argv[]) {
     // Coached training.
     /*
     Reader reader;
-    reader.setEventMode(mode);
-    if (mode == EventMode::File) {
+    reader.setGeneratorMode(mode);
+    if (mode == GeneratorMode::File) {
         bool stat = reader.open("input/Pythia.WpT500._000001.hepmc");
         if (!stat) { return 1; }
     }
     reader.setSize(64);
     */
     
-    HepMCGenerator hg ("input/Pythia.WpT500._000001.hepmc");
-    hg.setShape({32,32});
+    //HepMCGenerator generator ("input/Pythia.WpT500._000001.hepmc");
+    Wavenet::GaussianGenerator generator;
+    generator.setShape({32,32});
 
-    Coach  coach  (project); //("Pythia.WpT500.N16");
-    coach.setNevents(100); // (1000); // 25000
-    coach.setNepochs(5  ); // 4
+    Wavenet::Coach  coach  (project); //("Pythia.WpT500.N16");
+    coach.setNevents(10000); // (1000); // 25000
+    coach.setNepochs(1); // 4
     coach.setNcoeffs(Nfilter);
-    coach.setNinits (2); // (10);
-    coach.setUseAdaptiveLearning(true);
-    coach.setGenerator(&hg);
+    coach.setNinits (10); // (10);
+    //coach.setUseAdaptiveLearning(true);
+    coach.setUseAdaGrad(true);
+    coach.setGenerator(&generator);
     coach.setWavenet(&wavenet);
     
     coach.run();
     
-    hg.close();
+    generator.close();
     
-    cout << "Done." << endl;
+    FCTINFO("Done.");
     
     return 1;
 }

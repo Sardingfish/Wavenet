@@ -1,5 +1,8 @@
 #include "Wavenet/Coach.h"
 
+
+namespace Wavenet {
+    
  // Set method(s).
 // -------------------------------------------------------------------
 
@@ -49,6 +52,11 @@ void Coach::run () {
         ERROR("Coach name not set. Exiting.");
         return;
     }
+    /*
+    if (_Nevents < 0) {
+        if (_generator)
+    }
+    */
     
     // Run.
     INFO("Start training, using coach '%s'.", _name.c_str());
@@ -420,3 +428,5 @@ void Coach::run () {
     return;
     
 }
+
+} // namespace

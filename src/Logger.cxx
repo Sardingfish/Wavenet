@@ -1,5 +1,8 @@
 #include "Wavenet/Logger.h"
 
+
+namespace Wavenet {
+    
 void Logger::_print (std::string cls, std::string fun, std::string type, std::string format, ...) {
     
     std::string col = "\033[1m";
@@ -31,3 +34,5 @@ void Logger::_fctprint (std::string fun, std::string type, std::string format, .
     std::cout << std::endl;
     return;
 }
+
+} // namespace

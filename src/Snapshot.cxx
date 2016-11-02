@@ -1,5 +1,9 @@
 #include "Wavenet/Snapshot.h"
+#include "Wavenet/Wavenet.h" /* To resolve circular dependence. */
 
+
+namespace Wavenet {
+    
 std::string Snapshot::file () {
     
     if (_pattern.find("%") == std::string::npos) { return _pattern; }
@@ -136,3 +140,5 @@ void Snapshot::load (Wavenet* wavenet) {
     
     return;
 }
+
+} // namespace

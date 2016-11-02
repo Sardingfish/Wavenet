@@ -18,7 +18,7 @@
 // Wavenet include(s).
 #include "Wavenet/Wavenet.h"
 #include "Wavenet/Snapshot.h"
-#include "Wavenet/Reader.h"
+#include "Wavenet/Generators.h"
 
 using namespace std;
 using namespace arma;
@@ -27,33 +27,33 @@ int main (int argc, char* argv[]) {
     
     cout << "Running Wavenet analysis." << endl;
 
-    EventMode mode = EventMode::File;
+    Wavenet::GeneratorMode mode = Wavenet::GeneratorMode::Gaussian;
     const int M = 10;
-    int Nfilter = 16;
+    int Nfilter = 8;
     
     /* --- */
     
-    Wavenet ML;
-    ML.doWavelet(true);
+    Wavenet::Wavenet wavenet;
+    wavenet.doWavelet(true);
     
     // Variables.
     string outdir  = "./output/";
     string project = "Run.";
     switch (mode) {
-        case EventMode::File:
+        case Wavenet::GeneratorMode::File:
             // ...
             project += "File";
             break;
             
-        case EventMode::Uniform:
+        case Wavenet::GeneratorMode::Uniform:
             project += "Uniform";
             break;
             
-        case EventMode::Needle:
+        case Wavenet::GeneratorMode::Needle:
             project += "Needle";
             break;
             
-        case EventMode::Gaussian:
+        case Wavenet::GeneratorMode::Gaussian:
             project += "Gaussian";
             break;
             
@@ -68,31 +68,40 @@ int main (int argc, char* argv[]) {
     
     string pattern = outdir + "snapshots/" +  project + ".%06u.snap";
     
-    Snapshot snap (pattern);
+    Wavenet::Snapshot snap (pattern);
     
     vector< TGraph > costGraphs (M);
     vector< TGraph > filterGraphs (M);
     TCanvas c ("c", "", 700, 600);
     
-    ML.save(outdir + "tmp.snap");
+    wavenet.save(outdir + "tmp.snap");
     
-    Reader reader;
-    reader.setEventMode(mode);
-    if (mode == EventMode::File) {
-        bool stat = reader.open("input/Pythia.WpT500._000001.hepmc");
-        if (!stat) { return 1; }
+    Wavenet::GeneratorBase* generator = nullptr;
+    if (mode == Wavenet::GeneratorMode::File) {
+        generator = new Wavenet::HepMCGenerator("input/Pythia.WpT500._000001.hepmc");
+        if (!generator->good()) {
+            return 1;
+        }
+    } else if (mode == Wavenet::GeneratorMode::Needle) {
+        generator = new Wavenet::NeedleGenerator();
+    } else if (mode == Wavenet::GeneratorMode::Uniform) {
+        generator = new Wavenet::UniformGenerator();
+    } else if (mode == Wavenet::GeneratorMode::Gaussian) {
+        generator = new Wavenet::GaussianGenerator();
     }
-    //reader.open("input/Pythia.WpT500._000001.hepmc");
+
+    generator->setShape({16, 16});
+    
     
     vector< Mat<double> > examples;
     for (unsigned i = 0; i < 10; i++) {
-        examples.push_back( reader.next() );
-        TH1* exampleSignal = MatrixToHist(examples.at(i), 3.2);
+        examples.push_back( generator->next() );
+        TH1* exampleSignal = Wavenet::MatrixToHist(examples.at(i), 3.2);
         exampleSignal->Draw("COL Z");
         c.SaveAs((outdir + "exampleSignal." + to_string(i + 1) +"." + project + ".pdf").c_str());
         delete exampleSignal;
     }
-    reader.close();
+    generator->close();
 
 
     // * Run    
@@ -103,11 +112,11 @@ int main (int argc, char* argv[]) {
     unsigned longestCost = 0;
     while (snap.exists() && snap.number() <= M) {
         
-        ML.load(snap.file());
-        ML.print();
+        wavenet.load(snap.file());
+        wavenet.print();
         
-        auto filterLog = ML.filterLog();
-        auto costLog   = ML.costLog();
+        auto filterLog = wavenet.filterLog();
+        auto costLog   = wavenet.costLog();
         
         costLog.pop_back();
         
@@ -117,7 +126,7 @@ int main (int argc, char* argv[]) {
         const unsigned Ncoeffs = filterLog.size();
         
         // Cost graphs.
-        costGraphs.at(snap.number() - 1) = ML.getCostGraph( costLog );
+        costGraphs.at(snap.number() - 1) = wavenet.getCostGraph( costLog );
         
         double tmpMin = costGraphs.at(snap.number() - 1).GetMinimum();
         double tmpMax = costGraphs.at(snap.number() - 1).GetMaximum();
@@ -201,10 +210,10 @@ int main (int argc, char* argv[]) {
 
     
     
-    if (!fileExists(costMapName)) {
+    if (!Wavenet::fileExists(costMapName)) {
         arma::field< arma::Mat<double> > costs;
         
-        costs = ML.costMap(examples, 1.2, 300);
+        costs = wavenet.costMap(examples, 1.2, 300);
 
         costMap = costs(0,0);
         costMap.save(costMapName);
@@ -225,7 +234,7 @@ int main (int argc, char* argv[]) {
     
     
     c.SetLogz(true);
-    TH1* J = MatrixToHist(costMap, 1.2);
+    TH1* J = Wavenet::MatrixToHist(costMap, 1.2);
     J->SetContour(104); // (104);
     gStyle->SetOptStat(0);
     J->SetMaximum(100.); // 100.
@@ -290,7 +299,7 @@ int main (int argc, char* argv[]) {
     text.SetTextFont(42);
     text.SetTextSize(0.035);
     switch (mode) {
-        case EventMode::File:
+        case Wavenet::GeneratorMode::File:
             text.DrawLatexNDC(    c.GetLeftMargin(),  1. - c.GetTopMargin() + 0.025, "W (#rightarrow qq) + jets, #hat{p}_{T}  > 280 GeV");
             text.SetTextAlign(31);
             text.DrawLatexNDC(1 - c.GetRightMargin(), 1. - c.GetTopMargin() + 0.025, "#sqrt{s} = 13 TeV");
@@ -307,17 +316,19 @@ int main (int argc, char* argv[]) {
      // * Basis function.
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     snap.setNumber(bestBasis + 1);
-    ML.load(snap.file());
+    wavenet.load(snap.file());
     TH1* basisFct;
     
     
     cout << "Checking orthonormality (best snap):" << endl;
     TH1F norms ("norms", "", 200, -0.5, 1.5);
-    const unsigned size = 16;
-    for (unsigned i = 0; i < sq(size); i++) {
-        for (unsigned j = 0; j < sq(size); j++) {
-            Mat<double> f1 = ML.basisFct(size, i % size, i / size);
-            Mat<double> f2 = ML.basisFct(size, j % size, j / size);
+    
+    const unsigned int sizex = generator->shape()[0];
+    const unsigned int sizey = generator->shape()[1];
+    for (unsigned i = 0; i < Wavenet::sq(sizex); i++) {
+        for (unsigned j = 0; j < Wavenet::sq(sizey); j++) {
+            Mat<double> f1 = wavenet.basisFct(sizex, sizey, i % sizex, j / sizey);
+            Mat<double> f2 = wavenet.basisFct(sizex, sizey, i % sizex, j / sizey);
             double norm = trace(f1*f2.t());
             norms.Fill( norm < -0.5 ? -0.499 : (norm > 1.5 ? 1.499 : norm) );
         }
@@ -331,15 +342,23 @@ int main (int argc, char* argv[]) {
     unsigned dim  = 8;
     double   dimf = double(dim);
     double   marg = 0.03;
-    TCanvas cBasis ("cBasis", "", 1200, 1200);
+
+    unsigned dimx = std::min(sizex, dim);
+    unsigned dimy = std::min(sizey, dim);
+
+    double   dimfx = double(dimx);
+    double   dimfy = double(dimy);
+
+    TCanvas cBasis ("cBasis", "", 1200 * dimfx/dimf, 1200 * dimfy / dimf);
     
     //cBasis.Divide(dim, dim, 0.01, 0.01);
     
+    
     vector< vector<TPad*> > pads (dim, vector<TPad*> (dim));
 
-    for (unsigned i = 0; i < dim; i++) {
-        for (unsigned j = 0; j < dim; j++) {
-        pads[i][j] = new TPad((string("pad_") + to_string(i) + "_" + to_string(j)).c_str(), "", i/dimf, (dim - j - 1)/dimf, (i+1)/dimf, (dim - j)/dimf);
+    for (unsigned i = 0; i < dimx; i++) {
+        for (unsigned j = 0; j < dimy; j++) {
+        pads[i][j] = new TPad((string("pad_") + to_string(i) + "_" + to_string(j)).c_str(), "", i/dimfx, (dimy - j - 1)/dimfy, (i+1)/dimfx, (dimy - j)/dimfy);
         pads[i][j]->SetMargin(marg, marg, marg, marg);
         pads[i][j]->SetTickx();
         pads[i][j]->SetTicky();
@@ -350,21 +369,21 @@ int main (int argc, char* argv[]) {
 
     
     /* --- */
-    auto filterLog = ML.filterLog();
+    auto filterLog = wavenet.filterLog();
     unsigned Ncoeffs = filterLog.size();
     double zmax = 0.40;
     unsigned iFrame = 0;
     for (unsigned iCoeff = 0; iCoeff < Ncoeffs; iCoeff++) {
         auto filter = filterLog.at(iCoeff);
-        ML.setFilter(filter);
+        wavenet.setFilter(filter);
         if (iCoeff > 100 and iCoeff < Ncoeffs - 100 and (iCoeff % 4 > 0)) { continue; } // Reduce number of frames.
-        for (unsigned i = 0; i < dim; i++) {
-            for (unsigned j = 0; j < dim; j++) {
+        for (unsigned i = 0; i < dimx; i++) {
+            for (unsigned j = 0; j < dimy; j++) {
                 
                 //cBasis.cd(1 + i * dim + j);
                 pads[i][j]->cd();
                 
-                basisFct = MatrixToHist(ML.basisFct(16, i, j), 3.2);
+                basisFct = Wavenet::MatrixToHist(wavenet.basisFct(sizex, sizey, i, j), 3.2);
                 
                 basisFct->GetZaxis()->SetRangeUser(-zmax, zmax);
                 basisFct->SetContour(nb);
@@ -377,12 +396,14 @@ int main (int argc, char* argv[]) {
                 basisFct->GetYaxis()->SetLabelOffset(9999.);
                 
                 basisFct->DrawCopy("COL");
+
+                delete basisFct;
                 
             }
         }
         
         char buff[100];
-        snprintf(buff, sizeof(buff), (outdir + "/movie/bestBasis_%06d.png").c_str(), iFrame++); // iCoeff);
+        snprintf(buff, sizeof(buff), (outdir + "movie/bestBasis_%06d.png").c_str(), iFrame++); // iCoeff);
         std::string buffAsStdStr = buff;
         
         cBasis.SaveAs(buffAsStdStr.c_str());
@@ -402,27 +423,27 @@ int main (int argc, char* argv[]) {
 
     
     /* --- * /
-     basisFct = MatrixToHist(ML.basisFct(64, 0, 0), 3.2);
+     basisFct = MatrixToHist(wavenet.basisFct(64, 0, 0), 3.2);
      basisFct.Draw("COL Z");
      c.SaveAs((outdir + "BestBasisFunction-0-0.pdf").c_str());
      
-     basisFct = MatrixToHist(ML.basisFct(64, 1, 1), 3.2);
+     basisFct = MatrixToHist(wavenet.basisFct(64, 1, 1), 3.2);
      basisFct.Draw("COL Z");
      c.SaveAs((outdir + "BestBasisFunction-1-1.pdf").c_str());
      
-     basisFct = MatrixToHist(ML.basisFct(64, 2, 2), 3.2);
+     basisFct = MatrixToHist(wavenet.basisFct(64, 2, 2), 3.2);
      basisFct.Draw("COL Z");
      c.SaveAs((outdir + "BestBasisFunction-2-2.pdf").c_str());
      
-     basisFct = MatrixToHist(ML.basisFct(64, 6, 6), 3.2);
+     basisFct = MatrixToHist(wavenet.basisFct(64, 6, 6), 3.2);
      basisFct.Draw("COL Z");
      c.SaveAs((outdir + "BestBasisFunction-6-6.pdf").c_str());
      
-     basisFct = MatrixToHist(ML.basisFct(64, 6, 40), 3.2);
+     basisFct = MatrixToHist(wavenet.basisFct(64, 6, 40), 3.2);
      basisFct.Draw("COL Z");
      c.SaveAs((outdir + "BestBasisFunction-6-40.pdf").c_str());
      
-     basisFct = MatrixToHist(ML.basisFct(64, 40, 40), 3.2);
+     basisFct = MatrixToHist(wavenet.basisFct(64, 40, 40), 3.2);
      basisFct.Draw("COL Z");
      c.SaveAs((outdir + "BestBasisFunction-40-40.pdf").c_str());
      / * --- */

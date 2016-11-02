@@ -1,5 +1,8 @@
 #include "Wavenet/MatrixOperator.h"
 
+
+namespace Wavenet {
+    
 void MatrixOperator::construct () {
     
     if (!complete()) {
@@ -108,3 +111,4 @@ void rowshift (arma::Row<double>& row, const int& shift) {
     
 }
 
+} // namespace

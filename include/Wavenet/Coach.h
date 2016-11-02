@@ -21,6 +21,8 @@
 #include "Wavenet/GeneratorBase.h"
 
 
+namespace Wavenet {
+
 class Coach : Logger  {
     
 public:
@@ -91,4 +93,6 @@ private:
     
 };
 
-#endif
+} // namespace
+
+#endif // WAVENET_COACH_H

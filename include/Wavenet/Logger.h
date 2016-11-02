@@ -13,12 +13,6 @@
 #include <stdarg.h> /* variadic functions */
 #include <iomanip> /* std::setw */
 
-// ROOT include(s).
-// ...
-
-// HepMC include(s).
-// ...
-
 // Armadillo include(s).
 // ...
 
@@ -31,8 +25,10 @@
 #define INFO(...)                   {this->_print(type(*this), __FUNCTION__, "INFO",    __VA_ARGS__);}
 #define DEBUG(...)   if (debug())   {this->_print(type(*this), __FUNCTION__, "DEBUG",   __VA_ARGS__);}
 #define VERBOSE(...) if (verbose()) {this->_print(type(*this), __FUNCTION__, "VERBOSE", __VA_ARGS__);}
-#define FCTINFO(...)                {Logger::_fctprint(__FUNCTION__, "INFO",    __VA_ARGS__);}
+#define FCTINFO(...)                {Wavenet::Logger::_fctprint(__FUNCTION__, "INFO",    __VA_ARGS__);}
 
+
+namespace Wavenet {
 
 class Logger {
     
@@ -78,4 +74,6 @@ protected:
     
 };
 
-#endif
+} // namespace
+
+#endif // WAVENET_LOGGER_H

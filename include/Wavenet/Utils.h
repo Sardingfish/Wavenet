@@ -16,6 +16,8 @@
 #include "Wavenet/Logger.h"
 
 
+namespace Wavenet {
+
 const double EPS = 1.0e-12;
 const double PI  = 3.14159265359;
 
@@ -239,4 +241,6 @@ inline bool isEmpty (const std::string& s) {
     return !s.empty() && std::find_if(s.begin(), s.end(), [](char c) { return !(strcmp(&c, " ") == 0); }) == s.end();
 }
 
-#endif
+} // namespace
+
+#endif // WAVENET_UTILS_H

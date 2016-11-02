@@ -1,6 +1,9 @@
 #include "Wavenet/Wavenet.h"
 
- // Set method(s).
+
+namespace Wavenet {
+    
+// Set method(s).
 // -------------------------------------------------------------------
 
 bool Wavenet::setLambda (const double& lambda) {
@@ -15,6 +18,15 @@ bool Wavenet::setAlpha (const double& alpha) {
 
 bool Wavenet::setInertia (const double& inertia) {
     _inertia = inertia;
+    return true;
+}
+
+bool Wavenet::setInertiaTimeScale (const double& inertiaTimeScale) {
+    if (inertiaTimeScale < 0.) {
+        WARNING("Inertia time scale has to be positive. Received value %f. Exiting.", inertiaTimeScale);
+        return false;
+    }
+    _inertiaTimeScale = inertiaTimeScale;
     return true;
 }
 
@@ -669,7 +681,10 @@ void Wavenet::update (const arma::Col<double>& gradient) {
      **/
 
     // Update.
-    scaleMomentum( _inertia );
+    const unsigned int steps = _costLog.size();
+    double effectiveInertita = (_inertiaTimeScale > 0. ? _inertia * _inertiaTimeScale / (_inertiaTimeScale + float(steps)): _inertia);
+    //scaleMomentum( _inertia );
+    scaleMomentum( effectiveInertita );
     //addMomentum( - _alpha * newGradient); // ... * gradient);
     addMomentum( - _alpha * gradient);
     setFilter( _filter + _momentum );
@@ -963,3 +978,4 @@ arma::Mat<double> Wavenet::coeffsFromActivations (const std::vector< std::vector
     
 }
 
+} // namespace

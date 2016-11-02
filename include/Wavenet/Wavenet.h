@@ -19,7 +19,8 @@
 #include <algorithm> /* std::max */
 
 // ROOT include(s).
-#include "TGraph.h"
+/* @TODO: Make dependent on installation. */
+#include "TGraph.h" 
 
 // Armadillo include(s).
 #include <armadillo>
@@ -32,7 +33,7 @@
 #include "Wavenet/Snapshot.h"
 
 
-class Snapshot;
+namespace Wavenet {
 
 class Wavenet : Logger {
     
@@ -59,26 +60,17 @@ public:
     ~Wavenet () {};
     
     // Get method(s).
-    inline double getLambda () { return _lambda; }
-    inline double    lambda () { return getLambda(); }
-
-    inline double getAlpha () { return _alpha; }
-    inline double    alpha () { return getAlpha(); }
-
-    inline double getInertia () { return _inertia; }
-    inline double    inertia () { return getInertia(); }
+    inline double lambda ()  { return _lambda; }
+    inline double alpha ()   { return _alpha; }
+    inline double inertia () { return _inertia; }
+    inline double inertiaTimeScale () { return _inertiaTimeScale; }
     
-    inline arma::Col<double> getFilter () { return _filter; }
-    inline arma::Col<double>    filter () { return getFilter(); }
-    
-    inline arma::Col<double> getMomentum () { return _momentum; }
-    inline arma::Col<double>    momentum () { return getMomentum(); }
+    inline arma::Col<double> filter ()   { return _filter; }
+    inline arma::Col<double> momentum () { return _momentum; }
 
-    inline int getBatchSize () { return _batchSize; }
-    inline int    batchSize () { return getBatchSize(); }
+    inline int    batchSize () { return _batchSize; }
 
-    inline std::vector< arma::Col<double> > getFilterLog () { return _filterLog; }
-    inline std::vector< arma::Col<double> >    filterLog () { return getFilterLog(); }
+    inline std::vector< arma::Col<double> >    filterLog () { return _filterLog; }
     inline void                           clearFilterLog () { return _filterLog.clear(); }
 
     inline std::vector< double > getCostLog () { return _costLog; }
@@ -87,21 +79,22 @@ public:
 
     
     // Set method(s).
-    bool setLambda    (const double& lambda);
-    bool setAlpha     (const double& alpha);
-    bool setInertia   (const double& inertia);
-    bool setFilter    (const arma::Col<double>& filter);
-    bool setMomentum  (const arma::Col<double>& momentum);
-    bool setBatchSize (const unsigned& batchSize);
-    bool doWavelet    (const bool& wavelet);
+    bool setLambda           (const double& lambda);
+    bool setAlpha            (const double& alpha);
+    bool setInertia          (const double& inertia);
+    bool setInertiaTimeScale (const double& inertiaTimeScale);
+    bool setFilter           (const arma::Col<double>& filter);
+    bool setMomentum         (const arma::Col<double>& momentum);
+    bool setBatchSize        (const unsigned& batchSize);
+    bool doWavelet           (const bool& wavelet);
     
     // Print method(s).
     void print ();
 
     // Storage method(s).
     inline void saveAs (const std::string& filename) { save(filename); return; };
-    void        save   (const std::string& filename);
-    void        load   (const std::string& filename);
+           void save   (const std::string& filename);
+           void load   (const std::string& filename);
     
     // High-level learning methods(s).
     // -- 1D.
@@ -138,7 +131,6 @@ public:
     
     // High-level basis method(s).
     arma::Col<double> basisFct (const unsigned& nRows, const unsigned& irow);
-    //arma::Mat<double> basisFct (const unsigned& N, const unsigned& i, const unsigned& j);
     arma::Mat<double> basisFct (const unsigned& nRows, const unsigned& nCols, const unsigned& irow, const unsigned& icol);
     
     TGraph getCostGraph (const std::vector< double >& costLog);
@@ -183,6 +175,8 @@ private:
     double _lambda  = 10.0;
     double _alpha   =  0.05;
     double _inertia =  0.;
+    double _inertiaTimeScale = 0.;
+    
     arma::Col<double> _filter;
     arma::Col<double> _momentum;
 
@@ -208,4 +202,6 @@ private:
     
 };
 
-#endif
+} // namespace
+
+#endif // WAVENET_WAVENET_H
