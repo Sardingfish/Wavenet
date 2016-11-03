@@ -18,9 +18,10 @@
 #include <utility> /* std::move */
 #include <algorithm> /* std::max */
 
+#if USE_ROOT
 // ROOT include(s).
-/* @TODO: Make dependent on installation. */
 #include "TGraph.h" 
+#endif // USE_ROOT
 
 // Armadillo include(s).
 #include <armadillo>
@@ -133,8 +134,10 @@ public:
     arma::Col<double> basisFct (const unsigned& nRows, const unsigned& irow);
     arma::Mat<double> basisFct (const unsigned& nRows, const unsigned& nCols, const unsigned& irow, const unsigned& icol);
     
+    #if USE_ROOT
     TGraph getCostGraph (const std::vector< double >& costLog);
     TGraph getCostGraph (const std::vector< arma::Col<double> >& filterLog, const std::vector< arma::Mat<double> >& X);
+    #endif // USE_ROOT
     
 
 public: 

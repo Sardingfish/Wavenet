@@ -596,7 +596,7 @@ arma::Mat<double> Wavenet::basisFct (const unsigned& nRows, const unsigned& nCol
 }
 
 
-
+#if USE_ROOT
 TGraph Wavenet::getCostGraph (const std::vector< double >& costLog) {
     
     const unsigned N = costLog.size();
@@ -632,6 +632,7 @@ TGraph Wavenet::getCostGraph (const std::vector< arma::Col<double> >& filterLog,
     
     return graph;
 }
+#endif // USE_ROOT 
 
 
 
