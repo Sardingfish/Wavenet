@@ -69,10 +69,17 @@ void Coach::run () {
     }
     
     if (_Nevents < 0) {
-        if (dynamic_cast<NeedleGenerator*>  (_generator) != nullptr ||
-            dynamic_cast<UniformGenerator*> (_generator) != nullptr ||
-            dynamic_cast<GaussianGenerator*>(_generator) != nullptr) {
-            WARNING("The number of events is set to %d while using a generator with no natural epochs. Exiting.", _Nevents);
+        if ((dynamic_cast<NeedleGenerator*>  (_generator) != nullptr ||
+             dynamic_cast<UniformGenerator*> (_generator) != nullptr ||
+             dynamic_cast<GaussianGenerator*>(_generator) != nullptr) && 
+            !(useAdaptiveLearningRate() && targetPrecision() > 0.)) {
+            WARNING("The number of events is set to %d while using", _Nevents);
+            WARNING(".. a generator with no natural epochs and with");
+            WARNING(".. no target precision set. Etiher choose a ");
+            WARNING(".. different generator or use");
+            WARNING(".. 'Coach::setUseAdaptiveLearningRate()' and");
+            WARNING("'Coach::setTargetPrecision(someValue)'.");
+            WARNING("Exiting.");
             return;
         }
     }
@@ -194,7 +201,7 @@ void Coach::run () {
                         // Check whether we have reached target precision.
                         if (targetPrecision() != -1 && meanStepSize < targetPrecision()) {
                             INFO("[Adaptive learning rate] The mean step size over the last %d updates (%f)", useLastN, meanStepSize);
-                            INFO("[Adaptive learning rate]  is smaller than the target precision (%f). Done.", targetPrecision());
+                            INFO("[Adaptive learning rate] is smaller than the target precision (%f). Done.", targetPrecision());
                             done = true;
                         } else if (totalStepSize < meanStepSize) {
                             INFO("[Adaptive learning rate] Total step size (%f) is smaller than mean step size (%f).", totalStepSize, meanStepSize);
