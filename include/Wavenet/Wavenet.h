@@ -195,11 +195,6 @@ private:
     
     bool _wavelet = true;
     
-    // RMSprop stuff.
-    double _gamma = 0.1;
-    arma::Col<double> _RMSprop;
-    arma::Mat<double> _AdaGrad;
-    
 };
 
 } // namespace

@@ -41,18 +41,9 @@ bool Wavenet::setFilter (const arma::Col<double>& filter) {
     }
     _filter = filter;
     _filterLog.push_back(_filter);
-    //_momentum.zeros(size(_filter));
     clearCachedOperators();
-    //clearCachedWeights();
     
-    // AdaGrad
-    if (_AdaGrad.n_elem != _filter.n_elem) {
-        _AdaGrad.zeros(_filter.n_elem, _filter.n_elem);
-    }
-    // RMSprop
-    if (_RMSprop.n_elem != _filter.n_elem) {
-        _RMSprop.zeros(size(_filter));
-    }
+    // If the filter size is changes, resize the momentum vector accordingly.
     if (_momentum.n_elem != _filter.n_elem) {
         _momentum.zeros(size(_filter));
     }
