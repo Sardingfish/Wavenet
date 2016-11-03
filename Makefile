@@ -1,6 +1,11 @@
+# Get external paths
+ARMAPATH  := $(shell echo $$ARMAPATH)
+HEPMCPATH := $(shell echo $$HEPMCPATH)
+ROOTPATH  := $(shell echo $$ROOTSYS)
+
 # Variables.
 CXX = clang++
-PACKAGENAME = WaveletML
+PACKAGENAME = Wavenet
 
 # Root variables
 ROOTCFLAGS := $(shell root-config --cflags)
@@ -27,25 +32,90 @@ PROGS := $(patsubst $(PROGDIR)/%.$(SRCEXT),$(EXEDIR)/%.exe,$(PROGSRCS))
 GARBAGE = $(OBJDIR)/*.o $(EXEDIR)/* $(LIBDIR)/*.so
 
 # Dependencies
-CXXFLAGS  = --std=c++11 -O3 -fPIC -funroll-loops -I$(INCDIR) $(ROOTCFLAGS)
-LINKFLAGS = -O3 -L$(LIBDIR) -L$(ROOTSYS)/lib $(ROOTLIBS) 
+CXXFLAGS  = --std=c++11 -O3 -fPIC -funroll-loops -I$(INCDIR)
+LINKFLAGS = -O3 -L$(LIBDIR)
 
-# Libraries
-LIBS += $(ROOTLIBS)
+# -- Armadillo (necessary)
+ifeq ($(strip $(ARMAPATH)),)
+    $(info * ------------------------------------------------------------------------------------- *)
+    $(info | Path to Armadillo not provided. Please either:                                        |)
+    $(info |  (1) set the ARMAPATH environment variable in './scripts/setEnvironmentVariables.sh'  |)
+    $(info |      to the path of your existing local installation and run                          |)
+    $(info |       > source ./scripts/setEnvironmentVariables.sh                                   |)
+    $(info |      or                                                                               |)
+    $(info |  (2) run                                                                              |)
+    $(info |       > source ./scripts/downloadArmadillo.sh                                         |)
+    $(info |      to download and install Armadillo.                                               |)
+    $(info * ------------------------------------------------------------------------------------- *)
+    $(error Exiting)
+else
+    # Checks to make sure that the provided path is sensible.
+    ifeq ($(wildcard $(ARMAPATH)),)
+        $(error Path pointed to by ARMAPATH ($(ARMAPATH)) does not exists)
+    endif
+    ifeq ($(wildcard $(ARMAPATH)/include),)
+        $(error No 'include' directory was found in ARMAPATH ($(ARMAPATH)))
+    endif
+    ifeq ($(wildcard $(ARMAPATH)/libarmadillo*),)
+        $(error No library of type '/libarmadillo*' was found in ARMAPATH ($(ARMAPATH)))
+    endif
 
-# Externals
-ARMAPATH = /Users/A/Dropbox/PhD/Work/WaveletML/armadillo-6.500.4
-HEPMCPATH = /Users/A/Dropbox/hep/HepMC-2.06.09/installation/
+    # If everything checks out, add flags.
+    CXXFLAGS += -I$(ARMAPATH)/include
+    LINKFLAGS += -L$(ARMAPATH) -lArmadillo -DARMA_DONT_USE_WRAPPER -lblas -llapack
+endif
 
-CXXFLAGS += -I$(ARMAPATH)/include -I$(HEPMCPATH)/include
-LINKFLAGS += -L$(HEPMCPATH)/lib -lHepMC -L$(ARMAPATH) -lArmadillo -DARMA_DONT_USE_WRAPPER -lblas -llapack
+# -- HepMC (optional
+ifeq ($(strip $(HEPMCPATH)),)
+    $(info * ------------------------------------------------------------------------------------- *)
+    $(info | Path to HepMC not provided.                                                           |)
+    $(info | As this is not necessary we will continue, but some functionality will be disabled.   |)
+    $(info | If you want to use HepMC, please either:                                              |)
+    $(info |  (1) set the HEPMCPATH environment variable in './scripts/setEnvironmentVariables.sh' |)
+    $(info |      to the path of your existing local installation and run                          |)
+    $(info |       > source ./scripts/setEnvironmentVariables.sh                                   |)
+    $(info |      or                                                                               |)
+    $(info |  (2) run                                                                              |)
+    $(info |       > source ./scripts/downloadHepMC.sh                                             |)
+    $(info |      to download and install HepMC.                                                   |)
+    $(info * ------------------------------------------------------------------------------------- *)
+else
+    # Checks to make sure that the provided path is sensible.
+    ifeq ($(wildcard $(HEPMCPATH)),)
+        $(error Path pointed to by HEPMCPATH ($(HEPMCPATH)) does not exists)
+    endif
+    ifeq ($(wildcard $(HEPMCPATH)/include),)
+        $(error No 'include' directory was found in HEPMCPATH ($(HEPMCPATH)))
+    endif
+    ifeq ($(wildcard $(HEPMCPATH)/lib),)
+        $(error No 'lib' directory was found in HEPMCPATH ($(HEPMCPATH)))
+    endif
+
+    # If everything checks out, add flags.
+    CXXFLAGS += -I$(HEPMCPATH)/include -DUSE_HEPMC
+    LINKFLAGS += -L$(HEPMCPATH)/lib -lHepMC
+endif
+
+# -- ROOT (optional)
+ifeq ($(strip $(ROOTPATH)),)
+    $(info * ------------------------------------------ *)
+    $(info | Path to ROOT not provided.                 |)
+    $(info | As this is not necessary we will continue, |)
+    $(info | but some functionality will be disabled.   |)
+    $(info * ------------------------------------------ *)
+else
+    # Check to make sure that the provided paths is sensible?
+    CXXFLAGS += $(ROOTCFLAGS) -DUSE_ROOT
+    LINKFLAGS += -L$(ROOTSYS)/lib $(ROOTLIBS)
+endif
+
 
 # Targets
 all: $(PACKAGENAME) $(PROGS)
 
 $(PACKAGENAME) : $(OBJS) 
 	@mkdir -p $(LIBDIR)
-	$(CXX) -shared -O3 -o $(LIBDIR)/lib$@.so $(LINKFLAGS) $(OBJS) $(LIBS) 
+	$(CXX) -shared -O3 -o $(LIBDIR)/lib$@.so $(LINKFLAGS) $(OBJS)
 
 $(OBJDIR)/%.o : $(SRCDIR)/%.$(SRCEXT)
 	@mkdir -p $(OBJDIR)
@@ -54,7 +124,7 @@ $(OBJDIR)/%.o : $(SRCDIR)/%.$(SRCEXT)
 $(EXEDIR)/%.exe : $(PROGDIR)/%.$(SRCEXT)
 	@mkdir -p $(EXEDIR)
 	$(CXX) $< -o $@ $(CXXFLAGS) $(LINKFLAGS) -l$(PACKAGENAME)
- 
+
 clean : 
 	@rm -f $(GARBAGE)
 
