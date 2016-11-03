@@ -10,17 +10,17 @@
 #include <string>
 #include <algorithm> /* std::max */
 
+#ifdef USE_HEPMC
 // HepMC include(s).
-/* @TODO: Make dependent on installation */
 #include "HepMC/GenEvent.h"
 #include "HepMC/IO_GenEvent.h"
- 
+#endif
+
 // Armadillo include(s).
 #include <armadillo>
 
 // Wavenet include(s).
 #include "Wavenet/GeneratorBase.h"
-
 
 
 namespace Wavenet {
@@ -167,6 +167,7 @@ public:
 };
 
 
+#ifdef USE_HEPMC
 class HepMCGenerator : public GeneratorBase {
 
     /**
@@ -295,6 +296,7 @@ private:
     HepMC::GenEvent*    _event = nullptr;
     
 };
+#endif // USE_HEPMC
 
 } // namespace
 
