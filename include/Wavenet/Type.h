@@ -1,6 +1,11 @@
 #ifndef WAVENET_TYPE_H
 #define WAVENET_TYPE_H
 
+/**
+ * @file Type.h
+ * @author Andreas Sogaard
+**/
+
 #include <string>
 #include <typeinfo>
 

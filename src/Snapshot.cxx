@@ -1,7 +1,6 @@
 #include "Wavenet/Snapshot.h"
 #include "Wavenet/Wavenet.h" /* To resolve circular dependence. */
 
-
 namespace Wavenet {
     
 std::string Snapshot::file () {
@@ -19,6 +18,12 @@ void Snapshot::save (Wavenet* wavenet) {
     
     DEBUG("Saving snapshot '%s'.", file().c_str());
     
+    /**
+     * @TODO: Make sure that all relevant member variables are written to the snapshot.
+     *        For instance, what about inertiaTimeScale?
+     * @TODO: Move to XML format? Requires an easy-to-use, standard XML library...
+     **/
+
     if (strcmp(file().substr(0,1).c_str(), "/") == 0) {
         WARNING("File '%s' not accepted. Only accepting realtive paths.", file().c_str());
         return;
