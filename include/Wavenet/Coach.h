@@ -80,10 +80,10 @@ private:
     Wavenet*       _wavenet   = nullptr;
     GeneratorBase* _generator = nullptr;
     
-    int          _Nevents = -1;
-    unsigned int _Nepochs =  1;
-    unsigned int _Ninits  =  1;
-    unsigned int _Ncoeffs =  2;
+    int          _Nevents = 1000;
+    unsigned int _Nepochs =    1;
+    unsigned int _Ninits  =    1;
+    unsigned int _Ncoeffs =    2;
 
     bool   _useAdaptiveLearningRate = false;
     bool   _useSimulatedAnnealing   = false;

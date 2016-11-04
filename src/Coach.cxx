@@ -89,7 +89,7 @@ void Coach::run () {
     INFO("Start training, using coach '%s'.", _name.c_str());
     
     // -- Save base snapshot, to step back from adaptive learning.
-    _wavenet->save(_basedir + _name + "/snapshots/tmp.snap");
+    _wavenet->save(_basedir + _name + "/snapshots/.tmp.snap");
     
     // -- Definitions for daptive learning rate.
     const unsigned int useLastN = 10;
@@ -103,7 +103,7 @@ void Coach::run () {
         }
 
         // -- Load starting snapshot.
-        _wavenet->load(_basedir + _name + "/snapshots/tmp.snap");
+        _wavenet->load(_basedir + _name + "/snapshots/.tmp.snap");
         _wavenet->clear();
 
         // -- Generate initial coefficient configuration on random point on unit N-sphere.
@@ -251,7 +251,8 @@ void Coach::run () {
     outFileStream.close();
     
     // Clean up.
-    _wavenet->clear();
+    _wavenet->costLog().pop_back(); // Remove the last entry in the cost log, which isn't properly scaled to batch size since the batch queue hasn't been flushed, and therefore might bias result.
+    //_wavenet->clear();
     
     return;
     
