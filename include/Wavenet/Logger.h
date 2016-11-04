@@ -22,7 +22,7 @@
 #define INFO(...)                   {this->_print(type(*this),  __FUNCTION__, "INFO",    __VA_ARGS__);}
 #define DEBUG(...)   if (debug())   {this->_print(type(*this),  __FUNCTION__, "DEBUG",   __VA_ARGS__);}
 #define VERBOSE(...) if (verbose()) {this->_print(type(*this),  __FUNCTION__, "VERBOSE", __VA_ARGS__);}
-/* Macros only to be called from within Wavenet namespace. */
+/* Macros to be called from wherever. */
 #define FCTERROR(...)               {wavenet::Logger::_fctprint(__FUNCTION__, "ERROR",   __VA_ARGS__);}
 #define FCTWARNING(...)             {wavenet::Logger::_fctprint(__FUNCTION__, "WARNING", __VA_ARGS__);}
 #define FCTINFO(...)                {wavenet::Logger::_fctprint(__FUNCTION__, "INFO",    __VA_ARGS__);}

@@ -7,7 +7,6 @@
  **/
 
 // STL include(s).
-#include <iostream>
 #include <cmath> /* pow */
 
 // Armadillo include(s).

@@ -7,12 +7,9 @@
  **/
 
 // STL include(s).
+#include <iostream> /* std::cout */
 #include <string> /* std::string */
-#include <fstream>
-#include <iostream>
-
-// Armadillo include(s).
-// ...
+#include <fstream> /* std::ofstream */
 
 // Wavenet include(s).
 #include "Wavenet/Utilities.h"

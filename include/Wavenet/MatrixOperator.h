@@ -7,10 +7,9 @@
  **/
 
 // STL include(s).
-#include <iostream>
 #include <cmath> /* pow */
 #include <cstdlib> /* abs */
-#include <algorithm> /* for_each, rotate */
+#include <algorithm> /* std::rotate */
 
 // Armadillo include(s).
 #include <armadillo>

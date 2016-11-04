@@ -6,8 +6,8 @@
  * @author Andreas Sogaard
 **/
 
-#include <string>
-#include <typeinfo>
+#include <string> /* std::string */
+#include <typeinfo> /* typeid */
 
 /**
  * Taken from here: http://stackoverflow.com/a/4541470
