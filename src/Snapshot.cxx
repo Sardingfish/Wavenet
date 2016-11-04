@@ -19,8 +19,6 @@ void Snapshot::save (Wavenet* wavenet) {
     DEBUG("Saving snapshot '%s'.", file().c_str());
     
     /**
-     * @TODO: Make sure that all relevant member variables are written to the snapshot.
-     *        For instance, what about inertiaTimeScale?
      * @TODO: Move to XML format? Requires an easy-to-use, standard XML library...
      **/
 
@@ -46,6 +44,7 @@ void Snapshot::save (Wavenet* wavenet) {
     outFileStream << wavenet->_lambda << "\n";
     outFileStream << wavenet->_alpha << "\n";
     outFileStream << wavenet->_inertia << "\n";
+    outFileStream << wavenet->_inertiaTimeScale << "\n";
     outFileStream << wavenet->_filter << "\n#\n";
     outFileStream << wavenet->_momentum << "\n#\n";
     
@@ -83,6 +82,7 @@ void Snapshot::load (Wavenet* wavenet) {
     inFileStream >> wavenet->_lambda;
     inFileStream >> wavenet->_alpha;
     inFileStream >> wavenet->_inertia;
+    inFileStream >> wavenet->_inertiaTimeScale;
     
     // Read filter.
     std::vector<double> vec_filter;
