@@ -7,9 +7,8 @@
 **/
 
 // STL include(s).
-#include <fstream>
-#include <iostream>
-#include <stdio.h> /* printf */
+#include <iostream> /* std::cout */
+#include <cstdio> /* snprintf */
 #include <vector> /* std::vector */
 #include <string> /* std::string */
 #include <cmath> /* log2 */
@@ -48,8 +47,11 @@ public:
     Wavenet (const double& lambda, const double& alpha, const double& inertia) :
         _lambda(lambda), _alpha(alpha), _inertia(inertia)
     {};
+    Wavenet (const double& lambda, const double& alpha, const double& inertia, const double& inertiaTimeScale) :
+        _lambda(lambda), _alpha(alpha), _inertia(inertia), _inertiaTimeScale(inertiaTimeScale)
+    {};
     Wavenet (const Wavenet& other) :
-        _lambda(other._lambda), _alpha(other._alpha), _inertia(other._inertia), _filter(other._filter)
+        _lambda(other._lambda), _alpha(other._alpha), _inertia(other._inertia), _inertiaTimeScale(other._inertiaTimeScale), _filter(other._filter)
     {};
     
     // Destructor.
@@ -64,13 +66,13 @@ public:
     inline arma::Col<double> filter ()   { return _filter; }
     inline arma::Col<double> momentum () { return _momentum; }
 
-    inline int    batchSize () { return _batchSize; }
+    inline int batchSize () { return _batchSize; }
 
-    inline std::vector< arma::Col<double> >    filterLog () { return _filterLog; }
-    inline void                           clearFilterLog () { return _filterLog.clear(); }
+    inline std::vector< arma::Col<double> >      filterLog () { return _filterLog; }
+    inline void                             clearFilterLog () { return _filterLog.clear(); }
 
-    inline std::vector< double >    costLog () { return _costLog; }
-    inline void                clearCostLog () { return _costLog.resize(1, 0); }
+    inline std::vector< double >      costLog () { return _costLog; }
+    inline void                  clearCostLog () { return _costLog.resize(1, 0); }
 
     
     // Set method(s).
@@ -125,8 +127,9 @@ public:
     arma::field< arma::Mat<double> > costMap (const std::vector< arma::Mat<double> >& X, const double& range, const unsigned& Ndiv);
     
     // High-level basis method(s).
-    arma::Col<double> basisFct (const unsigned& nRows, const unsigned& irow);
-    arma::Mat<double> basisFct (const unsigned& nRows, const unsigned& nCols, const unsigned& irow, const unsigned& icol);
+    arma::Mat<double> basisFunction1D (const unsigned& nRows, const unsigned& irow);
+    arma::Mat<double> basisFunction2D (const unsigned& nRows, const unsigned& nCols, const unsigned& irow, const unsigned& icol);
+    arma::Mat<double> basisFunction   (const unsigned& nRows, const unsigned& nCols, const unsigned& irow, const unsigned& icol);
     
 
 public: 

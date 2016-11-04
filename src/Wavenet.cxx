@@ -558,40 +558,49 @@ arma::field< arma::Mat<double> > Wavenet::costMap (const std::vector< arma::Mat<
 // High-level learnings method(s).
 // -------------------------------------------------------------------
 
-arma::Col<double> Wavenet::basisFct (const unsigned& N, const unsigned& i) {
-    unsigned m = log2(N);
+arma::Mat<double> Wavenet::basisFunction1D (const unsigned& N, const unsigned& i) {
+    if (!isRadix2(N)) {
+        WARNING("Cannot produce 1D basis function with length %d. Exiting.", N);
+        return arma::Mat<double>();
+    }
+    if (i >= N) {
+        WARNING("Requested index (%d) is out of bounds with length %d. Exiting.", i, N);
+        return arma::Mat<double>();
+    }
+    const unsigned int m = log2(N);
     if (!_hasCachedOperators || size(_cachedLowpassOperators, 0) < m) { cacheOperators(m - 1); }
-    arma::Col<double> y (N, arma::fill::zeros);
-    y(i) = 1.;
-    return inverse(y);
-}
-
-
-/*
-arma::Mat<double> Wavenet::basisFct (const unsigned& N, const unsigned& i, const unsigned& j) {
-    unsigned m = log2(N);
-    if (!_hasCachedOperators || size(_cachedLowpassOperators, 0) < m) { cacheOperators(m - 1); }
-    arma::Mat<double> Y (N, N, arma::fill::zeros);
-    Y(i, j) = 1.;
+    arma::Mat<double> Y (N, 1, arma::fill::zeros);
+    Y(i, 0) = 1.;
     return inverse(Y);
 }
-*/
 
-arma::Mat<double> Wavenet::basisFct (const unsigned& nRows, const unsigned& nCols, const unsigned& irow, const unsigned& icol) {
+arma::Mat<double> Wavenet::basisFunction2D (const unsigned& nRows, const unsigned& nCols, const unsigned& irow, const unsigned& icol) {
     if (!isRadix2(nRows) || !isRadix2(nCols)) {
-        WARNING("Cannot produce basis function for shape {%d, %d}. Exiting.");
+        WARNING("Cannot produce 2D basis function for shape {%d, %d}. Exiting.", nRows, nCols);
         return arma::Mat<double>();
     }
     if (irow >= nRows || icol >= nCols) {
         WARNING("Requested indices (%d, %d) are out of bounds with shape {%d, %d}. Exiting.", irow, icol, nRows, nCols);
         return arma::Mat<double>();
     }
-    const unsigned int& n = log2(nRows);
-    const unsigned int& m = log2(nCols);
+    const unsigned int n = log2(nRows);
+    const unsigned int m = log2(nCols);
     if (!_hasCachedOperators || size(_cachedLowpassOperators, 0) < std::max(m,n)) { cacheOperators(std::max(m,n) - 1); }
     arma::Mat<double> Y (nRows, nCols, arma::fill::zeros);
     Y(irow, icol) = 1.;
     return inverse(Y);
+}
+
+arma::Mat<double> Wavenet::basisFunction (const unsigned& nRows, const unsigned& nCols, const unsigned& irow, const unsigned& icol) {
+    if (nCols == 1) {
+        assert(icol < 1);
+        return basisFunction1D(nRows, irow);
+    } else if (nRows == 1) {
+        assert(irow < 1);
+        return basisFunction1D(nCols, icol);
+    } else {
+        return basisFunction2D(nRows, nCols, irow, icol);
+    }
 }
 
 
