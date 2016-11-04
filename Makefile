@@ -1,6 +1,14 @@
-# Get external paths
-ARMAPATH  := $(shell echo $$ARMAPATH)
-HEPMCPATH := $(shell echo $$HEPMCPATH)
+# External paths.
+ARMAPATH  = 
+HEPMCPATH = 
+
+# If external paths are not set already, try to get them from environment variables.
+ifeq ($(ARMAPATH),)
+    ARMAPATH  := $(shell echo $$ARMAPATH)
+endif
+ifeq ($(HEPMCPATH),)
+    HEPMCPATH  := $(shell echo $$HEPMCPATH)
+endif
 ROOTPATH  := $(shell echo $$ROOTSYS)
 
 # Variables.
