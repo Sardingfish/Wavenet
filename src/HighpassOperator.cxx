@@ -1,7 +1,6 @@
 #include "Wavenet/HighpassOperator.h"
 
-
-namespace Wavenet {
+namespace wavenet {
     
 void HighpassOperator::setFilter (const arma::Col<double>& filter) {
     unsigned N = filter.n_elem;

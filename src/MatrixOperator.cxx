@@ -1,7 +1,6 @@
 #include "Wavenet/MatrixOperator.h"
 
-
-namespace Wavenet {
+namespace wavenet {
     
 void MatrixOperator::construct () {
     

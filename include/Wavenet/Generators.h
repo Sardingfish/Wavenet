@@ -14,7 +14,7 @@
 // HepMC include(s).
 #include "HepMC/GenEvent.h"
 #include "HepMC/IO_GenEvent.h"
-#endif
+#endif // USE_HEPMC
 
 // Armadillo include(s).
 #include <armadillo>
@@ -23,7 +23,7 @@
 #include "Wavenet/GeneratorBase.h"
 
 
-namespace Wavenet {
+namespace wavenet {
 
 enum class GeneratorMode {
    File     = 0,
@@ -222,7 +222,7 @@ public:
 
         // Fill '_data' matrix with content from 'hist'.
         DEBUG("Calling HistFillMatrix.");
-        HistFillMatrix(hist, _data);
+        HistFillMatrix(&hist, _data);
         DEBUG("Done.");
 
         // -- Get next HepMC event.

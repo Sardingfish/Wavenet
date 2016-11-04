@@ -4,7 +4,7 @@
 #include <memory>
 #include <cxxabi.h>
 
-namespace Wavenet {
+namespace wavenet {
 
 std::string demangle(const char* name) {
 

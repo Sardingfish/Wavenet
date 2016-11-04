@@ -17,7 +17,7 @@
 #include "Wavenet/MatrixOperator.h"
 
 
-namespace Wavenet {
+namespace wavenet {
 
 class LowpassOperator : public MatrixOperator {
     

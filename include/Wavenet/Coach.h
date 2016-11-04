@@ -15,13 +15,13 @@
 // ...
 
 // Wavenet include(s).
-#include "Wavenet/Utils.h"
+#include "Wavenet/Utilities.h"
 #include "Wavenet/Logger.h"
 #include "Wavenet/Wavenet.h"
 #include "Wavenet/GeneratorBase.h"
 
 
-namespace Wavenet {
+namespace wavenet {
 
 class Coach : Logger  {
     

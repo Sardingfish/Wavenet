@@ -1,7 +1,7 @@
 #include "Wavenet/Snapshot.h"
 #include "Wavenet/Wavenet.h" /* To resolve circular dependence. */
 
-namespace Wavenet {
+namespace wavenet {
     
 std::string Snapshot::file () {
     

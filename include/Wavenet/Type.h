@@ -13,7 +13,7 @@
  * Taken from here: http://stackoverflow.com/a/4541470
  **/
 
-namespace Wavenet {
+namespace wavenet {
 
 std::string demangle(const char* name);
 

@@ -16,11 +16,11 @@
 #include <armadillo>
 
 // Wavenet include(s).
-#include "Wavenet/Utils.h"
+#include "Wavenet/Utilities.h"
 #include "Wavenet/Logger.h"
 
 
-namespace Wavenet {
+namespace wavenet {
 
 class MatrixOperator : public arma::Mat<double>, public Logger {
     

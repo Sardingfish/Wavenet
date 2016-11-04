@@ -13,7 +13,7 @@
 #include "TEllipse.h"
 
 // Wavenet include(s).
-#include "Wavenet/Utils.h"
+#include "Wavenet/Utilities.h"
 #include "Wavenet/Logger.h"
 #include "Wavenet/Generators.h"
 #include "Wavenet/Wavenet.h"
@@ -21,30 +21,13 @@
 
 
 int main (int argc, char* argv[]) {
+
+    
     FCTINFO("Running Wavenet study.");
-    /*
-    arma::Mat<double> M;
-
-    //HepMCGenerator hg;
-    GaussianGenerator hg;
-    //hg.open("input/Pythia.WpT500._000001.hepmc");
-    hg.setShape({64,16});
-    
-
-    M = hg.next();
- 
-    TCanvas c1 ("c1", "", 600, 600);
-    TH1* h1 = MatrixToHist(M, 3.2);
-    h1->Draw("COL Z");
-    c1.SaveAs("TEMPTEMPTEMP.pdf");
-    
-    return 0;
-    */
 
 
-
-    Wavenet::GeneratorMode mode = Wavenet::GeneratorMode::Gaussian;
-    int Nfilter = 8;
+    wavenet::GeneratorMode mode = wavenet::GeneratorMode::File;
+    int Nfilter = 4;
    
     /* ----- */
     
@@ -53,20 +36,20 @@ int main (int argc, char* argv[]) {
     
     std::string project = "Run.";
     switch (mode) {
-        case Wavenet::GeneratorMode::File:
+        case wavenet::GeneratorMode::File:
             // ...
             project += "File";
             break;
             
-        case Wavenet::GeneratorMode::Uniform:
+        case wavenet::GeneratorMode::Uniform:
             project += "Uniform";
             break;
             
-        case Wavenet::GeneratorMode::Needle:
+        case wavenet::GeneratorMode::Needle:
             project += "Needle";
             break;
             
-        case Wavenet::GeneratorMode::Gaussian:
+        case wavenet::GeneratorMode::Gaussian:
             project += "Gaussian";
             break;
             
@@ -77,11 +60,11 @@ int main (int argc, char* argv[]) {
     }
     project += ".N" + std::to_string(Nfilter);
     
-    Wavenet::Wavenet wavenet;
+    wavenet::Wavenet wavenet;
 
-    wavenet.setLambda(10.);
+    wavenet.setLambda(10.); // 10.
     wavenet.setAlpha(0.002); // 10 -> 0.01; 100 -> 0.02
-    wavenet.setInertia(0.9);
+    wavenet.setInertia(0.999); // 0.99
     wavenet.setInertiaTimeScale(20.);
     wavenet.setBatchSize(20);
     wavenet.doWavelet(true); // >>> Default: true:
@@ -113,17 +96,19 @@ int main (int argc, char* argv[]) {
     reader.setSize(64);
     */
     
-    //HepMCGenerator generator ("input/Pythia.WpT500._000001.hepmc");
-    Wavenet::GaussianGenerator generator;
+    wavenet::HepMCGenerator generator ("input/Pythia.WpT500._000001.hepmc");
+    //wavenet::GaussianGenerator generator;
+    //wavenet::NeedleGenerator generator;
     generator.setShape({32,32});
 
-    Wavenet::Coach  coach  (project); //("Pythia.WpT500.N16");
-    coach.setNevents(10000); // (1000); // 25000
+    wavenet::Coach  coach  (project); //("Pythia.WpT500.N16");
+    coach.setNevents(100000); // (1000); // 25000
     coach.setNepochs(1); // 4
     coach.setNcoeffs(Nfilter);
-    coach.setNinits (10); // (10);
-    //coach.setUseAdaptiveLearning(true);
-    coach.setUseAdaGrad(true);
+    coach.setNinits (5); // (10);
+    coach.setUseAdaptiveLearningRate();
+    //coach.setUseSimulatedAnnealing();
+    //coach.setTargetPrecision(0.0001);
     coach.setGenerator(&generator);
     coach.setWavenet(&wavenet);
     
@@ -134,4 +119,6 @@ int main (int argc, char* argv[]) {
     FCTINFO("Done.");
     
     return 1;
+
 }
+

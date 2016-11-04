@@ -1,7 +1,7 @@
 #include "Wavenet/Coach.h"
 #include "Wavenet/Generators.h" /* To determine whether generator has natural epochs. */
 
-namespace Wavenet {
+namespace wavenet {
     
  // Set method(s).
 // -------------------------------------------------------------------

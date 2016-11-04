@@ -27,33 +27,35 @@ int main (int argc, char* argv[]) {
     
     cout << "Running Wavenet analysis." << endl;
 
-    Wavenet::GeneratorMode mode = Wavenet::GeneratorMode::Gaussian;
-    const int M = 10;
-    int Nfilter = 8;
+    //wavenet::GeneratorMode mode = wavenet::GeneratorMode::Gaussian;
+    wavenet::GeneratorMode mode = wavenet::GeneratorMode::File;
+    //wavenet::GeneratorMode mode = wavenet::GeneratorMode::Needle;
+    const int M = 5;
+    int Nfilter = 4;
     
     /* --- */
     
-    Wavenet::Wavenet wavenet;
+    wavenet::Wavenet wavenet;
     wavenet.doWavelet(true);
     
     // Variables.
     string outdir  = "./output/";
     string project = "Run.";
     switch (mode) {
-        case Wavenet::GeneratorMode::File:
+        case wavenet::GeneratorMode::File:
             // ...
             project += "File";
             break;
             
-        case Wavenet::GeneratorMode::Uniform:
+        case wavenet::GeneratorMode::Uniform:
             project += "Uniform";
             break;
             
-        case Wavenet::GeneratorMode::Needle:
+        case wavenet::GeneratorMode::Needle:
             project += "Needle";
             break;
             
-        case Wavenet::GeneratorMode::Gaussian:
+        case wavenet::GeneratorMode::Gaussian:
             project += "Gaussian";
             break;
             
@@ -68,7 +70,7 @@ int main (int argc, char* argv[]) {
     
     string pattern = outdir + "snapshots/" +  project + ".%06u.snap";
     
-    Wavenet::Snapshot snap (pattern);
+    wavenet::Snapshot snap (pattern);
     
     vector< TGraph > costGraphs (M);
     vector< TGraph > filterGraphs (M);
@@ -76,18 +78,18 @@ int main (int argc, char* argv[]) {
     
     wavenet.save(outdir + "tmp.snap");
     
-    Wavenet::GeneratorBase* generator = nullptr;
-    if (mode == Wavenet::GeneratorMode::File) {
-        generator = new Wavenet::HepMCGenerator("input/Pythia.WpT500._000001.hepmc");
-        if (!generator->good()) {
+    wavenet::GeneratorBase* generator = nullptr;
+    if (mode == wavenet::GeneratorMode::File) {
+        //generator = new wavenet::HepMCGenerator("input/Pythia.WpT500._000001.hepmc");
+        if (!generator || !generator->good()) {
             return 1;
         }
-    } else if (mode == Wavenet::GeneratorMode::Needle) {
-        generator = new Wavenet::NeedleGenerator();
-    } else if (mode == Wavenet::GeneratorMode::Uniform) {
-        generator = new Wavenet::UniformGenerator();
-    } else if (mode == Wavenet::GeneratorMode::Gaussian) {
-        generator = new Wavenet::GaussianGenerator();
+    } else if (mode == wavenet::GeneratorMode::Needle) {
+        generator = new wavenet::NeedleGenerator();
+    } else if (mode == wavenet::GeneratorMode::Uniform) {
+        generator = new wavenet::UniformGenerator();
+    } else if (mode == wavenet::GeneratorMode::Gaussian) {
+        generator = new wavenet::GaussianGenerator();
     }
 
     generator->setShape({16, 16});
@@ -96,10 +98,9 @@ int main (int argc, char* argv[]) {
     vector< Mat<double> > examples;
     for (unsigned i = 0; i < 10; i++) {
         examples.push_back( generator->next() );
-        TH1* exampleSignal = Wavenet::MatrixToHist(examples.at(i), 3.2);
+        std::unique_ptr<TH1> exampleSignal = wavenet::MatrixToHist(examples.at(i), 3.2);
         exampleSignal->Draw("COL Z");
         c.SaveAs((outdir + "exampleSignal." + to_string(i + 1) +"." + project + ".pdf").c_str());
-        delete exampleSignal;
     }
     generator->close();
 
@@ -126,7 +127,7 @@ int main (int argc, char* argv[]) {
         const unsigned Ncoeffs = filterLog.size();
         
         // Cost graphs.
-        costGraphs.at(snap.number() - 1) = wavenet.getCostGraph( costLog );
+        costGraphs.at(snap.number() - 1) = wavenet::costGraph( costLog );
         
         double tmpMin = costGraphs.at(snap.number() - 1).GetMinimum();
         double tmpMax = costGraphs.at(snap.number() - 1).GetMaximum();
@@ -210,7 +211,7 @@ int main (int argc, char* argv[]) {
 
     
     
-    if (!Wavenet::fileExists(costMapName)) {
+    if (!wavenet::fileExists(costMapName)) {
         arma::field< arma::Mat<double> > costs;
         
         costs = wavenet.costMap(examples, 1.2, 300);
@@ -234,7 +235,7 @@ int main (int argc, char* argv[]) {
     
     
     c.SetLogz(true);
-    TH1* J = Wavenet::MatrixToHist(costMap, 1.2);
+    std::unique_ptr<TH1> J = wavenet::MatrixToHist(costMap, 1.2);
     J->SetContour(104); // (104);
     gStyle->SetOptStat(0);
     J->SetMaximum(100.); // 100.
@@ -299,7 +300,7 @@ int main (int argc, char* argv[]) {
     text.SetTextFont(42);
     text.SetTextSize(0.035);
     switch (mode) {
-        case Wavenet::GeneratorMode::File:
+        case wavenet::GeneratorMode::File:
             text.DrawLatexNDC(    c.GetLeftMargin(),  1. - c.GetTopMargin() + 0.025, "W (#rightarrow qq) + jets, #hat{p}_{T}  > 280 GeV");
             text.SetTextAlign(31);
             text.DrawLatexNDC(1 - c.GetRightMargin(), 1. - c.GetTopMargin() + 0.025, "#sqrt{s} = 13 TeV");
@@ -311,13 +312,13 @@ int main (int argc, char* argv[]) {
     
     c.SaveAs((outdir + "CostMap.pdf").c_str());
     c.SetLogz(false);
-    delete J;
+    
     
      // * Basis function.
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     snap.setNumber(bestBasis + 1);
     wavenet.load(snap.file());
-    TH1* basisFct;
+    
     
     
     cout << "Checking orthonormality (best snap):" << endl;
@@ -325,8 +326,8 @@ int main (int argc, char* argv[]) {
     
     const unsigned int sizex = generator->shape()[0];
     const unsigned int sizey = generator->shape()[1];
-    for (unsigned i = 0; i < Wavenet::sq(sizex); i++) {
-        for (unsigned j = 0; j < Wavenet::sq(sizey); j++) {
+    for (unsigned i = 0; i < wavenet::sq(sizex); i++) {
+        for (unsigned j = 0; j < wavenet::sq(sizey); j++) {
             Mat<double> f1 = wavenet.basisFct(sizex, sizey, i % sizex, j / sizey);
             Mat<double> f2 = wavenet.basisFct(sizex, sizey, i % sizex, j / sizey);
             double norm = trace(f1*f2.t());
@@ -383,7 +384,7 @@ int main (int argc, char* argv[]) {
                 //cBasis.cd(1 + i * dim + j);
                 pads[i][j]->cd();
                 
-                basisFct = Wavenet::MatrixToHist(wavenet.basisFct(sizex, sizey, i, j), 3.2);
+                std::unique_ptr<TH1> basisFct = wavenet::MatrixToHist(wavenet.basisFct(sizex, sizey, i, j), 3.2);
                 
                 basisFct->GetZaxis()->SetRangeUser(-zmax, zmax);
                 basisFct->SetContour(nb);
@@ -396,8 +397,6 @@ int main (int argc, char* argv[]) {
                 basisFct->GetYaxis()->SetLabelOffset(9999.);
                 
                 basisFct->DrawCopy("COL");
-
-                delete basisFct;
                 
             }
         }
@@ -415,9 +414,6 @@ int main (int argc, char* argv[]) {
             delete pads[i][j]; pads[i][j] = nullptr;
         }
     }
-
-
-    delete basisFct;
 
     /* -- */
 

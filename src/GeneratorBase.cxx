@@ -1,7 +1,6 @@
 #include "Wavenet/GeneratorBase.h"
 
-
-namespace Wavenet {
+namespace wavenet {
     
 bool GeneratorBase::open () {
     return true; 

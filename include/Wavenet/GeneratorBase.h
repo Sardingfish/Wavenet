@@ -14,11 +14,11 @@
 #include <armadillo>
 
 // Wavenet include(s).
-#include "Wavenet/Utils.h"
+#include "Wavenet/Utilities.h"
 #include "Wavenet/Logger.h"
 
 
-namespace Wavenet {
+namespace wavenet {
 
 class GeneratorBase : public Logger {
 

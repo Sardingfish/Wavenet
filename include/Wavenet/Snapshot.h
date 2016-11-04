@@ -12,11 +12,11 @@
 #include <cstdio> /* snprintf */
 
 // Wavenet include(s).
-#include "Wavenet/Utils.h"
+#include "Wavenet/Utilities.h"
 #include "Wavenet/Logger.h"
 
 
-namespace Wavenet {
+namespace wavenet {
 
 class Wavenet; /* To resolve circular dependence. */
 

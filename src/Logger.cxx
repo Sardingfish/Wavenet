@@ -1,7 +1,6 @@
 #include "Wavenet/Logger.h"
 
-
-namespace Wavenet {
+namespace wavenet {
     
 void Logger::_print (std::string cls, std::string fun, std::string type, std::string format, ...) {
     
