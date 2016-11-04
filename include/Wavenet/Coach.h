@@ -69,7 +69,7 @@ public:
     inline unsigned printLevel () { return _printLevel; }
     
     // High-level management info.
-    void run ();
+    bool run ();
     
 
 private:

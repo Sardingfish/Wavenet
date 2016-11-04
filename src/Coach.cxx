@@ -49,23 +49,23 @@ void Coach::setTargetPrecision (const double& targetPrecision) {
  // High-level management info.
 // -------------------------------------------------------------------
 
-void Coach::run () {
+bool Coach::run () {
     DEBUG("Entering.");
 
     // Performing checks.
     if (!_wavenet) {
         ERROR("WaveletML object not set.Exiting.");
-        return;
+        return false;
     }
 
     if (!_generator) {
         ERROR("Input generator not set. Exiting.");
-        return;
+        return false;
     }
 
     if (!_name.size()) {
         ERROR("Coach name not set. Exiting.");
-        return;
+        return false;
     }
     
     if (_Nevents < 0) {
@@ -80,7 +80,7 @@ void Coach::run () {
             WARNING(".. 'Coach::setUseAdaptiveLearningRate()' and");
             WARNING("'Coach::setTargetPrecision(someValue)'.");
             WARNING("Exiting.");
-            return;
+            return false;
         }
     }
     
@@ -163,8 +163,8 @@ void Coach::run () {
                 
                 // -- Check initialisation.
                 if (!_generator->initialised()) {
-                    ERROR("Wavenet was not properly initialised. Exiting.");
-                    return;
+                    ERROR("Generator was not properly initialised. Did you remember to specify a valid shape? Exiting.");
+                    return false;
                 }
 
                 // -- Main training call.
@@ -254,7 +254,7 @@ void Coach::run () {
     _wavenet->costLog().pop_back(); // Remove the last entry in the cost log, which isn't properly scaled to batch size since the batch queue hasn't been flushed, and therefore might bias result.
     //_wavenet->clear();
     
-    return;
+    return true;
     
 }
 
