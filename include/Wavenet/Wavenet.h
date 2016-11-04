@@ -18,23 +18,18 @@
 #include <utility> /* std::move */
 #include <algorithm> /* std::max */
 
-#if USE_ROOT
-// ROOT include(s).
-#include "TGraph.h" 
-#endif // USE_ROOT
-
 // Armadillo include(s).
 #include <armadillo>
 
 // Wavenet include(s).
-#include "Wavenet/Utils.h"
+#include "Wavenet/Utilities.h"
 #include "Wavenet/Logger.h"
 #include "Wavenet/LowpassOperator.h"
 #include "Wavenet/HighpassOperator.h"
 #include "Wavenet/Snapshot.h"
 
 
-namespace Wavenet {
+namespace wavenet {
 
 class Wavenet : Logger {
     
@@ -74,8 +69,7 @@ public:
     inline std::vector< arma::Col<double> >    filterLog () { return _filterLog; }
     inline void                           clearFilterLog () { return _filterLog.clear(); }
 
-    inline std::vector< double > getCostLog () { return _costLog; }
-    inline std::vector< double >    costLog () { return getCostLog(); }
+    inline std::vector< double >    costLog () { return _costLog; }
     inline void                clearCostLog () { return _costLog.resize(1, 0); }
 
     
@@ -133,11 +127,6 @@ public:
     // High-level basis method(s).
     arma::Col<double> basisFct (const unsigned& nRows, const unsigned& irow);
     arma::Mat<double> basisFct (const unsigned& nRows, const unsigned& nCols, const unsigned& irow, const unsigned& icol);
-    
-    #if USE_ROOT
-    TGraph getCostGraph (const std::vector< double >& costLog);
-    TGraph getCostGraph (const std::vector< arma::Col<double> >& filterLog, const std::vector< arma::Mat<double> >& X);
-    #endif // USE_ROOT
     
 
 public: 

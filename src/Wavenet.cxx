@@ -1,7 +1,6 @@
 #include "Wavenet/Wavenet.h"
 
-
-namespace Wavenet {
+namespace wavenet {
     
 // Set method(s).
 // -------------------------------------------------------------------
@@ -594,45 +593,6 @@ arma::Mat<double> Wavenet::basisFct (const unsigned& nRows, const unsigned& nCol
     Y(irow, icol) = 1.;
     return inverse(Y);
 }
-
-
-#if USE_ROOT
-TGraph Wavenet::getCostGraph (const std::vector< double >& costLog) {
-    
-    const unsigned N = costLog.size();
-    double x[N], y[N];
-    for (unsigned i = 0; i < N; i++) {
-        x[i] = i;
-        y[i] = costLog.at(i);
-        
-    }
-    
-    TGraph graph (N, x, y);
-    
-    return graph;
-}
-
-
-TGraph Wavenet::getCostGraph (const std::vector< arma::Col<double> >& filterLog, const std::vector< arma::Mat<double> >& X) {
-    
-    const unsigned N = filterLog.size();
-    double x[N], y[N];
-    for (unsigned i = 0; i < N; i++) {
-        x[i] = i;
-        y[i] = 0;
-        setFilter(filterLog.at(i));
-        for (const arma::Mat<double>& x : X) {
-            y[i] += cost(coeffsFromActivations(forward(x)));
-        }
-        y[i] /= (double) X.size();
-        
-    }
-    
-    TGraph graph (N, x, y);
-    
-    return graph;
-}
-#endif // USE_ROOT 
 
 
 
