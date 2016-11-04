@@ -74,6 +74,8 @@ public:
     inline std::vector< double >      costLog () { return _costLog; }
     inline void                  clearCostLog () { return _costLog.resize(1, 0); }
 
+    inline double lastCost () { return (costLog().size() > 0 ? costLog()[costLog().size() - 1]: -1);}
+
     
     // Set method(s).
     bool setLambda           (const double& lambda);
@@ -168,7 +170,7 @@ public:
 private: 
     
     double _lambda  = 10.0;
-    double _alpha   =  0.05;
+    double _alpha   =  0.01;
     double _inertia =  0.;
     double _inertiaTimeScale = 0.;
     

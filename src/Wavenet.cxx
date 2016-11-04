@@ -74,34 +74,44 @@ bool Wavenet::doWavelet (const bool& wavelet) {
 // -------------------------------------------------------------------
 
 void Wavenet::print () {
-    printf("\n");
-    printf("This Wavenet instance has the following properties:\n");
-    printf("  lambda   : %4.1f  \n", _lambda);
-    printf("  alpha    :  %4.2f \n", _alpha);
-    printf("  inertia  :  %4.2f \n", _inertia);
-    printf("  filter   : [");
+    INFO("");
+    INFO("- - - - - - - - - - - - - - - - - - - - - - - - - -");
+    INFO("This Wavenet instance has the following properties:");
+    INFO("  lambda            : %4.1f  ", _lambda);
+    INFO("  alpha             :  %4.2f ", _alpha);
+    INFO("  inertia           :  %4.2f ", _inertia);
+    INFO("  inertiaTimeScale  :  %4.2f ", _inertiaTimeScale);
+
+    // Filter coefficients.
+    std::string filterString = "";
     for (unsigned i = 0; i < _filter.n_elem; i++) {
-        if (i > 0) { printf(", "); }
-        printf("%6.3f", _filter(i));
+        if (i > 0) { filterString += ", "; }
+        filterString += std::to_string(_filter(i));
     }
-    printf("] \n");
-    printf("  momentum : [");
+    INFO("  filter   : [%s]", filterString.c_str());
+
+    // Momentum.
+    std::string momentumString = "";
     for (unsigned i = 0; i < _momentum.n_elem; i++) {
-        if (i > 0) { printf(", "); }
-        printf("%6.3f", _momentum(i));
+        if (i > 0) { momentumString += ", "; }
+        momentumString += std::to_string(_momentum(i));
     }
-    printf("] \n");
-    printf("  batch size : %u\n", _batchSize);
-    printf("  batch queue : \n");
+    INFO("  momentum : [%s]", momentumString.c_str());
+    
+    
+    // Batch queue:
+    INFO("  batch size : %u", _batchSize);
+    INFO("  batch queue : %s", (_batchQueue.size() == 0 ? "(empty)" : ""));
     for (unsigned j = 0; j < _batchQueue.size(); j++) {
-        printf("    [");
+        std::string batchString = "";
         for (unsigned i = 0; i < _batchQueue.at(j).n_elem; i++) {
-            if (i > 0) { printf(", "); }
-            printf("%6.3f", _batchQueue.at(j)(i));
+            if (i > 0) { batchString += ", "; }
+            batchString += std::to_string(_batchQueue.at(j)(i));
         }
-        printf("] \n");
+        INFO("         : [%s]", batchString.c_str());
     }
-    printf("\n");
+    INFO("- - - - - - - - - - - - - - - - - - - - - - - - - -");
+    INFO("");
     return;
 }
 
@@ -621,6 +631,7 @@ void Wavenet::scaleMomentum (const double& factor) {
     _momentum = _momentum * factor;
     return;
 }
+
 void Wavenet::clear () {
     scaleMomentum(0.);
     clearFilterLog();
