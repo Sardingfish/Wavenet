@@ -1,6 +1,6 @@
 # External paths.
-ARMAPATH  = 
-HEPMCPATH = 
+ARMAPATH  =
+HEPMCPATH =
 
 # If external paths are not set already, try to get them from environment variables.
 ifeq ($(ARMAPATH),)
@@ -47,9 +47,9 @@ LINKFLAGS = -O3 -L$(LIBDIR)
 ifeq ($(strip $(ARMAPATH)),)
     $(info * ------------------------------------------------------------------------------------- *)
     $(info | Path to Armadillo not provided. Please either:                                        |)
-    $(info |  (1) set the ARMAPATH environment variable in './scripts/setEnvironmentVariables.sh'  |)
+    $(info |  (1) set the ARMAPATH environment variable in './scripts/setPaths.sh'                 |)
     $(info |      to the path of your existing local installation and run                          |)
-    $(info |       > source ./scripts/setEnvironmentVariables.sh                                   |)
+    $(info |       > source ./scripts/setPaths.sh                                                  |)
     $(info |      or                                                                               |)
     $(info |  (2) run                                                                              |)
     $(info |       > source ./scripts/downloadArmadillo.sh                                         |)
@@ -79,9 +79,9 @@ ifeq ($(strip $(HEPMCPATH)),)
     $(info | Path to HepMC not provided.                                                           |)
     $(info | As this is not necessary we will continue, but some functionality will be disabled.   |)
     $(info | If you want to use HepMC, please either:                                              |)
-    $(info |  (1) set the HEPMCPATH environment variable in './scripts/setEnvironmentVariables.sh' |)
+    $(info |  (1) set the HEPMCPATH environment variable in './scripts/setPaths.sh'                |)
     $(info |      to the path of your existing local installation and run                          |)
-    $(info |       > source ./scripts/setEnvironmentVariables.sh                                   |)
+    $(info |       > source ./scripts/setPaths.sh                                                  |)
     $(info |      or                                                                               |)
     $(info |  (2) run                                                                              |)
     $(info |       > source ./scripts/downloadHepMC.sh                                             |)
