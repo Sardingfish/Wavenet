@@ -89,7 +89,7 @@ bool Coach::run () {
     INFO("Start training, using coach '%s'.", _name.c_str());
     
     // -- Save base snapshot, to step back from adaptive learning.
-    _wavenet->save(_basedir + _name + "/snapshots/.tmp.snap");
+    _wavenet->save(outdir() + "snapshots/.tmp.snap");
     
     // -- Definitions for daptive learning rate.
     const unsigned int useLastN = 10;
@@ -103,7 +103,7 @@ bool Coach::run () {
         }
 
         // -- Load starting snapshot.
-        _wavenet->load(_basedir + _name + "/snapshots/.tmp.snap");
+        _wavenet->load(outdir() + "snapshots/.tmp.snap");
         _wavenet->clear();
 
         // -- Generate initial coefficient configuration on random point on unit N-sphere.
@@ -235,14 +235,14 @@ bool Coach::run () {
         
         // Saving snapshot to file.
         char buff[100];
-        snprintf(buff, sizeof(buff), "%s.%06u.snap", _name.c_str(), init + 1);
+        snprintf(buff, sizeof(buff), "%s.%06u.snap", _name.c_str(), init);
         std::string filename = buff;
-        _wavenet->save(_basedir + _name + "/snapshots/" + filename);
+        _wavenet->save(outdir() + "snapshots/" + filename);
     }
     
     // Writing setup to run-specific README file.
-    INFO("Writing run configuration to '%s'.", (_basedir + _name + "/README").c_str());
-    std::ofstream outFileStream (_basedir + _name + "/README");
+    INFO("Writing run configuration to '%s'.", (outdir() + "README").c_str());
+    std::ofstream outFileStream (outdir() + "README");
     
     outFileStream << "_numEvents: " << _numEvents << "\n";
     outFileStream << "_numEpochs: " << _numEpochs << "\n";

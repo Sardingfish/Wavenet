@@ -53,6 +53,7 @@ public:
     // Get method(s).
     inline std::string name ()    { return _name; }
     inline std::string basedir () { return _basedir; }
+    inline std::string outdir ()  { return _basedir + _name + "/"; }
     
     inline Wavenet*       wavenet ()   { return _wavenet; }
     inline GeneratorBase* generator () { return _generator; }

@@ -64,7 +64,7 @@ public:
 private:
     
     std::string _pattern = "";
-    int         _number  = 1;
+    int         _number  = 0;
     
 };
 

@@ -539,10 +539,11 @@ arma::field< arma::Mat<double> > Wavenet::costMap (const std::vector< arma::Mat<
 
     const unsigned nExample = X.size();
     
-    INFO("  Staring loop over examples.");
+    INFO("  Start traversing filter grid.");
     for (unsigned i = 0; i < Ndiv; i++) {
+        INFO("    Doing %d out of %d.", i, Ndiv);
         for (unsigned j = 0; j < Ndiv; j++) {
-            INFO("    Doing %d/%d out of %d.", i, j, Ndiv);
+            VERBOSE("      Doing %d/%d out of %d.", i, j, Ndiv);
             double a1 = (2*j/double(Ndiv - 1) - 1) * range;
             double a2 = (2*i/double(Ndiv - 1) - 1) * range;
             setFilter({a1, a2});
