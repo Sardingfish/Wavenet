@@ -2,7 +2,7 @@
 #include <string> /* std::string */
 
 // Wavenet include(s).
-#include "Wavenet/Logger.h" /* FCTINFO */
+#include "Wavenet/Logger.h" /* FCTINFO, FCTWARNING */
 #include "Wavenet/Generators.h" /* wavenet::NeedleGenerator */
 #include "Wavenet/Wavenet.h" /* wavenet::Wavenet */
 #include "Wavenet/Coach.h" /* wavevent::Coach */
@@ -10,20 +10,21 @@
 /**
  * Example01: Find the best wavelet basis with 2 filter coefficients for needle-like input.
  *
+ * Requirements: None
+ *
  * This first example shows a minimal setup, where ...
  *
  *
  */
 int main (int argc, char* argv[]) {
 
-    
     FCTINFO("===========================================================");
-    FCTINFO(" Running Wavenet Example01.");
+    FCTINFO("Running Wavenet Example01.");
     FCTINFO("-----------------------------------------------------------");
 
     // Set the number of filter coefficients to use in the training.
     // This is the dimension of the parameter space, in which the optimisation is performed
-    const unsigned int Ncoeffs = 2;
+    const unsigned int numCoeffs = 2;
 
     // Create an instance of the basic 'NeedleGenerator', and specify the shape of the data to generate.
     // The NeedleGenerator produces input matrices with all but a few entries set equal to zero. 
@@ -47,31 +48,32 @@ int main (int argc, char* argv[]) {
     // The rest of the settings are left at their default values. For more advances tuning, see some of the later examples.
     wavenet::Coach coach ("Example01");
 
-    coach.setNcoeffs  (Ncoeffs);
+    coach.setNumCoeffs(numCoeffs);
     coach.setGenerator(&ng);
     coach.setWavenet  (&wn);
     
     // Run the training.
     bool good = coach.run();
 
-    if (good) {
-        // Print initial and final configurations, with cost:
-        FCTINFO("");
-        FCTINFO("Number of updates: %d", wn.filterLog().size() - 1); // We subtract one, because the initial condition, stored in the filter log, doesn't count as an update.
-        FCTINFO("Initial filter coefficients were:");
-        FCTINFO("  [%-4.3f, %-4.3f] (cost: %4.2f)", wn.filterLog()[0][0], wn.filterLog()[0][1], wn.costLog()[0]);
-        FCTINFO("Final filter coefficients found were:");
-        FCTINFO("  [%-4.3f, %-4.3f] (cost: %4.2f)", wn.filter()[0], wn.filter()[1], wn.lastCost());
-    } else {
-        FCTWARNING("Uhh-oh!");
+    if (!good) {
+        FCTWARNING("Uhh-oh! Something went wrong.");
+        return 0;
     }
-    
+
+    // Print initial and final configurations, with cost:
+    FCTINFO("");
+    FCTINFO("Number of updates: %d", wn.filterLog().size() - 1); // We subtract one, because the initial condition, stored in the filter log, doesn't count as an update.
+    FCTINFO("Initial filter coefficients were:");
+    FCTINFO("  [%-4.3f, %-4.3f] (cost: %4.2f)", wn.filterLog()[0][0], wn.filterLog()[0][1], wn.costLog()[0]);
+    FCTINFO("Final filter coefficients found were:");
+    FCTINFO("  [%-4.3f, %-4.3f] (cost: %4.2f)", wn.filter()[0], wn.filter()[1], wn.lastCost());
+   
     // Information about the Coach configuation can be found in './output/Example01/README', and the final snapshot of the trained wavenet can be found in './output/Example01/snapshots/'.
 
     // Try running a few different times. The initial condition for the filter coefficients is random, so you should see that the initial filter changes between rounds. But (hopefully!) you should also see that the final filter configuration is the same, namely the global minimum. That means that the optimisation worked! :)
 
     FCTINFO("-----------------------------------------------------------");
-    FCTINFO(" Done.");
+    FCTINFO("Done.");
     FCTINFO("===========================================================");
     
     return 1;
