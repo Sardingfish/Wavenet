@@ -6,16 +6,10 @@ HEPMCPATH =
 # ----------------------------------------------------------------------------------
 # Internal stuff. There should be no need to touch this.
 
-# If external paths are not set already, try to get them from environment variables.
-ifeq ($(ARMAPATH),)
-    ARMAPATH  := $(shell echo $$ARMAPATH)
-endif
-ifeq ($(HEPMCPATH),)
-    HEPMCPATH  := $(shell echo $$HEPMCPATH)
-endif
+# Get ROOT path from environment variable
 ROOTPATH  := $(shell echo $$ROOTSYS)
 
-# Variables.
+# Variables
 CXX = clang++
 PACKAGENAME = Wavenet
 
