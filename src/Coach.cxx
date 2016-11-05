@@ -12,21 +12,21 @@ void Coach::setBasedir (const std::string& basedir) {
     return;
 }
 
-void Coach::setNevents (const int& Nevents) {
-    if (Nevents < 0 and Nevents != -1) {
-        WARNING("Input number of events (%d) not supported.", Nevents);
+void Coach::setNumEvents (const int& numEvents) {
+    if (numEvents < 0 and numEvents != -1) {
+        WARNING("Input number of events (%d) not supported.", numEvents);
         return;
     }
-    _Nevents = Nevents;
+    _numEvents = numEvents;
     return;
 }
 
-void Coach::setNcoeffs (const unsigned& Ncoeffs) {
-    if (!isRadix2(Ncoeffs)) {
-        WARNING("Input number of coefficients (%d) is not radix 2.", Ncoeffs);
+void Coach::setNumCoeffs (const unsigned& numCoeffs) {
+    if (!isRadix2(numCoeffs)) {
+        WARNING("Input number of coefficients (%d) is not radix 2.", numCoeffs);
         return;
     }
-    _Ncoeffs = Ncoeffs;
+    _numCoeffs = numCoeffs;
     return;
 }
 
@@ -68,12 +68,12 @@ bool Coach::run () {
         return false;
     }
     
-    if (_Nevents < 0) {
+    if (_numEvents < 0) {
         if ((dynamic_cast<NeedleGenerator*>  (_generator) != nullptr ||
              dynamic_cast<UniformGenerator*> (_generator) != nullptr ||
              dynamic_cast<GaussianGenerator*>(_generator) != nullptr) && 
             !(useAdaptiveLearningRate() && targetPrecision() > 0.)) {
-            WARNING("The number of events is set to %d while using", _Nevents);
+            WARNING("The number of events is set to %d while using", _numEvents);
             WARNING(".. a generator with no natural epochs and with");
             WARNING(".. no target precision set. Etiher choose a ");
             WARNING(".. different generator or use");
@@ -95,11 +95,11 @@ bool Coach::run () {
     const unsigned int useLastN = 10;
     
     // Loop initialisations.
-    for (unsigned init = 0; init < _Ninits; init++) {
+    for (unsigned init = 0; init < _numInits; init++) {
 
         // -- Print.
         if (_printLevel > 0) {
-            INFO("Initialisation %d/%d", init + 1, _Ninits);
+            INFO("Initialisation %d/%d", init + 1, _numInits);
         }
 
         // -- Load starting snapshot.
@@ -107,7 +107,7 @@ bool Coach::run () {
         _wavenet->clear();
 
         // -- Generate initial coefficient configuration on random point on unit N-sphere.
-        _wavenet->setFilter( PointOnNSphere(_Ncoeffs) );
+        _wavenet->setFilter( PointOnNSphere(_numCoeffs) );
         
         // -- Definitions for simulated annealing.
         const double lambdaBare = _wavenet->lambda();
@@ -119,14 +119,14 @@ bool Coach::run () {
         unsigned int previousCostLogSize = 0;
         
         // Loop epochs.
-        for (unsigned epoch = 0; epoch < _Nepochs; epoch++) {
+        for (unsigned epoch = 0; epoch < _numEpochs; epoch++) {
 
             // -- Reset (re-open) generator.
             _generator->reset();
 
             // -- Print.
             if (_printLevel > 1) {
-                INFO("  Epoch %d/%d", epoch + 1, _Nepochs);
+                INFO("  Epoch %d/%d", epoch + 1, _numEpochs);
             }
 
             // -- Reset lambda (if using simulated annealing).
@@ -140,8 +140,8 @@ bool Coach::run () {
             do {
                 // -- Print.
                 if (_printLevel > 2 && (event + 1) % eventPrint == 0) {
-                    if (_Nevents == -1) { INFO("    Event %d/-",  event + 1); }
-                    else                { INFO("    Event %d/%d", event + 1, _Nevents); }
+                    if (_numEvents == -1) { INFO("    Event %d/-",  event + 1); }
+                    else                  { INFO("    Event %d/%d", event + 1, _numEvents); }
                     if ((event + 1) == 10 * eventPrint) { eventPrint *= 10; }
                 }
 
@@ -156,7 +156,7 @@ bool Coach::run () {
                      *  -- f = 1:   1   / (2 - 1)^2   = 1   / 1    = 1
                     **/
 
-                     const double f = event/float(events());
+                     const double f = event/float(numEvents());
                      const double effectiveLambda = lambdaBare * f / sq(2 - f);
                      _wavenet->setLambda(effectiveLambda);
                 }
@@ -211,7 +211,8 @@ bool Coach::run () {
                                 _wavenet->setBatchSize(  2     * _wavenet->batchSize() );
                                 _wavenet->setAlpha    ( (1./2.) * _wavenet->alpha() * (totalStepSize/meanStepSize));
                                 tail = 0;
-                            } else {
+                            } else if (!useSimulatedAnnealing()) {
+                                // If using simulated annealing we disable early breaking, since then otherwise the minimisation would have been performed with a lower value of the regularisation factor than intended.
                                 INFO("[Adaptive learning rate] Step size is smaller than 1e-07. Done.");
                                 done = true;
                             }
@@ -226,7 +227,7 @@ bool Coach::run () {
                 // -- Increment.
                 ++event;
 
-            } while (!done && (_Nevents < 0 || (event < _Nevents && _generator->good())));
+            } while (!done && (_numEvents < 0 || (event < _numEvents && _generator->good())));
             
             if (done) { break; }
         }
@@ -243,10 +244,10 @@ bool Coach::run () {
     INFO("Writing run configuration to '%s'.", (_basedir + _name + "/README").c_str());
     std::ofstream outFileStream (_basedir + _name + "/README");
     
-    outFileStream << "Nevents: " << _Nevents << "\n";
-    outFileStream << "_Nepochs: " << _Nepochs << "\n";
-    outFileStream << "_Ninits: " << _Ninits << "\n";
-    outFileStream << "_Ncoeffs: " << _Ncoeffs << "\n";
+    outFileStream << "_numEvents: " << _numEvents << "\n";
+    outFileStream << "_numEpochs: " << _numEpochs << "\n";
+    outFileStream << "_numInits: "  << _numInits  << "\n";
+    outFileStream << "_numCoeffs: " << _numCoeffs << "\n";
     
     outFileStream.close();
     

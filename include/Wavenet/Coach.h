@@ -39,10 +39,10 @@ public:
     inline void setWavenet   (Wavenet* wavenet)          { _wavenet   = wavenet;   return; }
     inline void setGenerator (GeneratorBase*  generator) { _generator = generator; return; }
     
-           void setNevents (const int&      Nevents);
-    inline void setNepochs (const unsigned& Nepochs) { _Nepochs = Nepochs; return; }
-    inline void setNinits  (const unsigned& Ninits)  { _Ninits  = Ninits;  return; }
-           void setNcoeffs (const unsigned& Ncoeffs);
+           void setNumEvents (const int&      numEvents);
+    inline void setNumEpochs (const unsigned& numEpochs) { _numEpochs = numEpochs; return; }
+    inline void setNumInits  (const unsigned& numInits)  { _numInits  = numInits;  return; }
+           void setNumCoeffs (const unsigned& numCoeffs);
 
     inline void setUseAdaptiveLearningRate (const unsigned& useAdaptiveLearningRate = true) { _useAdaptiveLearningRate = useAdaptiveLearningRate; return; }
     inline void setUseSimulatedAnnealing   (const unsigned& useSimulatedAnnealing   = true) { _useSimulatedAnnealing   = useSimulatedAnnealing;   return; }
@@ -57,10 +57,10 @@ public:
     inline Wavenet*       wavenet ()   { return _wavenet; }
     inline GeneratorBase* generator () { return _generator; }
 
-    inline int          events  () { return _Nevents; }
-    inline unsigned int epochs  () { return _Nepochs; }
-    inline unsigned int inits   () { return _Ninits; }
-    inline unsigned int coeffs  () { return _Ncoeffs; }
+    inline int          numEvents  () { return _numEvents; }
+    inline unsigned int numEpochs  () { return _numEpochs; }
+    inline unsigned int numInits   () { return _numInits; }
+    inline unsigned int numCoeffs  () { return _numCoeffs; }
     
     inline bool   useAdaptiveLearningRate () { return _useAdaptiveLearningRate; }
     inline bool   useSimulatedAnnealing ()   { return _useSimulatedAnnealing; }
@@ -80,10 +80,10 @@ private:
     Wavenet*       _wavenet   = nullptr;
     GeneratorBase* _generator = nullptr;
     
-    int          _Nevents = 1000;
-    unsigned int _Nepochs =    1;
-    unsigned int _Ninits  =    1;
-    unsigned int _Ncoeffs =    2;
+    int          _numEvents = 1000;
+    unsigned int _numEpochs =    1;
+    unsigned int _numInits  =    1;
+    unsigned int _numCoeffs =    2;
 
     bool   _useAdaptiveLearningRate = false;
     bool   _useSimulatedAnnealing   = false;
