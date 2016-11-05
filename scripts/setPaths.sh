@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-export ARMAPATH=
-export HEPMCPATH=
+export ARMAPATH=/Users/A/Dropbox/PhD/Work/WaveletML/armadillo-6.500.4
+export HEPMCPATH=/Users/A/Dropbox/hep/HepMC-2.06.09/installation
 
 # --------------------------------------------------------------
 # No need to touch this bit; it just ensures that you don't have

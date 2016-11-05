@@ -1,6 +1,10 @@
-# External paths.
+# ----------------------------------------------------------------------------------
+# External paths, to be set by user.
 ARMAPATH  =
 HEPMCPATH =
+
+# ----------------------------------------------------------------------------------
+# Internal stuff. There should be no need to touch this.
 
 # If external paths are not set already, try to get them from environment variables.
 ifeq ($(ARMAPATH),)
@@ -45,16 +49,15 @@ LINKFLAGS = -O3 -L$(LIBDIR)
 
 # -- Armadillo (necessary)
 ifeq ($(strip $(ARMAPATH)),)
-    $(info * ------------------------------------------------------------------------------------- *)
-    $(info | Path to Armadillo not provided. Please either:                                        |)
-    $(info |  (1) set the ARMAPATH environment variable in './scripts/setPaths.sh'                 |)
-    $(info |      to the path of your existing local installation and run                          |)
-    $(info |       > source ./scripts/setPaths.sh                                                  |)
-    $(info |      or                                                                               |)
-    $(info |  (2) run                                                                              |)
-    $(info |       > source ./scripts/downloadArmadillo.sh                                         |)
-    $(info |      to download and install Armadillo.                                               |)
-    $(info * ------------------------------------------------------------------------------------- *)
+    $(info * --------------------------------------------------*)
+    $(info | Path to Armadillo not provided. Please either:    |)
+    $(info |  (1) set the ARMAPATH variable in the Makeile to  |)
+    $(info |      the path of your existing local installation |)
+    $(info |      or                                           |)
+    $(info |  (2) run                                          |)
+    $(info |       > source ./scripts/downloadArmadillo.sh     |)
+    $(info |      to download and install Armadillo.           |)
+    $(info * --------------------------------------------------*)
     $(error Exiting)
 else
     # Checks to make sure that the provided path is sensible.
@@ -75,18 +78,18 @@ endif
 
 # -- HepMC (optional
 ifeq ($(strip $(HEPMCPATH)),)
-    $(info * ------------------------------------------------------------------------------------- *)
-    $(info | Path to HepMC not provided.                                                           |)
-    $(info | As this is not necessary we will continue, but some functionality will be disabled.   |)
-    $(info | If you want to use HepMC, please either:                                              |)
-    $(info |  (1) set the HEPMCPATH environment variable in './scripts/setPaths.sh'                |)
-    $(info |      to the path of your existing local installation and run                          |)
-    $(info |       > source ./scripts/setPaths.sh                                                  |)
-    $(info |      or                                                                               |)
-    $(info |  (2) run                                                                              |)
-    $(info |       > source ./scripts/downloadHepMC.sh                                             |)
-    $(info |      to download and install HepMC.                                                   |)
-    $(info * ------------------------------------------------------------------------------------- *)
+    $(info * --------------------------------------------------*)
+    $(info | Path to HepMC not provided.                       |)
+    $(info | As this is not necessary we will continue, but    |)
+    $(info | some functionality will be disabled.              |)
+    $(info | If you want to use HepMC, please either:          |)
+    $(info |  (1) set the HEPMCPATH variable in Makefile to    |)
+    $(info |      the path of your existing local installation |)
+    $(info |      or                                           |)
+    $(info |  (2) run                                          |)
+    $(info |       > source ./scripts/downloadHepMC.sh         |)
+    $(info |      to download and install HepMC.               |)
+    $(info * --------------------------------------------------*)
 else
     # Checks to make sure that the provided path is sensible.
     ifeq ($(wildcard $(HEPMCPATH)),)
@@ -106,11 +109,11 @@ endif
 
 # -- ROOT (optional)
 ifeq ($(strip $(ROOTPATH)),)
-    $(info * ------------------------------------------ *)
-    $(info | Path to ROOT not provided.                 |)
-    $(info | As this is not necessary we will continue, |)
-    $(info | but some functionality will be disabled.   |)
-    $(info * ------------------------------------------ *)
+    $(info * ------------------------------------------------- *)
+    $(info | Path to ROOT not provided.                        |)
+    $(info | As this is not necessary we will continue, but    |)
+    $(info | some functionality will be disabled.              |)
+    $(info * ------------------------------------------------- *)
 else
     # Check to make sure that the provided paths is sensible?
     CXXFLAGS += $(ROOTCFLAGS) -DUSE_ROOT
