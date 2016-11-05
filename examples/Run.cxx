@@ -102,10 +102,10 @@ int main (int argc, char* argv[]) {
     generator.setShape({32,32});
 
     wavenet::Coach  coach  (project); //("Pythia.WpT500.N16");
-    coach.setNevents(100000); // (1000); // 25000
-    coach.setNepochs(1); // 4
-    coach.setNcoeffs(Nfilter);
-    coach.setNinits (5); // (10);
+    coach.setNumEvents(100000); // (1000); // 25000
+    coach.setNumEpochs(1); // 4
+    coach.setNumCoeffs(Nfilter);
+    coach.setNumInits (5); // (10);
     coach.setUseAdaptiveLearningRate();
     //coach.setUseSimulatedAnnealing();
     //coach.setTargetPrecision(0.0001);

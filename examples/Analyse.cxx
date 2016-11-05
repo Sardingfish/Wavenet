@@ -1,7 +1,7 @@
 // STL include(s).
-#include <string>
-#include <vector>
-#include <regex>
+#include <string> /* std::string */
+#include <vector> /* std::vector */
+#include <regex> /* std::regex */
 #include <cstdio> /* snprintf */
 
 // ROOT include(s).
@@ -119,7 +119,7 @@ int main (int argc, char* argv[]) {
         auto filterLog = wavenet.filterLog();
         auto costLog   = wavenet.costLog();
         
-        costLog.pop_back();
+        //costLog.pop_back();
         
         if (costLog.size() > longestCost) {
             longestCost = costLog.size();
@@ -328,8 +328,8 @@ int main (int argc, char* argv[]) {
     const unsigned int sizey = generator->shape()[1];
     for (unsigned i = 0; i < wavenet::sq(sizex); i++) {
         for (unsigned j = 0; j < wavenet::sq(sizey); j++) {
-            Mat<double> f1 = wavenet.basisFct(sizex, sizey, i % sizex, j / sizey);
-            Mat<double> f2 = wavenet.basisFct(sizex, sizey, i % sizex, j / sizey);
+            Mat<double> f1 = wavenet.basisFunction(sizex, sizey, i % sizex, j / sizey);
+            Mat<double> f2 = wavenet.basisFunction(sizex, sizey, i % sizex, j / sizey);
             double norm = trace(f1*f2.t());
             norms.Fill( norm < -0.5 ? -0.499 : (norm > 1.5 ? 1.499 : norm) );
         }
@@ -384,7 +384,7 @@ int main (int argc, char* argv[]) {
                 //cBasis.cd(1 + i * dim + j);
                 pads[i][j]->cd();
                 
-                std::unique_ptr<TH1> basisFct = wavenet::MatrixToHist(wavenet.basisFct(sizex, sizey, i, j), 3.2);
+                std::unique_ptr<TH1> basisFct = wavenet::MatrixToHist(wavenet.basisFunction(sizex, sizey, i, j), 3.2);
                 
                 basisFct->GetZaxis()->SetRangeUser(-zmax, zmax);
                 basisFct->SetContour(nb);
