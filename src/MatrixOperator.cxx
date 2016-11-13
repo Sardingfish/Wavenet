@@ -3,96 +3,98 @@
 namespace wavenet {
     
 void MatrixOperator::construct () {
-    
+
     if (!complete()) {
         WARNING("Trying to construct incomplete operator.");
         return;
     }
+
+    // Choose the most efficient (but equivalent) way to construct the matrix operator, given the size and filter configuration
+    const unsigned N = _filter.n_elem;
+    if ((N ==  2 && _size >= 2) ||
+        (N <=  6 && _size >= 3) ||
+        (N <= 20 && _size >= 4) ||
+        (           _size >= 5)) {
+        _constructByIndices();
+    } else {
+        _constructByRows();
+    }
+
+    return;
+}
+
+void MatrixOperator::_constructByRows () {
     
-    unsigned nRows = (unsigned) pow(2, _size);
-    unsigned nCols = (unsigned) pow(2, _size + 1);
-    unsigned N = _filter.n_elem;
+    const unsigned nRows = (unsigned) pow(2, _size);
+    const unsigned nCols = (unsigned) pow(2, _size + 1);
+    const unsigned N = _filter.n_elem;
     
+    // Initialise the matrix operator to all zeros.
     this->zeros(nRows, nCols);
     
     
-    // METHOD 1
-    /*
-    arma::Row<double> v (nCols, fill::zeros);
-    arma::Row<double> remainder (2);
-    for (unsigned i = 0; i < N; i++) {
-        v( (i - N/2 + 1) % nCols ) += _filter(N - i - 1);
-    }
-    
-    for (unsigned i = 0; i < nRows; i++) {
-        
-        this->row(i) = v;
-
-        // Shift vector two spaces to the right.
-        rowshift(v, +2);
-
-    }
-    */
-    
-    
-    // METHOD 2
+    // Initialise single row matrix with the appropriately positioned filter coefficients
     arma::Row<double> v (nCols, arma::fill::zeros);
     for (unsigned i = 0; i < N; i++) {
         v( (i - N/2 + 1) % nCols ) += _filter(N - i - 1);
     }
     
+    // Use that all rows in the matrix operator are identical modulo even-numbered shifts to construct the remaining rows by shifted versions of the base row.
     this->row(0) = v;
     for (unsigned i = nRows; i --> 1; ) {
-        std::rotate(v.begin(), v.begin() + 2, v.end());
-        this->row(i) = v;
-        
+
+        // Shift current row two places to the right.
+        rowshift(v, 2);
+
+        // And set as i'th row in matrix operator.
+        this->row(i) = v;        
+
     }
 
     
-    // METHOD 3
-    // Matrices are column by column
-    /*
-    this->zeros(nCols, nRows);
-    uvec idx = linspace< uvec > ((- N/2) % nCols, nRows * nCols - 2 + (- N/2) % nCols, nRows);
-    idx.print();
-    for (unsigned i = 0; i < N; i++) {
-        idx(nRows - 1) = idx(nRows - 1 ) % (nCols * nRows);
-        this->elem(idx) = arma::Row<double> (nRows, fill::ones) * _filter(N - i - 1);
-        idx = idx + 1;
-    }
-    inplace_trans(*this);
-    */
+    return;
+}
 
-    // METHOD 4
-    /*
-    uvec idxRow = linspace< uvec >(0, nRows - 1, nRows);
-    uvec idxCol = linspace< uvec >(0, nCols - 2, nRows) + ( - N/2 ) % nCols;
-    for (unsigned i = 0; i < N; i++) {
-        idxCol = idxCol + 1;
-        //idxCol = idxCol - idxCol / nCols;
-        idxCol.transform( [nCols](int idx) { return idx % nCols; } );
-        this->elem(idxRow + nRows*idxCol) = arma::Row<double> (nRows, fill::ones) * _filter(N - i - 1);
+void MatrixOperator::_constructByIndices () {
+    
+    const unsigned nRows = (unsigned) pow(2, _size);
+    const unsigned nCols = (unsigned) pow(2, _size + 1);
+    const unsigned N = _filter.n_elem;
+    
+    // Initialise the matrix operator to all zeros.
+    this->zeros(nRows, nCols);
+    
+    arma::Col<arma::uword> rows (nRows, arma::fill::zeros);
+    arma::Col<arma::uword> cols (nRows, arma::fill::zeros);
+
+    for (unsigned irow = 0; irow < nRows; irow++) {
+        rows(irow) = irow;
     }
-    */
+    for (unsigned icol = 0; icol < nRows; icol++) {
+        cols(icol) = (N / 2 + 2 * icol) % nCols;
+    }
+
+    arma::Col<arma::uword> indices, idxZero;
+    for (unsigned i = 0; i < N; i++) {
+        indices = cols * nRows + rows; 
+        (*this)(indices) += _filter(i);
+
+        // Shift indices.
+        idxZero = find(cols == 0);
+        cols(idxZero) += nCols;
+        cols -= 1;
+    }
     
     return;
 }
 
 void rowshift (arma::Row<double>& row, const int& shift) {
     
-    unsigned length = row.n_elem;
+    const unsigned length = row.n_elem;
     
     if (shift > 0 && shift < length) {
-
-        /*
-        arma::Row<double> remainder (shift);
-        remainder = row( span(length - shift, length - 1) );
-        row( span(shift, length - 1) ) = row( span(0, length - 1 - shift) );
-        row( span(0, shift - 1) ) = remainder;
-         */
         
-        std::rotate(row.begin(), row.end() - shift, row.end());
-
+        std::rotate(row.begin(), row.begin() + shift, row.end());
         
     } else {
         
