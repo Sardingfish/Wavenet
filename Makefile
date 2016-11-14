@@ -67,7 +67,7 @@ else
 
     # If everything checks out, add flags.
     CXXFLAGS += -I$(ARMAPATH)/include
-    LINKFLAGS += -L$(ARMAPATH) -lArmadillo -DARMA_DONT_USE_WRAPPER -lblas -llapack
+    LINKFLAGS += -L$(ARMAPATH) -march=native -lArmadillo -DARMA_DONT_USE_WRAPPER -DARMA_NO_DEBUG -lblas -llapack
 endif
 
 # -- HepMC (optional
