@@ -4,7 +4,7 @@
 /**
  * @file Utilities.h
  * @author Andreas Sogaard
-**/
+ */
 
 // STL include(s).
 #include <cmath> /* log2 */
@@ -29,11 +29,9 @@ namespace wavenet {
 
 class Wavenet; /* To resolve circular dependence. */
 
-
 // Global constants.
 const double EPS = 1.0e-12;
 const double PI  = 3.14159265359;
-
 
 
 /// Math functions.
@@ -51,20 +49,17 @@ inline T sq(const T& x) { return x * x; }
 template<class T>
 inline T norm(const T& x) { return sqrt(sq(x)); }
 
-// Sign of number /* @TODO: Used? */
+// Sign of number.
 template<class T>
 inline T sign(const T& x) { return x == 0 ? 0 : x/norm(x); }
 
-// Sign of all numbers in Armadillo matrix-type containers.
-template<class T> /* @TODO: Used? */
+// Sign of all numbers in Armadillo column vector-type container.
+template<class T> 
 inline arma::Col<T> sign(const arma::Col<T>& v) { arma::Col<T> s = v; return s.transform( [](double x) { return sign(x); } ); }
 
-template<class T> /* @TODO: Used? */
+// Sign of all numbers in Armadillo matrix-type container.
+template<class T> 
 inline arma::Mat<T> sign(const arma::Mat<T>& M) { return M / abs(M + EPS);  }
-
-template<class T> /* @TODO: Used? */
-inline arma::Mat<T> onset(const arma::Mat<T>& M) { arma::Mat<T> o = M; return o.transform( [](double x) { return (x > 0 ? 1 : 0); } );  }
-
 
 
 /// Path functions.
@@ -87,7 +82,6 @@ inline bool dirExists (const std::string& dir) {
 }
 
 
-
 /// String functions.
 // Check whether string contains only numeric characters.
 inline bool isNumber (const std::string& s) {
@@ -100,11 +94,9 @@ inline bool isEmpty (const std::string& s) {
 }
 
 
-
 /// Armadillo-specific functions.
-// Randomly generate points on N-sphere.
+// Randomly generate point on N-sphere.
 arma::Col<double> PointOnNSphere (const unsigned& N, const double& rho = 0., bool restrict = false);
-
 
 
 /// ROOT-specific functions.
