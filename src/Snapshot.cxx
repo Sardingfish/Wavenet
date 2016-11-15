@@ -7,7 +7,7 @@ std::string Snapshot::file () const {
 
     // If pattern is a pure file name, without any format specifiers (%), return
     // it.
-    if (!hasFormatSpecifier()) { return m_pattern; }
+    if (!hasFormatSpecifier_()) { return m_pattern; }
     
     // Otherwise use the member number to complete pattern.
     char buff[100];
@@ -18,7 +18,7 @@ std::string Snapshot::file () const {
 }
 
 Snapshot& Snapshot::operator++ () { 
-    if (!hasFormatSpecifier()) { 
+    if (!hasFormatSpecifier_()) { 
         WARNING("Calling pre-fix increment operator for snapshot with no format specifiers in file name pattern");
     } 
     ++m_number; 
@@ -26,7 +26,7 @@ Snapshot& Snapshot::operator++ () {
 }
 
 Snapshot& Snapshot::operator-- () { 
-    if (!hasFormatSpecifier()) { 
+    if (!hasFormatSpecifier_()) { 
         WARNING("Calling pre-fix decrement operator for snapshot with no format specifiers in file name pattern");
     } 
     --m_number; 
@@ -34,7 +34,7 @@ Snapshot& Snapshot::operator-- () {
 }
 
 Snapshot Snapshot::operator++ (int) { 
-    if (!hasFormatSpecifier()) { 
+    if (!hasFormatSpecifier_()) { 
         WARNING("Calling post-fix increment operator for snapshot with no format specifiers in file name pattern");
     } 
     Snapshot tmp(*this); 
@@ -43,7 +43,7 @@ Snapshot Snapshot::operator++ (int) {
 }
 
 Snapshot Snapshot::operator-- (int) { 
-    if (!hasFormatSpecifier()) { 
+    if (!hasFormatSpecifier_()) { 
         WARNING("Calling post-fix decrement operator for snapshot with no format specifiers in file name pattern");
     } 
     Snapshot tmp(*this); 

@@ -85,7 +85,7 @@ protected:
     /// Internal method(s).
     // Utility function to check whether the pattern contains any format 
     // specifiers (%).
-    inline bool hasFormatSpecifier () const { return m_pattern.find("%") != std::string::npos; }
+    inline bool hasFormatSpecifier_ () const { return m_pattern.find("%") != std::string::npos; }
 
 
 private:
