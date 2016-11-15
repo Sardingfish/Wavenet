@@ -21,7 +21,7 @@ void Logger::fctprint_ (std::string fun, std::string level, std::string format, 
     return;
 }
 
-void Logger::print_ (std::string cls, std::string fun, std::string level, std::string format, ...) {
+void Logger::print_ (std::string cls, std::string fun, std::string level, std::string format, ...) const {
     
     // Determine print level colour.
     std::string col = "\033[1m";

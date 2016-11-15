@@ -75,8 +75,8 @@ public:
 
 
     /// Get method(s).
-    inline bool debug   () { return m_debug; }
-    inline bool verbose () { return m_verbose; }
+    inline bool debug   () const { return m_debug; }
+    inline bool verbose () const { return m_verbose; }
 
 
     /// Public print method(s).
@@ -93,7 +93,7 @@ protected:
     // the calling class (cls) and member function (fct) as well as the print 
     // level.
     void print_ (std::string cls, std::string fun, std::string level, 
-                 std::string format, ...);
+                 std::string format, ...) const;
     
 
 protected:
