@@ -118,14 +118,14 @@ public:
 
     /// Generator method(s).
     virtual inline const arma::Mat<double>& next () {
-        
+
         // Check whether generator is properly set up.
         check_();
 
         // Initialise generator input to zeros.
         m_data.zeros();
         
-        // Initialise siez variables.
+        // Initialise size variables.
         const unsigned sizex = shape()[0];
         const unsigned sizey = shape()[1];
         
