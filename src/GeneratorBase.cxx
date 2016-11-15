@@ -3,87 +3,97 @@
 namespace wavenet {
     
 bool GeneratorBase::open () {
+    // Dummy implementation.
     return true; 
 }
 
 bool GeneratorBase::close () {
+    // Dummy implementation.
     return true; 
 }
 
-bool GeneratorBase::good () {
-    return true; 
-}
+bool GeneratorBase::setShape (const std::vector<unsigned>& shape) {
 
-bool GeneratorBase::reset () {
-    return close() && open(); 
-}
-
-bool GeneratorBase::setShape (const std::vector<unsigned int>& shape) {
-    _initialised = true;
+    // Initialiase variables.
+    m_initialised = true;
     bool compress = false;
 
     // Check whether the requested dimensions are feasible.
-    std::vector<unsigned int> compressed;
-    for (const unsigned int& size : shape) {
-        // If either dimension has size 1, we compress along that dimension. Keep all non-size-1 dimension for potential compression.
+    std::vector<unsigned> compressed;
+    for (const unsigned& size : shape) {
+
+        // If either dimension has size 1, we compress along that dimension. 
+        // Keep all non-size-1 dimension for potential compression.
         compress |= (size == 1);
         if (size > 1) {
             compressed.push_back(size);
         }
-        // If either dimension size is not radix 2, declare generator not properly initialised.
-        _initialised &= isRadix2(size);
+
+        // If either dimension size is not radix 2, declare generator not 
+        // properly initialised.
+        m_initialised &= isRadix2(size);
     }
 
     
-    if (!_initialised) {
+    if (!m_initialised) {
 
         // Produce warning if the dimension size were problematic.
         std::string shapeString = "";
-        unsigned int i = 0;
+        unsigned i = 0;
         for (const auto& size : shape) {
             if (i++ > 0) { shapeString += ", "; }
             shapeString += std::to_string(size);
         }
-        WARNING("Reguested shape {%s} is no good.", shapeString.c_str());
-        _shape = {};
-        _resize();
+        WARNING("Requested shape {%s} is no good.", shapeString.c_str());
+        m_shape = {};
+        resize_();
         
     } else if (compress) {
 
-        // Compress if needed
-        _initialised = setShape(compressed);
+        // Compress if needed.
+        m_initialised = setShape(compressed);
 
     } else {
 
         // Otherwise, store accepted shape dimensions.
-        _shape = shape;
-        if (_shape.size() == 1)  {_shape.push_back(1); }
+        m_shape = shape;
+        if (m_shape.size() == 1) { m_shape.push_back(1); }
         
-        _resize();
+        resize_();
 
     } 
-    return _initialised;
+
+    return m_initialised;
 }
 
+bool GeneratorBase::resize_ () {
 
-std::vector<unsigned int> GeneratorBase::shape () { 
-    return _shape; 
-}
-
-unsigned int GeneratorBase::dim () { 
-    return _shape[1] == 1 ? 1 : 2; 
-}
-
-bool GeneratorBase::initialised () { 
-    return _initialised; 
-}
-
-bool GeneratorBase::_resize () {
+    // Check whether generator is properly initialised.
     if (!initialised()) {
         WARNING("Cannot resize generator which isn't properly initialised.")
         return false;
     }
-    _data.resize(_shape[0], _shape[1]);
+
+    // Resize generator input object.
+    m_data.resize(m_shape[0], m_shape[1]);
+
+    return true;
+}
+
+bool GeneratorBase::check_ () {
+    
+    // Check whether generator is properly initialised.
+    if (!initialised()) { 
+        WARNING("Generator not properly initialised.");
+        return false;
+    }
+
+    // Check whether generato r is in a good condition.
+    if (!good()) {
+        ERROR("Generator not good. Exiting.");
+        return false;
+    }
+
     return true;
 }
 

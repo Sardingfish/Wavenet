@@ -2,9 +2,11 @@
 #define WAVENET_GENERATORBASE_H
 
 /**
- * @file GeneratorBase.h
+ * @file   GeneratorBase.h
  * @author Andreas Sogaard
-**/
+ * @date   14 November 2016
+ * @brief  Mix-in class for input generators. 
+ */
 
 // STL include(s).
 #include <string> /* std::string */
@@ -20,49 +22,83 @@
 
 namespace wavenet {
 
+/**
+ * Mix-in class for input generators. 
+ *
+ * The GeneratorBase provides functionality to set the shape of the generated 
+ * input as well as a few accessor/mutator functions. Define derived classes to 
+ * yield e.g. uniform, needle, gaussian, HepMC, or other custom input. 
+ */
 class GeneratorBase : public Logger {
-
-    /**
-     * Abstract class for input generators. 
-     *
-     * Define derived classes to yield e.g. uniform, needle, gaussian, HepMC, or other custom input.
-    **/
 
 public:
 
-    // Destructor.
+    /// Destructor.
     virtual ~GeneratorBase () {}
 
-    // Method(s).
-    // -- Lifetime management methods. Can be overwritten for derived generators.
+
+    /// Generator method(s).
+    // These are the main methods for any class deriving from GeneratorBase. 
+    // Purely virtual methods must be implemented in the derived, specialised 
+    // generators. The remaining virtual methods can be overwritten.
+
+    // Get the next input from the generator.
     virtual const arma::Mat<double>& next  () = 0;
+
+    // Whether the generator is in a good condition, i.e. whether we can safely 
+    // produce the next generator input.
+    virtual bool good  () const = 0;
+
+    // Open the generator.
     virtual bool open  ();
+
+    // Close the generator.
     virtual bool close ();
-    virtual bool good  ();
-            bool reset ();
 
-    // -- Shape method(s).
-    bool setShape (const std::vector<unsigned int>& shape);
-
-    std::vector<unsigned int> shape ();
-
-    unsigned int dim ();
-
-    bool initialised ();
+    // Reset the generator.
+    inline  bool reset () { return close() && open(); }
 
 
-private:
+    /// Shape method(s).
+    // Set the shape of the generator input.
+    bool setShape (const std::vector<unsigned>& shape);
 
-    // Internal method(s).
-    bool _resize ();
+
+    /// Get method(s)
+    // Get the shape of the generator input.
+    std::vector<unsigned> shape () const { return m_shape; }
+
+    // Get dimension of generator input. Currently supports up to two-
+    // dimensional input.
+    inline unsigned dim () const { return m_shape[1] == 1 ? 1 : 2; }
+
+    // Whether the current GeneratorBase instance is properly intialised.
+    inline bool initialised () const { return m_initialised; }
 
 
 protected:
 
-    // Data member(s).
-    bool _initialised = false;
-    std::vector<unsigned int> _shape;
-    arma::Mat<double> _data;
+    /// Internal method(s).
+    // Resize the generator input matrix to accorrding to the current, internal, 
+    // accepted shape
+    bool resize_ ();
+
+    // Called during each 'next' function call, to check whether the generator 
+    // is properly configured.
+    bool check_ ();
+
+
+protected:
+
+    /// Data member(s).
+    // Whether the generator is properly initialised.
+    bool m_initialised = false;
+
+    // The shape of the generator input.
+    std::vector<unsigned> m_shape = {}; 
+
+    // Armadillo matrix, holding the input produced by the generator.
+    arma::Mat<double> m_data = {};
 
 };
 
