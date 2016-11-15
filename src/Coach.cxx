@@ -3,12 +3,9 @@
 
 namespace wavenet {
     
- // Set method(s).
-// -------------------------------------------------------------------
-
 void Coach::setBasedir (const std::string& basedir) {
-    _basedir = basedir;
-    if (strcmp(&_basedir.back(), "/") == 0) { _basedir.append("/"); }
+    m_basedir = basedir;
+    if (strcmp(&m_basedir.back(), "/") == 0) { m_basedir.append("/"); }
     return;
 }
 
@@ -17,7 +14,7 @@ void Coach::setNumEvents (const int& numEvents) {
         WARNING("Input number of events (%d) not supported.", numEvents);
         return;
     }
-    _numEvents = numEvents;
+    m_numEvents = numEvents;
     return;
 }
 
@@ -26,7 +23,7 @@ void Coach::setNumCoeffs (const unsigned& numCoeffs) {
         WARNING("Input number of coefficients (%d) is not radix 2.", numCoeffs);
         return;
     }
-    _numCoeffs = numCoeffs;
+    m_numCoeffs = numCoeffs;
     return;
 }
 
@@ -39,41 +36,40 @@ void Coach::setTargetPrecision (const double& targetPrecision) {
         WARNING("Target precision is to be used in conjuction with 'adaptive learning rate'.");
         WARNING("Remember to set it using 'Coach::setUseAdaptiveLearningRate()'. Going to continue,");
         WARNING("but the set value of target precision won't have any effect on its own.");
-
     }
-    _targetPrecision = targetPrecision;
+    m_targetPrecision = targetPrecision;
     return;
 }
 
-
- // High-level management info.
-// -------------------------------------------------------------------
-
 bool Coach::run () {
-    DEBUG("Entering.");
-
-    // Performing checks.
-    if (!_wavenet) {
+    
+    // Perform checks.
+    if (!m_wavenet) {
         ERROR("WaveletML object not set.Exiting.");
         return false;
     }
 
-    if (!_generator) {
+    if (!m_generator) {
         ERROR("Input generator not set. Exiting.");
         return false;
     }
 
-    if (!_name.size()) {
+    if (!m_generator->initialised()) {
+        ERROR("Generator was not properly initialised. Did you remember to specify a valid shape? Exiting.");
+        return false;
+    }
+
+    if (!m_name.size()) {
         ERROR("Coach name not set. Exiting.");
         return false;
     }
     
-    if (_numEvents < 0) {
-        if ((dynamic_cast<NeedleGenerator*>  (_generator) != nullptr ||
-             dynamic_cast<UniformGenerator*> (_generator) != nullptr ||
-             dynamic_cast<GaussianGenerator*>(_generator) != nullptr) && 
+    if (m_numEvents < 0) {
+        if ((dynamic_cast<NeedleGenerator*>  (m_generator) != nullptr ||
+             dynamic_cast<UniformGenerator*> (m_generator) != nullptr ||
+             dynamic_cast<GaussianGenerator*>(m_generator) != nullptr) && 
             !(useAdaptiveLearningRate() && targetPrecision() > 0.)) {
-            WARNING("The number of events is set to %d while using", _numEvents);
+            WARNING("The number of events is set to %d while using", m_numEvents);
             WARNING(".. a generator with no natural epochs and with");
             WARNING(".. no target precision set. Etiher choose a ");
             WARNING(".. different generator or use");
@@ -84,179 +80,176 @@ bool Coach::run () {
         }
     }
     
+    INFO("Start training, using coach '%s'.", m_name.c_str());
     
-    // Run.
-    INFO("Start training, using coach '%s'.", _name.c_str());
+    // Save base snapshot of initial condition, so as to be able to restore same 
+    // configuration for each intitialisation (in particular, to roll back 
+    //changes made by adaptive learning methods.)
+    Snapshot baseSnap (outdir() + "snapshots/.tmp.snap");
+    m_wavenet->save(baseSnap);
     
-    // -- Save base snapshot, to step back from adaptive learning.
-    _wavenet->save(outdir() + "snapshots/.tmp.snap");
+    // Define number of trailing steps, for use with adaptive learning rate.
+    const unsigned useLastN = 10;
+    // Definition bare, specified regularsation constant, for use with simulated
+    // annealing.
+    const double lambdaBare = m_wavenet->lambda(); /* @TODO: Used? */
     
-    // -- Definitions for daptive learning rate.
-    const unsigned int useLastN = 10;
-    
-    // Loop initialisations.
-    for (unsigned init = 0; init < _numInits; init++) {
+    // Define snapshot object, for saving the final configuration for each 
+    // initialisation.
+    Snapshot snap (outdir() + "snapshots/" + m_name + ".%06u.snap", 0);
 
-        // -- Print.
-        if (_printLevel > 0) {
-            INFO("Initialisation %d/%d", init + 1, _numInits);
+    // Loop initialisations.
+    for (unsigned init = 0; init < m_numInits; init++) {
+
+        // Print progress.
+        if (m_printLevel > 0) {
+            INFO("Initialisation %d/%d", init + 1, m_numInits);
         }
 
-        // -- Load starting snapshot.
-        _wavenet->load(outdir() + "snapshots/.tmp.snap");
-        _wavenet->clear();
+        // Load base snapshot.
+        m_wavenet->load(baseSnap);
+        m_wavenet->clear();
 
-        // -- Generate initial coefficient configuration on random point on unit N-sphere.
-        _wavenet->setFilter( PointOnNSphere(_numCoeffs) );
+        // Generate initial coefficient configuration as random point on unit 
+        // N-sphere. In this way we immediately fullfill one out of the (at 
+        // most) four (non-trivial) conditions on the filter coefficients.
+        m_wavenet->setFilter( PointOnNSphere(m_numCoeffs) );
         
-        // -- Definitions for simulated annealing.
-        const double lambdaBare = _wavenet->lambda();
-        
-        // -- Definitions for adaptive learning.
-        bool done = false;
-        unsigned int tail = 0;
-        unsigned int currentCostLogSize  = 0;
-        unsigned int previousCostLogSize = 0;
+        // Definitions for adaptive learning.
+        bool done = false; // Whether the training is done, i.e. whether to 
+                           // break training early
+        unsigned tail = 0; // The number of updates since beginning of training 
+                           // or last update of the learning rate, whichever is 
+                           // latest.
+        unsigned currentCostLogSize  = 0; // Number of entries in cost log, now 
+        unsigned previousCostLogSize = 0; // and at previous step in the loop. 
+                                          // Used to determine whether a batch
+                                          // update occurred.
         
         // Loop epochs.
-        for (unsigned epoch = 0; epoch < _numEpochs; epoch++) {
+        for (unsigned epoch = 0; epoch < m_numEpochs; epoch++) {
 
-            // -- Reset (re-open) generator.
-            _generator->reset();
+            // Reset (re-open) generator.
+            m_generator->reset();
 
-            // -- Print.
-            if (_printLevel > 1) {
-                INFO("  Epoch %d/%d", epoch + 1, _numEpochs);
+            // Print progress.
+            if (m_printLevel > 1) {
+                INFO("  Epoch %d/%d", epoch + 1, m_numEpochs);
             }
 
-            // -- Reset lambda (if using simulated annealing).
+            // Reset lambda (if using simulated annealing).
+            /* Don't reset for each epoch. Should only be reset for each initialisation.
             if (useSimulatedAnnealing()) {
-                _wavenet->setLambda(lambdaBare);
+                m_wavenet->setLambda(lambdaBare);
             }
+            */
 
             // Loop events.
             int event = 0;
             int eventPrint = 100;
             do {
-                // -- Print.
-                if (_printLevel > 2 && (event + 1) % eventPrint == 0) {
-                    if (_numEvents == -1) { INFO("    Event %d/-",  event + 1); }
-                    else                  { INFO("    Event %d/%d", event + 1, _numEvents); }
+                // Print progress.
+                if (m_printLevel > 2 && (event + 1) % eventPrint == 0) {
+                    if (m_numEvents == -1) { INFO("    Event %d/-",  event + 1); }
+                    else                   { INFO("    Event %d/%d", event + 1, m_numEvents); }
                     if ((event + 1) == 10 * eventPrint) { eventPrint *= 10; }
                 }
 
-                // -- Simulated annealing.
+                // Simulated annealing.
                 if (useSimulatedAnnealing()) {
-                    /**
-                     * As ievent -> 0,       lambda -> 0
-                     * As ievent -> Nevents, lambda -> lambdaBare
-                     * Effective weight: f / (2 - f)
-                     *  -- f = 0:   0   / (2 - 0)^2   = 0   / 4    = 0
-                     *  -- f = 0.5: 0.5 / (2 - 0.5)^2 = 0.5 / 2.25 = 0.22...
-                     *  -- f = 1:   1   / (2 - 1)^2   = 1   / 1    = 1
-                    **/
-
-                     const double f = event/float(numEvents());
+                     const double f = (event + epoch * numEvents())/float(numEvents() * numEpochs());
                      const double effectiveLambda = lambdaBare * f / sq(2 - f);
-                     _wavenet->setLambda(effectiveLambda);
-                }
-                
-                // -- Check initialisation.
-                if (!_generator->initialised()) {
-                    ERROR("Generator was not properly initialised. Did you remember to specify a valid shape? Exiting.");
-                    return false;
+                     m_wavenet->setLambda(effectiveLambda);
                 }
 
-                // -- Main training call.
-                _wavenet->batchTrain( _generator->next() );
-                
+                // Main training call.
+                m_wavenet->batchTrain( m_generator->next() );
 
-                // -- Adaptive learning rate.
+                // Adaptive learning rate.
                 if (useAdaptiveLearningRate()) {
 
-                    // -- Determine whether a batch upate took place, by checking whether the size of the cost log changed.
+                    // Determine whether a batch upate took place, by checking 
+                    // whether the size of the cost log changed.
                     previousCostLogSize = currentCostLogSize;
-                    currentCostLogSize  = _wavenet->costLog().size();
+                    currentCostLogSize  = m_wavenet->costLog().size();
                     bool changed = (currentCostLogSize != previousCostLogSize);
                     
-                    // -- If it changed and the tail (number of updates since last learning rate adaptation) is sufficiently large, initiate adaptation.
+
+                    // If it changed and the tail (number of updates since last 
+                    // learning rate update) is sufficiently large, initiate
+                    // adaptation.
                     if (changed && ++tail > useLastN) {
                         
-                        const unsigned int filterLogSize = _wavenet->filterLog().size();
+                        const unsigned filterLogSize = m_wavenet->filterLog().size();
 
-                        // Compute the (vector) size of the last N steps in the SGD, as well as the mean (scalar) size of these.
+                        // Compute the (vector) size of the last N steps in the 
+                        // SGD, as well as the mean (scalar) size of these.
                         std::vector< arma::Col<double> > lastNsteps(useLastN);
                         double meanStepSize  = 0;
                         for (unsigned i = 0; i < useLastN; i++) {
-                            lastNsteps.at(i) = _wavenet->filterLog().at(filterLogSize - useLastN + i) - _wavenet->filterLog().at(filterLogSize - useLastN + i - 1);
+                            lastNsteps.at(i) = m_wavenet->filterLog().at(filterLogSize - useLastN + i) - m_wavenet->filterLog().at(filterLogSize - useLastN + i - 1);
                             meanStepSize += arma::norm(lastNsteps.at(i));
                         }
                         meanStepSize /= float(useLastN);
                         
-                        // Compute the total (vector) size of the last N steps in the SGD combined, as well as the (scalar) size.
-                        arma::Col<double> totalStep = _wavenet->filterLog().at(filterLogSize - 1) - _wavenet->filterLog().at(filterLogSize - 1 - useLastN);
+                        // Compute the total (vector) size of the last N steps 
+                        // in the SGD combined, as well as the (scalar) size.
+                        arma::Col<double> totalStep = m_wavenet->filterLog().at(filterLogSize - 1) - m_wavenet->filterLog().at(filterLogSize - 1 - useLastN);
                         double totalStepSize = arma::norm(totalStep);
                        
-                        // Check whether to perform adaptive learning rate update. 
-                        // Check whether we have reached target precision.
-                        if (targetPrecision() != -1 && meanStepSize < targetPrecision()) {
+                        // Check whether we have reached target precision or 
+                        // whether to perform adaptive learning rate update. 
+                        if (targetPrecision() != -1 && meanStepSize < targetPrecision() && !useSimulatedAnnealing()) {
                             INFO("[Adaptive learning rate] The mean step size over the last %d updates (%f)", useLastN, meanStepSize);
                             INFO("[Adaptive learning rate] is smaller than the target precision (%f). Done.", targetPrecision());
                             done = true;
                         } else if (totalStepSize < meanStepSize) {
                             INFO("[Adaptive learning rate] Total step size (%f) is smaller than mean step size (%f).", totalStepSize, meanStepSize);
-                            if (totalStepSize > 1e-07) {
-                                INFO("[Adaptive learning rate]   Increasing batch size from %d to %d.", _wavenet->batchSize(), 2 * _wavenet->batchSize());
-                                INFO("[Adaptive learning rate]   Reducing learning rate (alpha) from %f to %f.", _wavenet->alpha(), (1./2.) * _wavenet->alpha() * (totalStepSize/meanStepSize));
-                                _wavenet->setBatchSize(  2     * _wavenet->batchSize() );
-                                _wavenet->setAlpha    ( (1./2.) * _wavenet->alpha() * (totalStepSize/meanStepSize));
-                                tail = 0;
-                            } else if (!useSimulatedAnnealing()) {
-                                // If using simulated annealing we disable early breaking, since then otherwise the minimisation would have been performed with a lower value of the regularisation factor than intended.
-                                INFO("[Adaptive learning rate] Step size is smaller than 1e-07. Done.");
-                                done = true;
-                            }
+                            INFO("[Adaptive learning rate]   Increasing batch size from %d to %d.", m_wavenet->batchSize(), 2 * m_wavenet->batchSize());
+                            INFO("[Adaptive learning rate]   Reducing learning rate (alpha) from %f to %f.", m_wavenet->alpha(), (1./2.) * m_wavenet->alpha() * (totalStepSize/meanStepSize));
+                            m_wavenet->setBatchSize(  2     * m_wavenet->batchSize() );
+                            m_wavenet->setAlpha    ( (1./2.) * m_wavenet->alpha() * (totalStepSize/meanStepSize));
+                            tail = 0;
                         }
                         
                         
                     }
                     
-                } // adaptive learning rate
-                
+                } 
 
-                // -- Increment.
+                // Increment event number. (Only level not in a for-loop, since
+                // the number of events may be unspecified, i.e. be -1.)
                 ++event;
 
-            } while (!done && (_numEvents < 0 || (event < _numEvents && _generator->good())));
+                // If the generator is not in a good condition, break.
+                if (!m_generator->good()) { break; }
+
+            } while (!done && (event < m_numEvents || m_numEvents < 0 ));
             
             if (done) { break; }
         }
         
-        
         // Saving snapshot to file.
-        char buff[100];
-        snprintf(buff, sizeof(buff), "%s.%06u.snap", _name.c_str(), init);
-        std::string filename = buff;
-        _wavenet->save(outdir() + "snapshots/" + filename);
+        m_wavenet->save(snap++);
     }
     
     // Writing setup to run-specific README file.
     INFO("Writing run configuration to '%s'.", (outdir() + "README").c_str());
     std::ofstream outFileStream (outdir() + "README");
     
-    outFileStream << "_numEvents: " << _numEvents << "\n";
-    outFileStream << "_numEpochs: " << _numEpochs << "\n";
-    outFileStream << "_numInits: "  << _numInits  << "\n";
-    outFileStream << "_numCoeffs: " << _numCoeffs << "\n";
+    outFileStream << "m_numEvents: " << m_numEvents << "\n";
+    outFileStream << "m_numEpochs: " << m_numEpochs << "\n";
+    outFileStream << "m_numInits: "  << m_numInits  << "\n";
+    outFileStream << "m_numCoeffs: " << m_numCoeffs << "\n";
     
     outFileStream.close();
+
+    // Clean up, byremove the last entry in the cost log, which isn't properly 
+    // scaled to batch size since the batch queue hasn't been flushed, and 
+    // therefore might bias result.
+    m_wavenet->costLog().pop_back(); 
     
-    // Clean up.
-    _wavenet->costLog().pop_back(); // Remove the last entry in the cost log, which isn't properly scaled to batch size since the batch queue hasn't been flushed, and therefore might bias result.
-    //_wavenet->clear();
-    
-    return true;
-    
+    return true;   
 }
 
 } // namespace
