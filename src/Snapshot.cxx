@@ -3,147 +3,158 @@
 
 namespace wavenet {
     
-std::string Snapshot::file () {
+std::string Snapshot::file () const {
+
+    // If pattern is a pure file name, without any format specifiers (%), return
+    // it.
+    if (!hasFormatSpecifier()) { return m_pattern; }
     
-    if (_pattern.find("%") == std::string::npos) { return _pattern; }
-    
+    // Otherwise use the member number to complete pattern.
     char buff[100];
-    snprintf(buff, sizeof(buff), _pattern.c_str(), _number);
+    snprintf(buff, sizeof(buff), m_pattern.c_str(), m_number);
     std::string filename = buff;
     return filename;
     
 }
 
-void Snapshot::save (Wavenet* wavenet) {
-    
-    DEBUG("Saving snapshot '%s'.", file().c_str());
-    
-    /**
-     * @TODO: Move to XML format? Requires an easy-to-use, standard XML library...
-     **/
-
-    if (strcmp(file().substr(0,1).c_str(), "/") == 0) {
-        WARNING("File '%s' not accepted. Only accepting realtive paths.", file().c_str());
-        return;
-    }
-    
-    if (exists()) {
-        DEBUG("File '%s' already exists. Overwriting.", file().c_str()); // WARNING(...
-    }
-    
-    if (file().find("/") != std::string::npos) {
-        std::string dir = file().substr(0,file().find_last_of("/")); // ...
-        if (!dirExists(dir)) {
-            WARNING("Directory '%s' does not exist. Creating it.", dir.c_str());
-            system(("mkdir -p " + dir).c_str());
-        }
-    }
-    
-    ofstream outFileStream (file());
-    
-    outFileStream << wavenet->_lambda << "\n";
-    outFileStream << wavenet->_alpha << "\n";
-    outFileStream << wavenet->_inertia << "\n";
-    outFileStream << wavenet->_inertiaTimeScale << "\n";
-    outFileStream << wavenet->_filter << "\n#\n";
-    outFileStream << wavenet->_momentum << "\n#\n";
-    
-    outFileStream << wavenet->_batchSize << "\n";
-    outFileStream << "BATCHQUEUE" << "\n";
-    for (const auto& q : wavenet->_batchQueue) {
-        outFileStream << q << "\n#\n";
-    }
-    outFileStream << "FILTERLOG" << "\n";
-    for (const auto& f : wavenet->_filterLog) {
-        outFileStream << f << "\n#\n";
-    }
-    outFileStream << "COSTLOG" << "\n";
-    for (const auto& f : wavenet->_costLog) {
-        outFileStream << f << "\n";
-    }
-    
-    outFileStream.close();
-    
-    return;
+Snapshot& Snapshot::operator++ () { 
+    if (!hasFormatSpecifier()) { 
+        WARNING("Calling pre-fix increment operator for snapshot with no format specifiers in file name pattern");
+    } 
+    ++m_number; 
+    return *this;
 }
 
-void Snapshot::load (Wavenet* wavenet) {
-    
-    DEBUG("Loading snapshot '%s'.", file().c_str())
-    
-    if (!fileExists(file())) {
-        WARNING("File '%s' doesn't exists.", file().c_str());
-        return;
-    }
-    
-    ifstream inFileStream (file());
-    std::string tmp; // To stream in values and check for delimeters.
-    
-    inFileStream >> wavenet->_lambda;
-    inFileStream >> wavenet->_alpha;
-    inFileStream >> wavenet->_inertia;
-    inFileStream >> wavenet->_inertiaTimeScale;
+Snapshot& Snapshot::operator-- () { 
+    if (!hasFormatSpecifier()) { 
+        WARNING("Calling pre-fix decrement operator for snapshot with no format specifiers in file name pattern");
+    } 
+    --m_number; 
+    return *this;
+}
+
+Snapshot Snapshot::operator++ (int) { 
+    if (!hasFormatSpecifier()) { 
+        WARNING("Calling post-fix increment operator for snapshot with no format specifiers in file name pattern");
+    } 
+    Snapshot tmp(*this); 
+    m_number++; 
+    return tmp;
+}
+
+Snapshot Snapshot::operator-- (int) { 
+    if (!hasFormatSpecifier()) { 
+        WARNING("Calling post-fix decrement operator for snapshot with no format specifiers in file name pattern");
+    } 
+    Snapshot tmp(*this); 
+    m_number--; 
+    return tmp;
+}
+
+Snapshot& operator<< (Snapshot& snap, const Wavenet& wavenet) {
+     
+    // Initialise output stream.
+    ofstream stream (snap.file());
+
+    // Stream Wavenet data members out.
+    stream << wavenet.m_lambda           << "\n";
+    stream << wavenet.m_alpha            << "\n";
+    stream << wavenet.m_inertia          << "\n";
+    stream << wavenet.m_inertiaTimeScale << "\n";
+    stream << wavenet.m_filter           << "\n#\n";
+    stream << wavenet.m_momentum         << "\n#\n";
+
+    stream << wavenet.m_batchSize << "\n";
+    stream << "BATCHQUEUE" << "\n";
+    for (const auto& q : wavenet.m_batchQueue) { stream << q << "\n#\n"; }
+
+    stream << "FILTERLOG" << "\n";
+    for (const auto& f : wavenet.m_filterLog)  { stream << f << "\n#\n"; }
+
+    stream << "COSTLOG" << "\n";
+    for (const auto& c : wavenet.m_costLog)    { stream << c << "\n"; }
+
+    // Close output stream.
+    stream.close();
+
+    return snap;
+}
+
+const Snapshot& operator>> (const Snapshot& snap, Wavenet& wavenet) {
+
+    // To stream in values and check for delimeters.
+    std::string tmp; 
+
+    // Initialise input stream.
+    ifstream stream (snap.file());
+
+    // Stream Wavenet data members int.
+    stream >> wavenet.m_lambda;
+    stream >> wavenet.m_alpha;
+    stream >> wavenet.m_inertia;
+    stream >> wavenet.m_inertiaTimeScale;
     
     // Read filter.
     std::vector<double> vec_filter;
-    while (inFileStream >> tmp && tmp.find("#") == std::string::npos) {
+    while (stream >> tmp && tmp.find("#") == std::string::npos) {
         try {
             vec_filter.push_back( stod(tmp) );
         } catch (const std::invalid_argument& ia) {;}
     }
-    wavenet->_filter = arma::conv_to< arma::Col<double> >::from(vec_filter);
+    wavenet.m_filter = arma::conv_to< arma::Col<double> >::from(vec_filter);
     
     // Read momentum.
     std::vector<double> vec_momentum;
-    while (inFileStream >> tmp && tmp.find("#") == std::string::npos) {
+    while (stream >> tmp && tmp.find("#") == std::string::npos) {
         try {
             vec_momentum.push_back( stod(tmp) );
         } catch (const std::invalid_argument& ia) {;}
     }
-    wavenet->_momentum = arma::conv_to< arma::Col<double> >::from(vec_momentum);
+    wavenet.m_momentum = arma::conv_to< arma::Col<double> >::from(vec_momentum);
     
-    inFileStream >> wavenet->_batchSize;
+    stream >> wavenet.m_batchSize;
     
     // Read batch queue.
-    inFileStream >> tmp;
-    wavenet->_batchQueue.clear();
+    stream >> tmp;
+    wavenet.m_batchQueue.clear();
     while (tmp.find("FILTERLOG") == std::string::npos) {
         std::vector<double> vec_momentum;
-        while (inFileStream >> tmp) {
+        while (stream >> tmp) {
             try {
                 vec_momentum.push_back( stod(tmp) );
             } catch (const std::invalid_argument& ia) { break; }
         }
         if (!vec_momentum.size()) { break; }
-        wavenet->_batchQueue.push_back( arma::conv_to< arma::Col<double> >::from(vec_momentum) );
+        wavenet.m_batchQueue.push_back( arma::conv_to< arma::Col<double> >::from(vec_momentum) );
     }
     
     // Read filter log.
-    wavenet->_filterLog.clear();
+    wavenet.m_filterLog.clear();
     while (tmp.find("COSTLOG") == std::string::npos) {
         std::vector<double> vec_filter;
-        while (inFileStream >> tmp) {
+        while (stream >> tmp) {
             try {
                 vec_filter.push_back( stod(tmp) );
             } catch (const std::invalid_argument& ia) { break; }
         }
         if (!vec_filter.size()) { break; }
-        wavenet->_filterLog.push_back( arma::conv_to< arma::Col<double> >::from(vec_filter) );
+        wavenet.m_filterLog.push_back( arma::conv_to< arma::Col<double> >::from(vec_filter) );
     }
     
     // Read cost log.
-    wavenet->_costLog.clear();
-    while (!inFileStream.fail()) {
-        while (inFileStream >> tmp) {
+    wavenet.m_costLog.clear();
+    while (!stream.fail()) {
+        while (stream >> tmp) {
             try {
-                wavenet->_costLog.push_back( stod(tmp) );
+                wavenet.m_costLog.push_back( stod(tmp) );
             } catch (const std::invalid_argument& ia) { break; }
         }
     }
     
-    inFileStream.close();
-    
-    return;
+    // Close the input stream.
+    stream.close();
+
+    return snap;
 }
 
 } // namespace

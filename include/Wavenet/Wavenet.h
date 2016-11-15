@@ -4,18 +4,18 @@
 /**
  * @file Wavenet.h
  * @author Andreas Sogaard
-**/
+ */
 
 // STL include(s).
-#include <iostream> /* std::cout */
+#include <iostream> /* std::cout, std::istream, std::ostream */
 #include <cstdio> /* snprintf */
 #include <vector> /* std::vector */
 #include <string> /* std::string */
 #include <cmath> /* log2 */
 #include <assert.h> /* assert */
-#include <stdlib.h> /* system */
 #include <utility> /* std::move */
 #include <algorithm> /* std::max */
+#include <cstdlib> /* system */
 
 // Armadillo include(s).
 #include <armadillo>
@@ -27,54 +27,55 @@
 #include "Wavenet/HighpassOperator.h"
 #include "Wavenet/Snapshot.h"
 
-
 namespace wavenet {
 
 class Wavenet : Logger {
-    
-    friend class Snapshot;
-    
+
 public:
+    
+    /**
+     * @TODO: Declare all member function which do not change the state of the of the object (i.e. all get-methods) as 'const'.
+     */
     
     // Constructor(s).
     Wavenet () {};
     Wavenet (const double& lambda) :
-        _lambda(lambda)
+        m_lambda(lambda)
     {};
     Wavenet (const double& lambda, const double& alpha) :
-        _lambda(lambda), _alpha(alpha)
+        m_lambda(lambda), m_alpha(alpha)
     {};
     Wavenet (const double& lambda, const double& alpha, const double& inertia) :
-        _lambda(lambda), _alpha(alpha), _inertia(inertia)
+        m_lambda(lambda), m_alpha(alpha), m_inertia(inertia)
     {};
     Wavenet (const double& lambda, const double& alpha, const double& inertia, const double& inertiaTimeScale) :
-        _lambda(lambda), _alpha(alpha), _inertia(inertia), _inertiaTimeScale(inertiaTimeScale)
+        m_lambda(lambda), m_alpha(alpha), m_inertia(inertia), m_inertiaTimeScale(inertiaTimeScale)
     {};
     Wavenet (const Wavenet& other) :
-        _lambda(other._lambda), _alpha(other._alpha), _inertia(other._inertia), _inertiaTimeScale(other._inertiaTimeScale), _filter(other._filter)
+        m_lambda(other.m_lambda), m_alpha(other.m_alpha), m_inertia(other.m_inertia), m_inertiaTimeScale(other.m_inertiaTimeScale), m_filter(other.m_filter)
     {};
     
     // Destructor.
     ~Wavenet () {};
     
     // Get method(s).
-    inline double lambda ()  { return _lambda; }
-    inline double alpha ()   { return _alpha; }
-    inline double inertia () { return _inertia; }
-    inline double inertiaTimeScale () { return _inertiaTimeScale; }
+    inline double lambda           () const { return m_lambda; }
+    inline double alpha            () const { return m_alpha; }
+    inline double inertia          () const { return m_inertia; }
+    inline double inertiaTimeScale () const { return m_inertiaTimeScale; }
     
-    inline arma::Col<double> filter ()   { return _filter; }
-    inline arma::Col<double> momentum () { return _momentum; }
+    inline arma::Col<double> filter   () const { return m_filter; }
+    inline arma::Col<double> momentum () const { return m_momentum; }
 
-    inline int batchSize () { return _batchSize; }
+    inline int batchSize () const { return m_batchSize; }
 
-    inline std::vector< arma::Col<double> >      filterLog () { return _filterLog; }
-    inline void                             clearFilterLog () { return _filterLog.clear(); }
+    inline std::vector< arma::Col<double> >      filterLog () const { return m_filterLog; }
+    inline void                             clearFilterLog ()       { return m_filterLog.clear(); }
 
-    inline std::vector< double >      costLog () { return _costLog; }
-    inline void                  clearCostLog () { return _costLog.resize(1, 0); }
+    inline std::vector< double >      costLog () const { return m_costLog; }
+    inline void                  clearCostLog ()       { return m_costLog.resize(1, 0); }
 
-    inline double lastCost () { return (costLog().size() > 0 ? costLog()[costLog().size() - 1]: -1);}
+    inline double lastCost () const { return (costLog().size() > 0 ? costLog()[costLog().size() - 1]: -1);}
 
     
     // Set method(s).
@@ -88,12 +89,14 @@ public:
     bool doWavelet           (const bool& wavelet);
     
     // Print method(s).
-    void print ();
+    void print () const;
 
     // Storage method(s).
-    inline void saveAs (const std::string& filename) { save(filename); return; };
-           void save   (const std::string& filename);
-           void load   (const std::string& filename);
+    /**
+     * The snapshots are passed by value since (1) they're tiny, (2) the methods are called infrequently, and (3) this allows us load from/save to temporary snapshot objects, which means that we can do e.g. wavenet.save(snap++).
+     */
+    void save (Snapshot snap);
+    void load (Snapshot snap);
     
     // High-level learning methods(s).
     // -- 1D.
@@ -148,7 +151,7 @@ public:
     
     void cacheWeights       (const unsigned& m);
     void clearCachedWeights ();
-    
+
     arma::Col<double> lowpassfilter      (const arma::Col<double>& x);
     arma::Col<double> highpassfilter     (const arma::Col<double>& x);
     arma::Col<double> inv_lowpassfilter  (const arma::Col<double>& y);
@@ -157,7 +160,7 @@ public:
     const arma::Mat<double>& lowpassweight  (const unsigned& level, const unsigned& filt);
     const arma::Mat<double>& highpassweight (const unsigned& level, const unsigned& filt);
 
-    arma::field< arma::Col<double> >  ComputeDelta (const arma::Col<double>& delta, arma::field< arma::Col<double> > activations);
+    arma::field< arma::Col<double> > backpropagate (const arma::Col<double>& delta, arma::field< arma::Col<double> > activations);
     
     void batchTrain (arma::Mat<double> X);
     void flushBatchQueue ();
@@ -167,32 +170,59 @@ public:
     arma::Mat<double> coeffsFromActivations (const std::vector< std::vector< arma::field< arma::Col<double> > > >& Activations);
     
 
-private: 
-    
-    double _lambda  = 10.0;
-    double _alpha   =  0.01;
-    double _inertia =  0.;
-    double _inertiaTimeScale = 0.;
-    
-    arma::Col<double> _filter;
-    arma::Col<double> _momentum;
+protected:
 
-    bool _hasCachedOperators = false;
-    arma::field< arma::Mat<double> > _cachedLowpassOperators;
-    arma::field< arma::Mat<double> > _cachedHighpassOperators;
+    /// Streaming operator(s).
+    /**
+     * As these methods relate chiefly to the Snapshot class, they are 
+     * implemented in Snapshot.cxx.
+     */
+    friend       Snapshot& operator<< (      Snapshot& snap, const Wavenet& wavenet);
+    friend const Snapshot& operator>> (const Snapshot& snap,       Wavenet& wavenet);
 
-    bool _hasCachedWeights = false;
-    arma::field< arma::Mat<double> > _cachedLowpassWeights;
-    arma::field< arma::Mat<double> > _cachedHighpassWeights;
 
-    unsigned _batchSize = 1;
-    std::vector< arma::Col<double> > _batchQueue;
-    std::vector< arma::Col<double> > _filterLog;
-    std::vector< double >            _costLog;
+protected: 
     
-    bool _wavelet = true;
+    double m_lambda  = 10.0;
+    double m_alpha   =  0.01;
+    double m_inertia =  0.;
+    double m_inertiaTimeScale = 0.;
+    
+    arma::Col<double> m_filter;
+    arma::Col<double> m_momentum;
+
+    bool m_hasCachedOperators = false;
+    arma::field< arma::Mat<double> > m_cachedLowpassOperators;
+    arma::field< arma::Mat<double> > m_cachedHighpassOperators;
+
+    bool m_hasCachedWeights = false;
+    arma::field< arma::Mat<double> > m_cachedLowpassWeights;
+    arma::field< arma::Mat<double> > m_cachedHighpassWeights;
+    
+    unsigned m_batchSize = 1;
+    std::vector< arma::Col<double> > m_batchQueue;
+    std::vector< arma::Col<double> > m_filterLog;
+    std::vector< double >            m_costLog;
+    
+    bool m_wavelet = true;
     
 };
+
+/// Utility function(s).
+// Frobenius inner product between matrices A and B. In the current design, this is the most significant performance bottleneck.
+template<class T>
+inline T frobeniusProduct (const arma::Mat<T>& A, const arma::Mat<T>& B) { 
+    // Other, slower variants:
+    //   return arma::trace( A * B.t() ); 
+    //   return arma::as_scalar( arma::vectorise(A).t() * arma::vectorise(B) ); 
+    return arma::accu( A % B );
+};
+
+// Vector outer product between vectors a and b.
+template<class T>
+inline arma::Mat<T> outerProduct (const arma::Col<T>& a, const arma::Col<T>& b) { 
+    return (a * b.t()); 
+}
 
 } // namespace
 
