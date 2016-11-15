@@ -12,7 +12,7 @@
 #include <vector> /* std::vector */
 #include <string> /* std::string */
 #include <cmath> /* log2 */
-#include <assert.h> /* assert */
+#include <cassert> /* assert */
 #include <utility> /* std::move */
 #include <algorithm> /* std::max */
 #include <cstdlib> /* system */
@@ -26,6 +26,7 @@
 #include "Wavenet/LowpassOperator.h"
 #include "Wavenet/HighpassOperator.h"
 #include "Wavenet/Snapshot.h"
+#include "Wavenet/CostFunctions.h"
 
 namespace wavenet {
 
@@ -37,7 +38,7 @@ public:
      * @TODO: Declare all member function which do not change the state of the of the object (i.e. all get-methods) as 'const'.
      */
     
-    // Constructor(s).
+    /// Constructor(s).
     Wavenet () {};
     Wavenet (const double& lambda) :
         m_lambda(lambda)
@@ -55,10 +56,12 @@ public:
         m_lambda(other.m_lambda), m_alpha(other.m_alpha), m_inertia(other.m_inertia), m_inertiaTimeScale(other.m_inertiaTimeScale), m_filter(other.m_filter)
     {};
     
-    // Destructor.
+
+    /// Destructor.
     ~Wavenet () {};
     
-    // Get method(s).
+
+    /// Get method(s).
     inline double lambda           () const { return m_lambda; }
     inline double alpha            () const { return m_alpha; }
     inline double inertia          () const { return m_inertia; }
@@ -69,6 +72,8 @@ public:
 
     inline int batchSize () const { return m_batchSize; }
 
+    inline bool wavelet () const { return m_wavelet; }
+
     inline std::vector< arma::Col<double> >      filterLog () const { return m_filterLog; }
     inline void                             clearFilterLog ()       { return m_filterLog.clear(); }
 
@@ -78,53 +83,76 @@ public:
     inline double lastCost () const { return (costLog().size() > 0 ? costLog()[costLog().size() - 1]: -1);}
 
     
-    // Set method(s).
-    bool setLambda           (const double& lambda);
-    bool setAlpha            (const double& alpha);
-    bool setInertia          (const double& inertia);
-    bool setInertiaTimeScale (const double& inertiaTimeScale);
-    bool setFilter           (const arma::Col<double>& filter);
-    bool setMomentum         (const arma::Col<double>& momentum);
-    bool setBatchSize        (const unsigned& batchSize);
-    bool doWavelet           (const bool& wavelet);
+    /// Set method(s).
+    inline bool setLambda           (const double& lambda)           { assert(lambda           > 0); m_lambda           = lambda;           return true; }
+    inline bool setAlpha            (const double& alpha)            { assert(alpha            > 0); m_alpha            = alpha;            return true; }
+    inline bool setInertia          (const double& inertia)          { assert(inertia          > 0); m_inertia          = inertia;          return true; }
+    inline bool setInertiaTimeScale (const double& inertiaTimeScale) { assert(inertiaTimeScale > 0); m_inertiaTimeScale = inertiaTimeScale; return true; }
+
+           bool setFilter   (const arma::Col<double>& filter);
+    inline bool setMomentum (const arma::Col<double>& momentum) { assert(momentum.size() == m_filter.size()); m_momentum = momentum; return true; }
+
+    inline bool setBatchSize (const unsigned& batchSize) { m_batchSize = batchSize; return true; }
+
+    inline bool doWavelet (const bool& wavelet) { m_wavelet   = wavelet;   return true; }
     
-    // Print method(s).
+
+    /// Print method(s).
     void print () const;
 
-    // Storage method(s).
+
+    /// Storage method(s).
     /**
      * The snapshots are passed by value since (1) they're tiny, (2) the methods are called infrequently, and (3) this allows us load from/save to temporary snapshot objects, which means that we can do e.g. wavenet.save(snap++).
      */
-    void save (Snapshot snap);
+    void save (Snapshot snap) const;
     void load (Snapshot snap);
+
     
-    // High-level learning methods(s).
-    // -- 1D.
+    /// 1D wavenet transform method(s).
+    /**
+     * @brief Forward transform of (column) vector.
+     *
+     * Since C++ methods cannot be distinguished simply based on the type of the
+     * return argument, no equivalent method returning a vector of wavelet 
+     * coefficients is implemented. This behaviour can however be achieved using 
+     * the 'coeffsFromActivations' method below.
+     *
+     * @param x The input vector which is forward transformed.
+     * @returns Collection of neural network activations for all layers/levels 
+     *          in the wavenet.
+     */
     arma::field< arma::Col<double> > forward (const arma::Col<double>& x);
     
-    arma::Col<double>                inverse (const arma::field< arma::Col<double> >& activations);
-    arma::Col<double>                inverse (const arma::Col<double>& y);
+    /**
+     * @brief Inverse transform of collection of neural network activations.
+     *
+     * Conceptually equivalent to the corresponding 'inverse' method accepting a
+     * vector of wavelet coefficients.
+     *
+     * @param activations Collection of activations for all layers/levels in the 
+              wavenet.
+     * @returns Vector of values in position space.
+     */
+    arma::Col<double> inverse (const arma::field< arma::Col<double> >& activations);
+    /**
+     * @brief Inverse transform of wavelet coefficients.
+     *
+     * Conceptually equivalent to the corresponding 'inverse' method accepting a
+     * collection of neural network activations.
+     *
+     * @param activations Vector of wavelet coefficients.
+     * @returns Vector of values in position space.
+     */
+    arma::Col<double> inverse (const arma::Col<double>& y);
 
-    // -- 2D.
+    /// 2D wavenet transform method(s).
     std::vector< std::vector< arma::field< arma::Col<double> > > > forward (const arma::Mat<double>& X);
     arma::Mat<double>                                              inverse (const arma::Mat<double>& Y);
 
     
-    // High-level cost method(s).
-    double GiniCoeff (const arma::Col<double>& y);
-    double GiniCoeff (const arma::Mat<double>& Y);
-
-    arma::Col<double> GiniCoeffDeriv (const arma::Col<double>& y);
-    arma::Mat<double> GiniCoeffDeriv (const arma::Mat<double>& Y);
-
-    double SparseTerm (const arma::Col<double>& y);
-    double SparseTerm (const arma::Mat<double>& Y);
-    double RegTerm    (const arma::Col<double>& y);
-
-    arma::Col<double> SparseTermDeriv (const arma::Col<double>& y);
-    arma::Mat<double> SparseTermDeriv (const arma::Mat<double>& Y);
-    arma::Col<double> RegTermDeriv    (const arma::Col<double>& y);
-
+    /// High-level cost method(s).
+    
     double cost (const arma::Col<double>& y);
     double cost (const arma::Mat<double>& Y);
     
@@ -181,7 +209,7 @@ protected:
     friend const Snapshot& operator>> (const Snapshot& snap,       Wavenet& wavenet);
 
 
-protected: 
+private: 
     
     double m_lambda  = 10.0;
     double m_alpha   =  0.01;

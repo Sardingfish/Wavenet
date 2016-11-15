@@ -1,45 +1,30 @@
 #include "Wavenet/Wavenet.h"
 
 namespace wavenet {
-    
-// Set method(s).
-// -------------------------------------------------------------------
 
-bool Wavenet::setLambda (const double& lambda) {
-    m_lambda = lambda;
-    return true;
-}
-
-bool Wavenet::setAlpha (const double& alpha) {
-    m_alpha = alpha;
-    return true;
-}
-
-bool Wavenet::setInertia (const double& inertia) {
-    m_inertia = inertia;
-    return true;
-}
-
-bool Wavenet::setInertiaTimeScale (const double& inertiaTimeScale) {
-    if (inertiaTimeScale < 0.) {
-        WARNING("Inertia time scale has to be positive. Received value %f. Exiting.", inertiaTimeScale);
-        return false;
-    }
-    m_inertiaTimeScale = inertiaTimeScale;
-    return true;
-}
+/// Set method(s).
+// -----------------------------------------------------------------------------
 
 bool Wavenet::setFilter (const arma::Col<double>& filter) {
+
+    // Perform checks.
     if (filter.is_empty()) {
         WARNING("Input filter is empty.");
         return false;
     }
+
     if (filter.n_rows % 2) {
         WARNING("Input filter length is not a multiple of 2.");
         return false;
     }
+
+    // Set wavenet filter coeffients.
     m_filter = filter;
+
+    // Add to filter coefficent log.
     m_filterLog.push_back(m_filter);
+
+    // Clear operators cached with the previous filter.
     clearCachedOperators();
     
     // If the filter size is changes, resize the momentum vector accordingly.
@@ -50,30 +35,12 @@ bool Wavenet::setFilter (const arma::Col<double>& filter) {
     return true;
 }
 
-bool Wavenet::setMomentum (const arma::Col<double>& momentum) {
-    if (momentum.size() != m_filter.size()) {
-        WARNING("Input momentum is not same size as stored filter.");
-        return false;
-    }
-    m_momentum = momentum;
-    return true;
-}
 
-
-bool Wavenet::setBatchSize (const unsigned& batchSize) {
-    m_batchSize = batchSize;
-    return true;
-}
-
-bool Wavenet::doWavelet (const bool& wavelet) {
-    m_wavelet = wavelet;
-    return true;
-}
-
- // Print method(s).
-// -------------------------------------------------------------------
+/// Print method(s).
+// -----------------------------------------------------------------------------
 
 void Wavenet::print () const {
+
     INFO("");
     INFO("- - - - - - - - - - - - - - - - - - - - - - - - - -");
     INFO("This Wavenet instance has the following properties:");
@@ -112,13 +79,15 @@ void Wavenet::print () const {
     }
     INFO("- - - - - - - - - - - - - - - - - - - - - - - - - -");
     INFO("");
+
     return;
 }
 
 
-// Storage methods(s).
-// -------------------------------------------------------------------
-void Wavenet::save (Snapshot snap) {
+/// Storage method(s).
+// -----------------------------------------------------------------------------
+
+void Wavenet::save (Snapshot snap) const {
 
     DEBUG("Saving snapshot '%s'.", snap.file().c_str());
 
@@ -142,6 +111,7 @@ void Wavenet::save (Snapshot snap) {
 
     // Stream the instance to file.
     snap << *this;
+
     return;
 }
 
@@ -157,14 +127,14 @@ void Wavenet::load (Snapshot snap) {
     
     // Stream the instance from file.
     snap >> *this;
+
     return;
 }
 
 
- // High-level learning methods(s).
-// -------------------------------------------------------------------
+/// 1D wavenet transform method(s).
+// -----------------------------------------------------------------------------
 
-// Forward (1D).
 arma::field< arma::Col<double> > Wavenet::forward (const arma::Col<double>& x) {
 
     const unsigned m = log2(x.n_elem);
@@ -190,7 +160,39 @@ arma::field< arma::Col<double> > Wavenet::forward (const arma::Col<double>& x) {
     return activations;
 }
 
-// Forward (2D) - returning activation fields.
+arma::Col<double> Wavenet::inverse (const arma::field< arma::Col<double> >& activations) {
+    
+    const unsigned m = log2(size(activations, 0));
+    
+    arma::Col<double> x = activations(0, 0);
+    
+    for (unsigned i = 0; i < m + 1; i++) {
+        x  = inv_lowpassfilter (x);
+        x += inv_highpassfilter(activations(i, 1));
+    }
+    
+    return x;
+}
+
+arma::Col<double> Wavenet::inverse (const arma::Col<double>& y) {
+
+    const unsigned m = log2(y.n_elem);
+    
+    arma::Col<double> x (1, arma::fill::ones);
+    x.fill(y(0));
+
+    for (unsigned i = 0; i < m; i++) {
+        x  = inv_lowpassfilter (x);
+        x += inv_highpassfilter(y( arma::span(pow(2, i), pow(2, i + 1) - 1) ));
+    }
+    
+    return x;
+}
+
+
+/// 2D wavenet transform method(s).
+// -----------------------------------------------------------------------------
+
 std::vector< std::vector< arma::field< arma::Col<double> > > > Wavenet::forward (const arma::Mat<double>& X) {
     
     const unsigned nRows = size(X,0); // Rows.
@@ -225,7 +227,6 @@ std::vector< std::vector< arma::field< arma::Col<double> > > > Wavenet::forward 
     return Activations;
 }
 
-// Inverse (2D).
 arma::Mat<double> Wavenet::inverse (const arma::Mat<double>& Y) {
     
     const unsigned N1 = size(Y, 0);
@@ -245,413 +246,9 @@ arma::Mat<double> Wavenet::inverse (const arma::Mat<double>& Y) {
     return X;
 }
 
-// Inverse (1D) – using activation fields.
-arma::Col<double> Wavenet::inverse (const arma::field< arma::Col<double> >& activations) {
-    
-    const unsigned m = log2(size(activations, 0));
-    
-    arma::Col<double> x = activations(0, 0);
-    
-    for (unsigned i = 0; i < m + 1; i++) {
-        x  = inv_lowpassfilter (x);
-        x += inv_highpassfilter(activations(i, 1));
-    }
-    
-    return x;
-}
 
-// Inverse (1D) – using coefficients.
-arma::Col<double> Wavenet::inverse (const arma::Col<double>& y) {
-
-    const unsigned m = log2(y.n_elem);
-    
-    arma::Col<double> x (1, arma::fill::ones);
-    x.fill(y(0));
-
-    for (unsigned i = 0; i < m; i++) {
-        x  = inv_lowpassfilter (x);
-        x += inv_highpassfilter(y( arma::span(pow(2, i), pow(2, i + 1) - 1) ));
-    }
-    
-    return x;
-}
-
-
- // High-level cost method(s).
-// -------------------------------------------------------------------
-double Wavenet::GiniCoeff (const arma::Col<double>& y) {
-    
-    const int N = y.n_elem;
-    
-    arma::Col<double> ySortAbs = sort(abs(y));
-    arma::Row<double> indices  = arma::linspace< arma::Row<double> >(1, N, N);
-    
-    double f = - dot( (2*indices - N - 1), ySortAbs);
-    double g = N * sum(ySortAbs);
-    
-    return f/g + 1;
-}
-
-double Wavenet::GiniCoeff (const arma::Mat<double>& Y) {
-    const arma::Col<double> y = vectorise(Y);
-    return GiniCoeff(y);
-}
-
-
-arma::Col<double> Wavenet::GiniCoeffDeriv (const arma::Col<double>& y) {
-   
-    /**
-     * Gini coefficient is written as: G({a}) = f({a})/g({a}) with :
-     *   f({a}) = sum_i (2i - N - 1)|a_i|
-     * for ordered a_i (a_i < a_{i+1}), and:
-     *   g({a})  = N * sum_i |a_i|
-     * Then: delta(i) = d/da_i G({a}) = f'*g - f*g' / g^2
-    **/
-        
-    // Define some convenient variables.
-    const int N = y.n_elem;
-    arma::Col<double> yAbs  = abs(y);
-    arma::Col<double> ySign = sign(y);
-    arma::uvec idxSortAbs = sort_index(yAbs, "ascend");
-    arma::Col<double> ySortAbs = yAbs.elem(idxSortAbs);
-    arma::Col<double> indices  = arma::linspace< arma::Col<double> >(1, N, N);
-    
-    // Get numerator and denominator for Gini coefficient.
-    double f = - dot( (2*indices - N - 1), ySortAbs );
-    double g = N * sum(ySortAbs);
-    
-    // df/d|a| for sorted a.
-    arma::Col<double> dfSort = - (2*indices - N - 1);
-    
-    // df/d|a| for a with original ordering.
-    arma::Col<double> df (N, arma::fill::zeros);
-    df.elem(idxSortAbs) = dfSort;
-    
-    // df/da for a with original ordering.
-    df = df % ySign; // Elementwise multiplication.
-    
-    // df/da for a with original ordering.
-    arma::Col<double> dg = N * ySign;
-    
-    // Combined derivative.
-    arma::Col<double> D = (df * g - f * dg)/pow(g,2.);
-    
-    return D;
-}
-
-arma::Mat<double> Wavenet::GiniCoeffDeriv (const arma::Mat<double>& Y) {
-    arma::Col<double> y = vectorise(Y);
-    arma::Col<double> D = GiniCoeffDeriv(y);
-    return reshape(D, size(Y));
-}
-
-double Wavenet::SparseTerm (const arma::Col<double>& y) {
-    return GiniCoeff(y);
-}
-
-double Wavenet::SparseTerm (const arma::Mat<double>& Y) {
-    return GiniCoeff(Y);
-}
-
-double Wavenet::RegTerm    (const arma::Col<double>& a) {
-    
-    const int N = a.n_elem;
-    arma::Col<double> kroenecker_delta (N+1, arma::fill::zeros);
-    kroenecker_delta(N/2) = 1;
-    
-    // Regularisation term.
-    double R = 0.; 
-
-    /**
-     * (C2): Orthogonality of scaling functions
-     *
-     * Mathematical condition:
-     *   \sum_{k} a_{k} a_{k + 2m} = #delta_{0,m} \quad \forall m \in \mathbb{Z}
-     *
-     * Implementation:
-     *   Let a be the vector of filter coefficients, of length N. 
-     *
-     *   Let N = 4. Then
-     *
-     *         |  0  0  0  0  0  0  0  0  0  0  0  0  |
-     *         |  0  0  0  0  0  0  0  0  0  0  0  0  |
-     *     M = |  0  0  0  0  0  0  0  0  0  0  0  0  |
-     *         |  0  0  0  0  0  0  0  0  0  0  0  0  |
-     *         |  0  0  0  0  0  0  0  0  0  0  0  0  |
-     *
-     *     For i = 0:
-     *         |  0  0  0  0  a0 a1 a2 a3 0  0  0  0  |
-     *         |  0  0  0  0  0  0  0  0  0  0  0  0  |
-     *     M = |  0  0  0  0  0  0  0  0  0  0  0  0  |
-     *         |  0  0  0  0  0  0  0  0  0  0  0  0  |
-     *         |  0  0  0  0  0  0  0  0  0  0  0  0  |
-     *
-     *     (Shift by 2 * (0 - 4/2) = -4)
-     *         |  0  0  0  0  0  0  0  0  a0 a1 a2 a3 |
-     *         |  0  0  0  0  0  0  0  0  0  0  0  0  |
-     *     M = |  0  0  0  0  0  0  0  0  0  0  0  0  |
-     *         |  0  0  0  0  0  0  0  0  0  0  0  0  |
-     *         |  0  0  0  0  0  0  0  0  0  0  0  0  |
-     *
-     *     For i = 1:
-     *         |  0  0  0  0  0  0  0  0  a0 a1 a2 a3 |
-     *         |  0  0  0  0  a0 a1 a2 a3 0  0  0  0  |
-     *     M = |  0  0  0  0  0  0  0  0  0  0  0  0  |
-     *         |  0  0  0  0  0  0  0  0  0  0  0  0  |
-     *         |  0  0  0  0  0  0  0  0  0  0  0  0  |
-     *
-     *     (Shift by 2 * (1 - 4/2) = -2)
-     *         |  0  0  0  0  0  0  0  0  a0 a1 a2 a3 |
-     *         |  0  0  0  0  0  0  a0 a1 a2 a3 0  0  |
-     *     M = |  0  0  0  0  0  0  0  0  0  0  0  0  |
-     *         |  0  0  0  0  0  0  0  0  0  0  0  0  |
-     *         |  0  0  0  0  0  0  0  0  0  0  0  0  |
-     *
-     *     For i = 2:
-     *         |  0  0  0  0  0  0  0  0  a0 a1 a2 a3 |
-     *         |  0  0  0  0  0  0  a0 a1 a2 a3 0  0  |
-     *     M = |  0  0  0  0  a0 a1 a2 a3 0  0  0  0  |
-     *         |  0  0  0  0  0  0  0  0  0  0  0  0  |
-     *         |  0  0  0  0  0  0  0  0  0  0  0  0  |
-     *
-     *     (Shift by 2 * (2 - 4/2) = 0)
-     *         |  0  0  0  0  0  0  0  0  a0 a1 a2 a3 |
-     *         |  0  0  0  0  0  0  a0 a1 a2 a3 0  0  |
-     *     M = |  0  0  0  0  a0 a1 a2 a3 0  0  0  0  |
-     *         |  0  0  0  0  0  0  0  0  0  0  0  0  |
-     *         |  0  0  0  0  0  0  0  0  0  0  0  0  |
-     *
-     *     (...)
-     *
-     *         |  0  0  0  0  0  0  0  0  a0 a1 a2 a3 |
-     *         |  0  0  0  0  0  0  a0 a1 a2 a3 0  0  |
-     *     M = |  0  0  0  0  a0 a1 a2 a3 0  0  0  0  |
-     *         |  0  0  a0 a1 a2 a3 0  0  0  0  0  0  |
-     *         |  a0 a1 a2 a3 0  0  0  0  0  0  0  0  |
-     *
-     *   Take sub-matrix
-     *              |  0  0  0  0  \| 0  0  0  0  |\ a0 a1 a2 a3 |
-     *              |  0  0  0  0  \| 0  0  a0 a1 |\ a2 a3 0  0  |
-     *     M -> M = |  0  0  0  0  \| a0 a1 a2 a3 |\ 0  0  0  0  |
-     *              |  0  0  a0 a1 \| a2 a3 0  0  |\ 0  0  0  0  |
-     *              |  a0 a1 a2 a3 \| 0  0  0  0  |\ 0  0  0  0  |
-     *
-     *              |  0  0  0  0  |
-     *              |  0  0  a0 a1 |
-     *            = |  a0 a1 a2 a3 |
-     *              |  a2 a3 0  0  |
-     *              |  0  0  0  0  |
-     *
-     *   Finally, multiply
-     *
-     *             |  0  0  0  0  |   | a0 |   |         0         |    | 0 |
-     *             |  0  0  a0 a1 |   | a1 |   | a0 * a2 + a1 * a3 |    | 0 |
-     *     M * a = |  a0 a1 a2 a3 | * | a2 | = |        |a|^2      | == | 1 | = kroenecker_delta
-     *             |  a2 a3 0  0  |   | a3 |   | a0 * a2 + a1 * a3 |    | 0 |
-     *             |  0  0  0  0  |            |         0         |    | 0 |
-     *
-     */
-    arma::Mat<double> M (N+1, 3*N, arma::fill::zeros);
-    
-    for (unsigned i = 0; i < N+1; i++) {
-        M.submat(arma::span(i,i), arma::span(N,2*N-1)) = a.t();
-        M.row(i) = rowshift(M.row(i), 2 * (N/2 - i));
-    }
-    M = M.submat(arma::span::all, arma::span(N,2*N-1));
-    
-    R += sum(square(M * a - kroenecker_delta));
-    
-
-    // Wavelet part.
-    if (m_wavelet) {
-
-        // Compute high-pass coefficients.
-        arma::Col<double> b (N, arma::fill::zeros);
-        for (unsigned i = 0; i < N; i++) {
-            b(i) = pow(-1, i) * a(N - i - 1);
-        }
-        
-        /**
-         * (C1): Dilation equation.
-         *
-         * Mathmatical condition:
-         *   \sum_{k} a_{k} = \sqrt{2}
-         */
-        R += sq(sum(a) - sqrt(2));
-
-
-        /**
-         * (C3): Orthonormality of wavelet functions.
-         *
-         * Mathematical condition:
-         *   \sum_{k} b_{k} b_{k + 2m} = \delta_{0,m} \quad \forall m \in \mathbb{Z}
-         */
-        arma::Mat<double> M3 (N+1, 3*N, arma::fill::zeros);
-        for (unsigned i = 0; i < N+1; i++) {
-            M3.submat(arma::span(i,i), arma::span(N,2*N-1)) = b.t();
-            M3.row(i) = rowshift(M3.row(i), 2 * (N/2 - i));
-        }
-        M3 = M3.submat(arma::span::all, arma::span(N,2*N-1));
-
-        R += sum(square(M3 * b - kroenecker_delta));
-
-        
-        /**
-         * (C4): High-pass filter.
-         * 
-         * Mathematical condition:
-         *   \sum_{k} b_{k} = 0
-         */
-        R += sq(sum(b) - 0);
-
-
-        /**
-         * (C5): Orthogonality of scaling and wavelet functions.
-         *
-         * Mathematical condition:
-         *   \sum_{k} a_{k} b_{k + 2m} = 0 \quad \forall m \in \mathbb{Z}
-         */
-        /* This should be automatically satisfied (confirm).
-        arma::Mat<double> M5 (N+1, 3*N, arma::fill::zeros);
-        for (unsigned i = 0; i < N+1; i++) {
-            M5.submat(arma::span(i,i), arma::span(N,2*N-1)) = b.t();
-            M5.row(i) = rowshift(M5.row(i), 2 * (N/2 - i));
-        }
-        M5 = M5.submat(arma::span::all, arma::span(N,2*N-1));
-        R += sum(square(M5 * a));
-        */
-        
-    }
-    
-    return (m_lambda/2.) * R;
-}
-
-arma::Col<double> Wavenet::SparseTermDeriv (const arma::Col<double>& y) {
-    return GiniCoeffDeriv(y);
-}
-
-arma::Mat<double> Wavenet::SparseTermDeriv (const arma::Mat<double>& Y) {
-    return GiniCoeffDeriv(Y);
-}
-
-arma::Col<double> Wavenet::RegTermDeriv    (const arma::Col<double>& a) {
-    
-    // Taking the derivative of each term in the sum of squared
-    // deviations from the Kroeneker deltea, in the regularion term
-    // of the cost function.
-    //  - First term is the outer derivative.
-    //  - Second term is the inner derivative.
-    
-    const int N = a.n_elem;
-    arma::Col<double> D (N, arma::fill::zeros); // Derivative
-
-    // -- Get outer derivative
-    arma::Mat<double> M (N+1, 3*N, arma::fill::zeros);
-    
-    for (unsigned i = 0; i < N+1; i++) {
-        M.submat(arma::span(i,i), arma::span(N,2*N-1)) = a.t();
-        M.row(i) = rowshift(M.row(i), 2 * (N/2 - i));
-    }
-    M = M.submat(arma::span::all, arma::span(N,2*N-1));
-    
-    arma::Col<double> kroenecker_delta (N+1, arma::fill::zeros);
-    kroenecker_delta(N/2) = 1;
-    
-    arma::Col<double> outer = 2 * (M * a - kroenecker_delta);
-    
-    // -- Get inner derivative.
-    arma::Mat<double> inner (N + 1, N, arma::fill::zeros);
-    
-    for (int l = 0; l < N; l++) {
-        for (int i = 0; i < N + 1; i++) {
-            
-            int d = 2 * abs(i - (int) N/2);
-            if (l + d < N) {
-                inner(i, l) += a(l + d);
-            }
-            if (l - d >= 0) {
-                inner(i, l) += a(l - d);
-            }
-            
-        }
-    }
-    
-    D += (outer.t() * inner).t();
-    
-    // Wavelet part.
-    if (m_wavelet) {
-
-        arma::Col<double> b     (N, arma::fill::zeros);
-        arma::Col<double> bsign (N, arma::fill::zeros);
-        for (unsigned i = 0; i < N; i++) {
-            b    (i) = pow(-1, i) * a(N - i - 1);
-            bsign(i) = pow(-1, N - i - 1);
-        }
-        arma::Col<double> kroenecker_delta (N+1, arma::fill::zeros);
-        kroenecker_delta(N/2) = 1;
-        
-        // C1
-        D += 2 * (sum(a) - sqrt(2)) * arma::Col<double> (N, arma::fill::ones);
-        
-        // C3
-        // -- Get outer derivative
-        arma::Mat<double> M3 (N+1, 3*N, arma::fill::zeros);
-        for (unsigned i = 0; i < N+1; i++) {
-            M3.submat(arma::span(i,i), arma::span(N,2*N-1)) = b.t();
-            M3.row(i) = rowshift(M3.row(i), 2 * (N/2 - i));
-        }
-        M3 = M3.submat(arma::span::all, arma::span(N,2*N-1));
-        arma::Col<double> outer3 = 2 * (M3 * b - kroenecker_delta);
-        
-        // -- Get inner derivative.
-        arma::Mat<double> inner3 (N + 1, N, arma::fill::zeros);
-        for (int l = 0; l < N; l++) {
-            for (int i = 0; i < N + 1; i++) {
-                int d = 2 * abs(i - (int) N/2);
-                if (N - 1 - l + d < N) {
-                    inner3(i, l) += pow(-1, N - 1 - l) * b(N - 1 - l + d);
-                }
-                if (N - 1 - l - d >= 0) {
-                    inner3(i, l) += pow(-1, N - 1 - l) * b(N - 1 - l - d);
-                }
-            }
-        }
-        D += (outer3.t() * inner3).t();
-        
-
-        // C4
-        D += 2 * (sum(b) - 0) * bsign;
-        
-        // C5
-        /* This should be automatically satisfied (confirm).
-        // -- Get outer derivative
-        arma::Mat<double> M5 (N+1, 3*N, arma::fill::zeros);
-        for (unsigned i = 0; i < N+1; i++) {
-            M5.submat(arma::span(i,i), arma::span(N,2*N-1)) = b.t();
-            M5.row(i) = rowshift(M5.row(i), 2 * (N/2 - i));
-        }
-        M5 = M5.submat(arma::span::all, arma::span(N,2*N-1));
-        arma::Col<double> outer5 = 2 * (M * b - kroenecker_delta);
-        
-        // -- Get inner derivative.
-        arma::Mat<double> inner5 (N + 1, N, arma::fill::zeros);
-        for (int l = 0; l < N; l++) {
-            for (int i = 0; i < N + 1; i++) {
-                int d = 2 * abs(i - (int) N/2);
-                if (l + d < N) {
-                    inner5(i, l) += b(l + d);
-                }
-                if (l - d >= 0) {
-                    inner5(i, l) += b(l - d);
-                }
-            }
-        }
-        waveletTerm += (outer5.t() * inner5).t();
-        */
-    }
-    
-    return (m_lambda/2.) * D;
-}
+/// High-level cost method(s).
+// -----------------------------------------------------------------------------
 
 double Wavenet::cost (const arma::Col<double>& y) {
 
@@ -659,7 +256,7 @@ double Wavenet::cost (const arma::Col<double>& y) {
     double S = SparseTerm(y);
     
     // Regularisation term.
-    double R = RegTerm(filter());
+    double R = lambda() * RegTerm(filter());
     
     // Sum.
     double J = S + R;
@@ -696,7 +293,7 @@ arma::field< arma::Mat<double> > Wavenet::costMap (const std::vector< arma::Mat<
                 arma::Mat<double> Y = coeffsFromActivations(Activations);
                 costs(0,0).submat(arma::span(i,i),arma::span(j,j)) += cost(Y);
                 costs(1,0).submat(arma::span(i,i),arma::span(j,j)) += SparseTerm(Y);
-                costs(2,0).submat(arma::span(i,i),arma::span(j,j)) += RegTerm(m_filter);
+                costs(2,0).submat(arma::span(i,i),arma::span(j,j)) += lambda() * RegTerm(m_filter);
             }
         }
     }
@@ -991,7 +588,7 @@ void Wavenet::batchTrain (arma::Mat<double> X) {
     }
     
     // Compute sparsity error on filter coefficients.
-    arma::Col<double> regularisation = RegTermDeriv(m_filter);
+    arma::Col<double> regularisation = lambda() * RegTermDeriv(m_filter);
     
     // Compute combined errror
     Delta += regularisation;
