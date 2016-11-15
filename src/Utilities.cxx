@@ -39,6 +39,7 @@ arma::Col<double> PointOnNSphere (const unsigned& N, const double& rho, bool res
 TGraph costGraph (const std::vector< double >& costLog) {
     
     const unsigned N = costLog.size();
+
     double x[N], y[N];
     for (unsigned i = 0; i < N; i++) {
         x[i] = i;
@@ -50,7 +51,6 @@ TGraph costGraph (const std::vector< double >& costLog) {
     
     return graph;
 }
-
 
 TGraph costGraph (const std::vector< arma::Col<double> >& filterLog, const std::vector< arma::Mat<double> >& X) {
     
@@ -72,13 +72,10 @@ TGraph costGraph (const std::vector< arma::Col<double> >& filterLog, const std::
     return graph;
 }
 
-
 std::unique_ptr<TH1> MatrixToHist2D (const arma::Mat<double>& matrix, const double& range) {
-    /**
-     * Return a unique pointer to a ROOT TH2F filled with the content of the arma matrix 'matrix'.
-    **/
     
-    unsigned N1 = size(matrix, 0), N2 = size(matrix, 1);
+    const unsigned N1 = size(matrix, 0);
+    const unsigned N2 = size(matrix, 1);
     
     std::unique_ptr<TH1> hist (new TH2F("hist", "", N1, -range, range, N2, -range, range));
     
@@ -88,15 +85,12 @@ std::unique_ptr<TH1> MatrixToHist2D (const arma::Mat<double>& matrix, const doub
         }
     }
     
-    return hist;
+    return std::move(hist);
 }
 
 std::unique_ptr<TH1> MatrixToHist1D (const arma::Mat<double>& matrix, const double& range) {
-    /**
-     * Return a unique pointer to a ROOT TH1F filled with the content of the arma matrix 'matrix'.
-    **/
-
-    unsigned N1 = size(matrix, 0);
+    
+    const unsigned N1 = size(matrix, 0);
     
     std::unique_ptr<TH1> hist (new TH1F("hist", "", N1, -range, range) );
     
@@ -104,30 +98,27 @@ std::unique_ptr<TH1> MatrixToHist1D (const arma::Mat<double>& matrix, const doub
         hist->SetBinContent(i + 1, matrix(i,0));
     }
     
-    return hist;
+    return std::move(hist);
 }
 
 std::unique_ptr<TH1> MatrixToHist (const arma::Mat<double>& matrix, const double& range) {
-    /**
-     * Determine the appropriate dimension of data, and return a unique pointer to a TH1-type object (either a TH1F or a TH2F).
-    **/
-
+    
     if (size(matrix,1) == 1) {
         return MatrixToHist1D(matrix, range);
     } else {
         return MatrixToHist2D(matrix, range);
     }
-    return nullptr;
 }
 
 arma::Mat<double> HistFillMatrix2D (const TH1* hist, arma::Mat<double>& matrix) {
     
     assert(dynamic_cast<const TH2F*>(hist));
 
-    unsigned N1 = hist->GetYaxis()->GetNbins(), N2 = hist->GetXaxis()->GetNbins();
+    const unsigned N1 = hist->GetYaxis()->GetNbins();
+    const unsigned N2 = hist->GetXaxis()->GetNbins();
     
-    assert(N1 = size(matrix,0));
-    assert(N2 = size(matrix,1));
+    assert(N1 == size(matrix,0));
+    assert(N2 == size(matrix,1));
 
     matrix.zeros();
     
@@ -144,9 +135,9 @@ arma::Mat<double> HistFillMatrix1D (const TH1* hist, arma::Mat<double>& matrix) 
     
     assert(dynamic_cast<const TH1F*>(hist));
 
-    unsigned N1 = hist->GetYaxis()->GetNbins();
+    const unsigned N1 = hist->GetYaxis()->GetNbins();
     
-    assert(N1 = size(matrix,0));
+    assert(N1 == size(matrix,0));
     
     matrix.zeros();
     
@@ -158,10 +149,7 @@ arma::Mat<double> HistFillMatrix1D (const TH1* hist, arma::Mat<double>& matrix) 
 }
 
 arma::Mat<double> HistFillMatrix (const TH1* hist, arma::Mat<double>& matrix) {
-    /**
-     * Determine the appropriate dimension of data, and return a unique pointer to a TH1-type object (either a TH1F or a TH2F).
-    **/
-
+   
     if (size(matrix,1) == 1) {
         return HistFillMatrix1D(hist, matrix);
     } else {
@@ -173,7 +161,8 @@ arma::Mat<double> HistToMatrix2D (const TH1* hist) {
     
     assert(dynamic_cast<const TH2F*>(hist));
 
-    unsigned N1 = hist->GetYaxis()->GetNbins(), N2 = hist->GetXaxis()->GetNbins();
+    const unsigned N1 = hist->GetYaxis()->GetNbins();
+    const unsigned N2 = hist->GetXaxis()->GetNbins();
     
     arma::Mat<double> matrix (N1, N2, arma::fill::zeros);
     
@@ -190,7 +179,7 @@ arma::Mat<double> HistToMatrix1D (const TH1* hist) {
 
     assert(dynamic_cast<const TH1F*>(hist));
 
-    unsigned N1 = hist->GetXaxis()->GetNbins();
+    const unsigned N1 = hist->GetXaxis()->GetNbins();
     
     arma::Mat<double> matrix (N1, 1, arma::fill::zeros);
     
@@ -201,12 +190,8 @@ arma::Mat<double> HistToMatrix1D (const TH1* hist) {
     return matrix;
 }
 
-
 arma::Mat<double> HistFillMatrix (const TH1* hist) {
-    /**
-     * Determine the type of the histogram, and return an appropriately filled Armadillo matrix.
-    **/
-
+    
     if (const TH2F* p = dynamic_cast<const TH2F*>(hist)) {
         return HistToMatrix2D(hist);
     } else {

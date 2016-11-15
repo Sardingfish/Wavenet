@@ -2,8 +2,10 @@
 #define WAVENET_UTILS_H
 
 /**
- * @file Utilities.h
+ * @file   Utilities.h
  * @author Andreas Sogaard
+ * @date   15 November 2016
+ * @brief  Collection of utility functions.
  */
 
 // STL include(s).
@@ -11,6 +13,7 @@
 #include <sys/stat.h> /* struct stat */
 #include <cassert> /* assert */
 #include <memory> /* std::unique_ptr */
+#include <utility> /* std::move */
 
 #ifdef USE_ROOT
 // ROOT include(s).
