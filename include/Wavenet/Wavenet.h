@@ -28,6 +28,9 @@
 #include "Wavenet/Snapshot.h"
 #include "Wavenet/CostFunctions.h"
 
+typedef arma::field< arma::Col<double> >              Activations1D_t;
+typedef std::vector< std::vector< Activations1D_t > > Activations2D_t;
+
 namespace wavenet {
 
 class Wavenet : Logger {
@@ -38,7 +41,7 @@ public:
      * @TODO: Declare all member function which do not change the state of the of the object (i.e. all get-methods) as 'const'.
      */
     
-    /// Constructor(s).
+/// Constructor(s).
     Wavenet () {};
     Wavenet (const double& lambda) :
         m_lambda(lambda)
@@ -57,11 +60,11 @@ public:
     {};
     
 
-    /// Destructor.
+/// Destructor.
     ~Wavenet () {};
     
 
-    /// Get method(s).
+/// Get method(s).
     inline double lambda           () const { return m_lambda; }
     inline double alpha            () const { return m_alpha; }
     inline double inertia          () const { return m_inertia; }
@@ -83,7 +86,7 @@ public:
     inline double lastCost () const { return (costLog().size() > 0 ? costLog()[costLog().size() - 1]: -1);}
 
     
-    /// Set method(s).
+/// Set method(s).
     inline bool setLambda           (const double& lambda)           { assert(lambda           > 0); m_lambda           = lambda;           return true; }
     inline bool setAlpha            (const double& alpha)            { assert(alpha            > 0); m_alpha            = alpha;            return true; }
     inline bool setInertia          (const double& inertia)          { assert(inertia          > 0); m_inertia          = inertia;          return true; }
@@ -97,30 +100,52 @@ public:
     inline bool doWavelet (const bool& wavelet) { m_wavelet   = wavelet;   return true; }
     
 
-    /// Print method(s).
+/// Print method(s).
+    /**
+     * Print the configuration of the wavenet object to stdout.
+     */
     void print () const;
 
 
-    /// Storage method(s).
+/// Storage method(s).
     /**
-     * The snapshots are passed by value since (1) they're tiny, (2) the methods are called infrequently, and (3) this allows us load from/save to temporary snapshot objects, which means that we can do e.g. wavenet.save(snap++).
+     * @brief Save the wavenet object to file.
+     *
+     * Save the wavenet object to the file pointed to by the Snapshot object.
+     *
+     * Snapshots are passed by value since (1) they're tiny, (2) the methods are
+     * called infrequently, and (3) this allows us load from/save to temporary 
+     * snapshot objects, which means that we can do e.g. wavenet.save(snap++).
+     * 
+     * @param snap The Snapshot object to which the wavenet object is to be 
+     *             saved.
      */
     void save (Snapshot snap) const;
+    /**
+     * @brief Load a wavenet object from file.
+     *
+     * Load a wavenet object from the file pointed to by the Snapshot object. 
+     * This method modifies the internal state of the calling Wavenet object to 
+     * match that of the saved object.
+     *
+     * @param snap The Snapshot object from  which the wavenet object is to be 
+     *             loaded.
+     */
     void load (Snapshot snap);
 
     
-    /// 1D wavenet transform method(s).
+/// 1D wavenet transform method(s).
     /**
      * @brief Forward transform of (column) vector.
      *
      * Since C++ methods cannot be distinguished simply based on the type of the
      * return argument, no equivalent method returning a vector of wavelet 
      * coefficients is implemented. This behaviour can however be achieved using 
-     * the 'coeffsFromActivations' method below.
+     * the 'coeffsFromActivations' method (@see Utilities.h).
      *
      * @param x The input vector which is forward transformed.
-     * @returns Collection of neural network activations for all layers/levels 
-     *          in the wavenet.
+     * @return Collection of neural network activations for all layers/levels 
+     *         in the wavenet.
      */
     arma::field< arma::Col<double> > forward (const arma::Col<double>& x);
     
@@ -132,9 +157,9 @@ public:
      *
      * @param activations Collection of activations for all layers/levels in the 
               wavenet.
-     * @returns Vector of values in position space.
-     */
-    arma::Col<double> inverse (const arma::field< arma::Col<double> >& activations);
+     * @return Vector of values in position space.
+     * /
+    arma::Col<double> inverse (const arma::field< arma::Col<double> >& activations);*/
     /**
      * @brief Inverse transform of wavelet coefficients.
      *
@@ -142,24 +167,88 @@ public:
      * collection of neural network activations.
      *
      * @param activations Vector of wavelet coefficients.
-     * @returns Vector of values in position space.
+     * @return Vector of values in position space.
      */
     arma::Col<double> inverse (const arma::Col<double>& y);
 
-    /// 2D wavenet transform method(s).
+    /* @TODO: Make similar function for 2D activations, with same signature? This would ensure consistency with 'forward' and 'inverse' methods. Put in the same place in the code. Make typedefs for complicated, nested types? */
+    arma::field< arma::Col<double> > backpropagate (const arma::Col<double>& delta, arma::field< arma::Col<double> > activations);
+
+/// 2D wavenet transform method(s).
     std::vector< std::vector< arma::field< arma::Col<double> > > > forward (const arma::Mat<double>& X);
     arma::Mat<double>                                              inverse (const arma::Mat<double>& Y);
 
+
+/// High-level learning method(s).
     
-    /// High-level cost method(s).
+    void train (arma::Mat<double> X);
     
+    
+
+    
+/// High-level cost method(s).
+    /**
+     * @brief Compute the combined cost of a vector of wavelet coefficients, and
+     *        the member filter coefficients.
+     *
+     * The method comptued the combined cost of the current wavenet 
+     * configuration with wavelet coefficients specified as argument. The 
+     * sparsity term is computed as the Gini coefficient of the wavelet 
+     * coefficiets. The regularisation term is computed as squared deviations 
+     * from the five (four non-trivial) wavelet conditions on the filter 
+     * coefficients. The regularisation term is scaled by the regularisation 
+     * constant lambda.
+     *
+     * @param y A vector of wavelet coefficients, from the forward transform.
+     * @return The combined (sparsity + regularisation) cost of the wavenet 
+     *         configuration given the specified wavelet coefficients.
+     */
     double cost (const arma::Col<double>& y);
+    /**
+     * @brief Compute the combined cost of a matrix of wavelet coefficients, and
+     *        and the member filter coefficients.
+     *
+     * Wraps the cost method accepting vectors of wavelet coefficients.
+     * @see cost(arma::Col<double>)
+     * @param Y A matrix of wavelet coefficients, from the forward transform.
+     * @return The combined (sparsity + regularisation) cost of the wavenet 
+     *         configuration given the specified wavelet coefficients.   
+     */
     double cost (const arma::Mat<double>& Y);
     
-    arma::field< arma::Mat<double> > costMap (const arma::Mat<double>& X, const double& range, const unsigned& Ndiv);
+    /**
+     * @brief Produce cost maps for a set of input examples.
+     *
+     * This method performs a 2D scan of filter coefficients, and for each 
+     * combination computes the combined, sparsity-only, and regularisation-only 
+     * costs given the provided input examples. This is useful for visualising 
+     * the low-dimensionality cost space of the data, but due to visualisation 
+     * and computating limitations, the method can only scan filter coefficients 
+     * in two dimensions. (This is core of the argument for needing a machine 
+     * learning techinque for higher-dimension optimisation in the first place).
+     *
+     * @param X A vector of input examples, in the form of Armadillo matrices, 
+     *          for which the cost map is to be produced.
+     * @param range Upper and lower (-range) limits of the filter coefficients 
+     *              used to compute the cost map. A range of approx. 1 is likely
+     *              sufficient, due to the conditions of orthonormality imposed
+     *              on the filter coefficients.
+     * @param Ndiv The number of divisions along each axis in scanning the 
+     *             filter coefficients. The output matrix will have dimensions
+     *             Ndiv x Ndiv. A larger number of divisions means greater 
+     *             granularity, but the run time grows as Ndiv squared.
+     * @return Three matrices, mapping the (1) combined cost, (2) sparsity cost,
+     *         and (3) regularisation cost for the scan of filter coefficients
+     *         given the set of input examples. These maps are stored as 
+     *         Armadillo matrices, where each entry corresponds to a cost for a
+     *         given filter coefficient configuration, which can be found 
+     *         explicitly from the specified range and number of divisions. Each
+     *         map is stored in an Armadillo field, and is accessed as map(0,0),
+     *         map(1,0), and map(2,0), resp.          
+     */
     arma::field< arma::Mat<double> > costMap (const std::vector< arma::Mat<double> >& X, const double& range, const unsigned& Ndiv);
     
-    // High-level basis method(s).
+/// High-level basis method(s).
     arma::Mat<double> basisFunction1D (const unsigned& nRows, const unsigned& irow);
     arma::Mat<double> basisFunction2D (const unsigned& nRows, const unsigned& nCols, const unsigned& irow, const unsigned& icol);
     arma::Mat<double> basisFunction   (const unsigned& nRows, const unsigned& nCols, const unsigned& irow, const unsigned& icol);
@@ -168,6 +257,8 @@ public:
 public: 
     
     // Low-level learning method(s).
+    void flushBatchQueue ();
+
     void addMomentum   (const arma::Col<double>& momentum);
     void scaleMomentum (const double& factor);
 
@@ -187,16 +278,6 @@ public:
 
     const arma::Mat<double>& lowpassweight  (const unsigned& level, const unsigned& filt);
     const arma::Mat<double>& highpassweight (const unsigned& level, const unsigned& filt);
-
-    arma::field< arma::Col<double> > backpropagate (const arma::Col<double>& delta, arma::field< arma::Col<double> > activations);
-    
-    void batchTrain (arma::Mat<double> X);
-    void flushBatchQueue ();
-    
-    // Miscellaneous.
-    arma::Col<double> coeffsFromActivations (const arma::field< arma::Col<double> >& activations);
-    arma::Mat<double> coeffsFromActivations (const std::vector< std::vector< arma::field< arma::Col<double> > > >& Activations);
-    
 
 protected:
 

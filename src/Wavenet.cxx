@@ -160,6 +160,7 @@ arma::field< arma::Col<double> > Wavenet::forward (const arma::Col<double>& x) {
     return activations;
 }
 
+/* Conceptually equivalent to Wavenet::inverse(arma::Col<T>), but has little use.
 arma::Col<double> Wavenet::inverse (const arma::field< arma::Col<double> >& activations) {
     
     const unsigned m = log2(size(activations, 0));
@@ -173,6 +174,7 @@ arma::Col<double> Wavenet::inverse (const arma::field< arma::Col<double> >& acti
     
     return x;
 }
+*/
 
 arma::Col<double> Wavenet::inverse (const arma::Col<double>& y) {
 
@@ -187,6 +189,61 @@ arma::Col<double> Wavenet::inverse (const arma::Col<double>& y) {
     }
     
     return x;
+}
+
+arma::field< arma::Col<double> > Wavenet::backpropagate (const arma::Col<double>& delta, arma::field< arma::Col<double> > activations) {
+    
+    const unsigned N = m_filter.n_elem;
+    const unsigned m = size(activations, 0) - 1;
+    
+    if (!m_hasCachedWeights) { cacheWeights(m); }
+    
+    arma::Col<double> Delta  (N, arma::fill::zeros);
+    
+    arma::Col<double> delta_LP (1), delta_HP (1), delta_new_LP, delta_new_HP, activ_LP;
+    delta_LP.row(0) = delta.row(0);
+    if (size(delta,0) > 1) {
+        // Guard for 1D cases.
+        delta_HP.row(0) = delta.row(1);
+    }
+    
+
+    arma::Mat<double> error_LP, error_HP;
+    for (unsigned i = 0; i < m; i++) {
+        
+        activ_LP = activations(i + 1, 0);
+
+        // * Lowpass
+        error_LP = outerProduct(delta_LP, activ_LP);
+       
+        for (unsigned k = 0; k < N; k++) {
+            Delta (k) += frobeniusProduct( lowpassweight (i, k), error_LP );
+        }
+        
+        // * Highpass
+        error_HP = outerProduct(delta_HP, activ_LP);
+      
+        for (unsigned k = 0; k < N; k++) {
+            Delta (k) += frobeniusProduct( highpassweight (i, k), error_HP );
+        }
+
+        // * Next level.
+        delta_LP = inv_lowpassfilter(delta_LP) + inv_highpassfilter(delta_HP);
+        if (i != m - 1) {
+            delta_HP = delta(arma::span( pow(2, i + 1), pow(2, i + 2) - 1 ));
+        } else {
+            delta_HP.copy_size(delta_LP);
+            delta_HP.zeros();
+        }
+        
+    }
+    
+    arma::field< arma::Col<double> > outField(2,1);
+    
+    outField(0,0) = Delta;
+    outField(1,0) = delta_LP;
+    
+    return outField;
 }
 
 
@@ -247,6 +304,66 @@ arma::Mat<double> Wavenet::inverse (const arma::Mat<double>& Y) {
 }
 
 
+
+
+/// High-level learning method(s).
+// -----------------------------------------------------------------------------
+
+void Wavenet::train (arma::Mat<double> X) {
+    
+    /// Main method for training wavenet instance. 
+    /// 
+    /// Performs (1) forward propagation to find activation of all nodes and (2) back-progation to find error terms of all matrix weights (i.e. wavelet filter coefficients).
+
+    const unsigned nRows = size(X, 0);
+    const unsigned nCols = size(X, 1);
+
+    // Perform forward transform of input 'X', and get activations of all nodes in wavenet.
+    std::vector< std::vector< arma::field< arma::Col<double> > > > Activations = forward(X);
+    
+    // Given the complete set of node activations, get the (nRows x nCols) set of wavelet coefficients.
+    arma::Mat< double > Y (size(X));
+    for (unsigned icol = 0; icol < nCols; icol++) {
+        Y.col(icol) = coeffsFromActivations( Activations.at(1).at(icol) );
+    }
+    
+    // Compute sparsity error on wavelet (NB: not filter) coefficents.
+    arma::Mat< double > delta = SparseTermDeriv(Y), new_delta(size(delta)); 
+    
+    // Back-propagate these errors to errors on the transfer matrix weights (i.e. filter coefficients).
+    arma::Col<double> Delta  (size(m_filter), arma::fill::zeros);
+    arma::Col<double> weight (size(m_filter), arma::fill::zeros);
+
+    // -- Columns.
+    for (unsigned icol = 0; icol < nCols; icol++) {
+        arma::field< arma::Col<double> > outField = backpropagate(delta.col(icol), Activations.at(1).at(icol));
+        Delta += outField(0,0);
+        new_delta.col(icol) = outField(1,0);
+    }
+
+    // -- Rows.
+    for (unsigned irow = 0; irow < nRows; irow++) {
+        arma::field< arma::Col<double> > outField = backpropagate(new_delta.row(irow).t(), Activations.at(0).at(irow));
+        Delta += outField(0,0);
+    }
+    
+    // Compute sparsity error on filter coefficients.
+    arma::Col<double> regularisation = lambda() * RegTermDeriv(m_filter, wavelet());
+    
+    // Compute combined errror
+    Delta += regularisation;
+
+    // Add current combined (back-propagated sparsity and regularisation) errors to batch queue.
+    m_batchQueue.push_back(Delta);
+    m_costLog.back() += cost(Y);
+
+    // If batch queue has reach maximal batch size, flush the queue.
+    if (m_batchQueue.size() >= m_batchSize) { flushBatchQueue(); }
+    
+    return;
+}
+
+
 /// High-level cost method(s).
 // -----------------------------------------------------------------------------
 
@@ -256,7 +373,7 @@ double Wavenet::cost (const arma::Col<double>& y) {
     double S = SparseTerm(y);
     
     // Regularisation term.
-    double R = lambda() * RegTerm(filter());
+    double R = lambda() * RegTerm(m_filter, m_wavelet);
     
     // Sum.
     double J = S + R;
@@ -267,10 +384,6 @@ double Wavenet::cost (const arma::Col<double>& y) {
 double Wavenet::cost (const arma::Mat<double>& Y) {
     arma::Col<double> y = vectorise(Y);
     return cost(y);
-}
-
-arma::field< arma::Mat<double> > Wavenet::costMap (const arma::Mat<double>& X, const double& range, const unsigned& Ndiv) {
-    return costMap(std::vector< arma::Mat<double> > ({X}), range, Ndiv);
 }
 
 arma::field< arma::Mat<double> > Wavenet::costMap (const std::vector< arma::Mat<double> >& X, const double& range, const unsigned& Ndiv) {
@@ -293,7 +406,7 @@ arma::field< arma::Mat<double> > Wavenet::costMap (const std::vector< arma::Mat<
                 arma::Mat<double> Y = coeffsFromActivations(Activations);
                 costs(0,0).submat(arma::span(i,i),arma::span(j,j)) += cost(Y);
                 costs(1,0).submat(arma::span(i,i),arma::span(j,j)) += SparseTerm(Y);
-                costs(2,0).submat(arma::span(i,i),arma::span(j,j)) += lambda() * RegTerm(m_filter);
+                costs(2,0).submat(arma::span(i,i),arma::span(j,j)) += lambda() * RegTerm(m_filter, m_wavelet);
             }
         }
     }
@@ -307,8 +420,8 @@ arma::field< arma::Mat<double> > Wavenet::costMap (const std::vector< arma::Mat<
 }
 
 
-// High-level learnings method(s).
-// -------------------------------------------------------------------
+/// High-level basis method(s).
+// -----------------------------------------------------------------------------
 
 arma::Mat<double> Wavenet::basisFunction1D (const unsigned& N, const unsigned& i) {
     if (!isRadix2(N)) {
@@ -357,15 +470,37 @@ arma::Mat<double> Wavenet::basisFunction (const unsigned& nRows, const unsigned&
 
 
 
- // Low-level learnings method(s).
-// -------------------------------------------------------------------
+/// Low-level learnings method(s).
+// -----------------------------------------------------------------------------
+
+void Wavenet::flushBatchQueue () {
+
+    // If batch is empty, exit.
+    if (!m_batchQueue.size()) { return; }
+
+    // Compute batch-averaged gradient.
+    arma::Col<double> gradient (size(m_filter), arma::fill::zeros);
+    for (unsigned i = 0; i < m_batchQueue.size(); i++) {
+        gradient += m_batchQueue.at(i);
+    }
+    gradient /= float(m_batchQueue.size());
+    
+    // Update with batch-averaged gradient.
+    this->update(gradient);
+
+    // Update cost log.
+    m_costLog.back() /= float(m_batchQueue.size());
+    m_costLog.push_back(0);
+    
+    // Clear batch queue.
+    m_batchQueue.clear();
+    
+    return;
+}
 
 void Wavenet::addMomentum   (const arma::Col<double>& momentum) {
-    if (m_momentum.n_elem > 0) {
-        m_momentum += momentum;
-    } else {
-        m_momentum  = momentum;
-    }
+    if (m_momentum.n_elem > 0) { m_momentum += momentum; }
+    else                       { m_momentum  = momentum; }
     return;
 }
 
@@ -393,7 +528,7 @@ void Wavenet::update (const arma::Col<double>& gradient) {
     double effectiveInertita = (m_inertiaTimeScale > 0. ? m_inertia * m_inertiaTimeScale / (m_inertiaTimeScale + float(steps)): m_inertia);
     
     // Update.
-    scaleMomentum( effectiveInertita ); /* scaleMomentum( m_inertia ); */
+    scaleMomentum( effectiveInertita ); 
     addMomentum( - m_alpha * gradient);
     setFilter( m_filter + m_momentum );
     return;
@@ -492,173 +627,6 @@ const arma::Mat<double>& Wavenet::lowpassweight (const unsigned& level, const un
 const arma::Mat<double>& Wavenet::highpassweight (const unsigned& level, const unsigned& filt) {
     if (!m_hasCachedWeights || size(m_cachedHighpassWeights, 0) <= level) { cacheWeights(level); }
     return m_cachedHighpassWeights(level, filt);
-}
-
-arma::field< arma::Col<double> > Wavenet::backpropagate (const arma::Col<double>& delta, arma::field< arma::Col<double> > activations) {
-    
-    const unsigned N = m_filter.n_elem;
-    const unsigned m = size(activations, 0) - 1;
-    
-    if (!m_hasCachedWeights) { cacheWeights(m); }
-    
-    arma::Col<double> Delta  (N, arma::fill::zeros);
-    
-    arma::Col<double> delta_LP (1), delta_HP (1), delta_new_LP, delta_new_HP, activ_LP;
-    delta_LP.row(0) = delta.row(0);
-    if (size(delta,0) > 1) {
-        // Guard for 1D cases.
-        delta_HP.row(0) = delta.row(1);
-    }
-    
-
-    arma::Mat<double> error_LP, error_HP;
-    for (unsigned i = 0; i < m; i++) {
-        
-        activ_LP = activations(i + 1, 0);
-
-        // * Lowpass
-        error_LP = outerProduct(delta_LP, activ_LP);
-       
-        for (unsigned k = 0; k < N; k++) {
-            Delta (k) += frobeniusProduct( lowpassweight (i, k), error_LP );
-        }
-        
-        // * Highpass
-        error_HP = outerProduct(delta_HP, activ_LP);
-      
-        for (unsigned k = 0; k < N; k++) {
-            Delta (k) += frobeniusProduct( highpassweight (i, k), error_HP );
-        }
-
-        // * Next level.
-        delta_LP = inv_lowpassfilter(delta_LP) + inv_highpassfilter(delta_HP);
-        if (i != m - 1) {
-            delta_HP = delta(arma::span( pow(2, i + 1), pow(2, i + 2) - 1 ));
-        } else {
-            delta_HP.copy_size(delta_LP);
-            delta_HP.zeros();
-        }
-        
-    }
-    
-    arma::field< arma::Col<double> > outField(2,1);
-    
-    outField(0,0) = Delta;
-    outField(1,0) = delta_LP;
-    
-    return outField;
-}
-
-void Wavenet::batchTrain (arma::Mat<double> X) {
-    
-    /// Main method for training wavenet instance. 
-    /// 
-    /// Performs (1) forward propagation to find activation of all nodes and (2) back-progation to find error terms of all matrix weights (i.e. wavelet filter coefficients).
-
-    const unsigned nRows = size(X, 0);
-    const unsigned nCols = size(X, 1);
-
-    // Perform forward transform of input 'X', and get activations of all nodes in wavenet.
-    std::vector< std::vector< arma::field< arma::Col<double> > > > Activations = forward(X);
-    
-    // Given the complete set of node activations, get the (nRows x nCols) set of wavelet coefficients.
-    arma::Mat< double > Y (size(X));
-    for (unsigned icol = 0; icol < nCols; icol++) {
-        Y.col(icol) = coeffsFromActivations( Activations.at(1).at(icol) );
-    }
-    
-    // Compute sparsity error on wavelet (NB: not filter) coefficents.
-    arma::Mat< double > delta = SparseTermDeriv(Y), new_delta(size(delta)); 
-    
-    // Back-propagate these errors to errors on the transfer matrix weights (i.e. filter coefficients).
-    arma::Col<double> Delta  (size(m_filter), arma::fill::zeros);
-    arma::Col<double> weight (size(m_filter), arma::fill::zeros);
-
-    // -- Columns.
-    for (unsigned icol = 0; icol < nCols; icol++) {
-        arma::field< arma::Col<double> > outField = backpropagate(delta.col(icol), Activations.at(1).at(icol));
-        Delta += outField(0,0);
-        new_delta.col(icol) = outField(1,0);
-    }
-
-    // -- Rows.
-    for (unsigned irow = 0; irow < nRows; irow++) {
-        arma::field< arma::Col<double> > outField = backpropagate(new_delta.row(irow).t(), Activations.at(0).at(irow));
-        Delta += outField(0,0);
-    }
-    
-    // Compute sparsity error on filter coefficients.
-    arma::Col<double> regularisation = lambda() * RegTermDeriv(m_filter);
-    
-    // Compute combined errror
-    Delta += regularisation;
-
-    // Add current combined (back-propagated sparsity and regularisation) errors to batch queue.
-    m_batchQueue.push_back(Delta);
-    m_costLog.back() += cost(Y);
-
-    // If batch queue has reach maximal batch size, flush the queue.
-    if (m_batchQueue.size() >= m_batchSize) { flushBatchQueue(); }
-    
-    return;
-}
-
-
-void Wavenet::flushBatchQueue () {
-    // If batch is empty, exit.
-    if (!m_batchQueue.size()) { return; }
-
-    // Compute batch-averaged gradient.
-    arma::Col<double> gradient (size(m_filter), arma::fill::zeros);
-    for (unsigned i = 0; i < m_batchQueue.size(); i++) {
-        gradient += m_batchQueue.at(i);
-    }
-    gradient /= float(m_batchQueue.size());
-    
-    // Update with batch-averaged gradient.
-    this->update(gradient);
-
-    // Update cost log.
-    m_costLog.back() /= float(m_batchQueue.size());
-    m_costLog.push_back(0);
-    
-    // Clear batch queue.
-    m_batchQueue.clear();
-    
-    return;
-}
-
-
- // Miscellaneous.
-// -------------------------------------------------------------------
-arma::Col<double> Wavenet::coeffsFromActivations (const arma::field< arma::Col<double> >& activations) {
-    
-    const unsigned m = size(activations, 0) - 1;
-    
-    arma::Col<double> y (pow(2, m), arma::fill::zeros);
-
-    y(arma::span(0,0)) = activations(0, 0);
-    for (unsigned i = 0; i < m; i++) {
-        y( arma::span(pow(2, i), pow(2, i + 1) - 1) ) = activations(i, 1);
-    }
-    
-    return y;
-    
-}
-
-arma::Mat<double> Wavenet::coeffsFromActivations (const std::vector< std::vector< arma::field< arma::Col<double> > > >& Activations) {
-    
-    const unsigned nRows = Activations.at(0).size();
-    const unsigned nCols = Activations.at(1).size();
-    
-    arma::Mat<double> Y (nRows, nCols, arma::fill::zeros);
-    
-    for (unsigned icol = 0; icol < nCols; icol++) {
-        Y.col(icol) = coeffsFromActivations(Activations.at(1).at(icol));
-    }
-    
-    return Y;
-    
 }
 
 } // namespace
