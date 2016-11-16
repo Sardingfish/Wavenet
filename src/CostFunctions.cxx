@@ -17,7 +17,7 @@ double SparseTerm (const arma::Col<double>& y) {
     double f = - dot( (2*indices - N - 1), ySortAbs);
     double g = N * sum(ySortAbs);
     
-    return f/g + 1;
+    return f/g + 1.;
 }
 
 double SparseTerm (const arma::Mat<double>& Y) {
