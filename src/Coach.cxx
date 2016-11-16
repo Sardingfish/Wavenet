@@ -163,7 +163,7 @@ bool Coach::run () {
                 }
 
                 // Main training call.
-                m_wavenet->batchTrain( m_generator->next() );
+                m_wavenet->train( m_generator->next() );
 
                 // Adaptive learning rate.
                 if (useAdaptiveLearningRate()) {
