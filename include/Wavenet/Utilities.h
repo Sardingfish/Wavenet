@@ -101,6 +101,12 @@ inline bool isEmpty (const std::string& s) {
 // Randomly generate point on N-sphere.
 arma::Col<double> PointOnNSphere (const unsigned& N, const double& rho = 0., bool restrict = false);
 
+// Given a collection of 1D neural network activations, return the corresponding vector of wavelet coefficients.
+arma::Col<double> coeffsFromActivations (const arma::field< arma::Col<double> >& activations);
+    
+// Given a collection of 2D neural network activations, return the corresponding matrix of wavelet coefficients.
+arma::Mat<double> coeffsFromActivations (const std::vector< std::vector< arma::field< arma::Col<double> > > >& Activations);
+    
 
 /// ROOT-specific functions.
 #ifdef USE_ROOT

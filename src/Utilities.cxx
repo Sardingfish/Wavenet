@@ -32,6 +32,34 @@ arma::Col<double> PointOnNSphere (const unsigned& N, const double& rho, bool res
     return coords;
 }
 
+arma::Col<double> coeffsFromActivations (const arma::field< arma::Col<double> >& activations) {
+    
+    const unsigned m = size(activations, 0) - 1;
+    
+    arma::Col<double> y (pow(2, m), arma::fill::zeros);
+
+    y(arma::span(0,0)) = activations(0, 0);
+    for (unsigned i = 0; i < m; i++) {
+        y( arma::span(pow(2, i), pow(2, i + 1) - 1) ) = activations(i, 1);
+    }
+    
+    return y;
+}
+
+arma::Mat<double> coeffsFromActivations (const std::vector< std::vector< arma::field< arma::Col<double> > > >& Activations) {
+    
+    const unsigned nRows = Activations.at(0).size();
+    const unsigned nCols = Activations.at(1).size();
+    
+    arma::Mat<double> Y (nRows, nCols, arma::fill::zeros);
+    
+    for (unsigned icol = 0; icol < nCols; icol++) {
+        Y.col(icol) = coeffsFromActivations(Activations.at(1).at(icol));
+    }
+    
+    return Y;
+}
+
 
 /// ROOT-specific functions.
 #ifdef USE_ROOT
@@ -62,7 +90,7 @@ TGraph costGraph (const std::vector< arma::Col<double> >& filterLog, const std::
         y[i] = 0;
         wavenet.setFilter(filterLog.at(i));
         for (const arma::Mat<double>& x : X) {
-            y[i] += wavenet.cost(wavenet.coeffsFromActivations(wavenet.forward(x)));
+            y[i] += wavenet.cost(coeffsFromActivations(wavenet.forward(x)));
         }
         y[i] /= (double) X.size();
     }
