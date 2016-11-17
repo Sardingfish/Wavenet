@@ -32,14 +32,41 @@ void Coach::setTargetPrecision (const double& targetPrecision) {
         WARNING("Requested target precision (%f) is no good. Exiting.", targetPrecision);
         return;
     }
-    if (!useAdaptiveLearningRate()) {
-        WARNING("Target precision is to be used in conjuction with 'adaptive learning rate'.");
-        WARNING("Remember to set it using 'Coach::setUseAdaptiveLearningRate()'. Going to continue,");
-        WARNING("but the set value of target precision won't have any effect on its own.");
+    if (!(useAdaptiveLearningRate() || useAdaptiveBatchSize())) {
+        WARNING("Target precision is to be used in conjuction with 'adaptive learning rate' or 'adaptive batch size'.");
+        WARNING("Remember to set it using 'Coach::setUseAdaptiveLearningRate()' or 'Coach::setUseAdaptiveBatchSize()'.");
+        WARNING(" Going to continue, but the set value of target precision won't have any effect on its own.");
     }
     m_targetPrecision = targetPrecision;
     return;
 }
+
+void Coach::checkMakeOutdir (const std::string& subdir) const {
+
+    // Perform checks.
+    if (m_basedir == "" || outdir() == "") {
+        WARNING("Directory not set.");
+        return;
+    }
+
+    if (strcmp(outdir().substr(0,1).c_str(), "/") == 0) {
+        WARNING("Directory '%s' not accepted. Only accepting realtive paths.", outdir().c_str());
+        return;
+    }
+
+    const std::string dir = outdir() + subdir;
+
+    if (dirExists(dir)) {
+        DEBUG("Directory '%s' already exists. Exiting.", dir.c_str()); 
+        return;
+    }
+    
+    // Create the directory.
+    INFO("Creating directory '%s'.", dir.c_str());
+    system(("mkdir -p " + dir).c_str());
+    
+    return;
+}   
 
 bool Coach::run () {
     
@@ -68,12 +95,13 @@ bool Coach::run () {
         if ((dynamic_cast<NeedleGenerator*>  (m_generator) != nullptr ||
              dynamic_cast<UniformGenerator*> (m_generator) != nullptr ||
              dynamic_cast<GaussianGenerator*>(m_generator) != nullptr) && 
-            !(useAdaptiveLearningRate() && targetPrecision() > 0.)) {
+            !((useAdaptiveLearningRate() || useAdaptiveBatchSize()) && targetPrecision() > 0.)) {
             WARNING("The number of events is set to %d while using", m_numEvents);
             WARNING(".. a generator with no natural epochs and with");
             WARNING(".. no target precision set. Etiher choose a ");
             WARNING(".. different generator or use");
-            WARNING(".. 'Coach::setUseAdaptiveLearningRate()' and");
+            WARNING(".. 'Coach::setUseAdaptiveLearningRate()' or")
+            WARNING(".. 'Coach::setUseAdaptiveLearningRate()', and");
             WARNING("'Coach::setTargetPrecision(someValue)'.");
             WARNING("Exiting.");
             return false;
@@ -126,6 +154,9 @@ bool Coach::run () {
                                           // Used to determine whether a batch
                                           // update occurred.
         
+        // Get the number of digits to use when printing the number of events.
+        const unsigned eventDigits = (m_numEvents > 0 ? unsigned(log10(m_numEvents)) + 1 : 1);
+
         // Loop epochs.
         for (unsigned epoch = 0; epoch < m_numEpochs; epoch++) {
 
@@ -137,36 +168,28 @@ bool Coach::run () {
                 INFO("  Epoch %d/%d", epoch + 1, m_numEpochs);
             }
 
-            // Reset lambda (if using simulated annealing).
-            /* Don't reset for each epoch. Should only be reset for each initialisation.
-            if (useSimulatedAnnealing()) {
-                m_wavenet->setLambda(lambdaBare);
-            }
-            */
-
             // Loop events.
             int event = 0;
-            int eventPrint = 100;
+            int eventPrint = m_wavenet->batchSize(); 
             do {
-                // Print progress.
-                if (m_printLevel > 2 && (event + 1) % eventPrint == 0) {
-                    if (m_numEvents == -1) { INFO("    Event %d/-",  event + 1); }
-                    else                   { INFO("    Event %d/%d", event + 1, m_numEvents); }
-                    if ((event + 1) == 10 * eventPrint) { eventPrint *= 10; }
-                }
-
                 // Simulated annealing.
                 if (useSimulatedAnnealing()) {
-                     const double f = (event + epoch * numEvents())/float(numEvents() * numEpochs());
+                     const double f = (event + epoch * numEvents()) / float(numEvents() * numEpochs());
                      const double effectiveLambda = lambdaBare * f / sq(2 - f);
                      m_wavenet->setLambda(effectiveLambda);
                 }
 
                 // Main training call.
-                m_wavenet->train( m_generator->next() );
+                bool status = m_wavenet->train( m_generator->next() );
+
+                // In case something goes wrong
+                if (!status) {
+                    done = true;
+                    break;
+                }
 
                 // Adaptive learning rate.
-                if (useAdaptiveLearningRate()) {
+                if (useAdaptiveLearningRate() || useAdaptiveBatchSize()) {
 
                     // Determine whether a batch upate took place, by checking 
                     // whether the size of the cost log changed.
@@ -200,15 +223,24 @@ bool Coach::run () {
                         // Check whether we have reached target precision or 
                         // whether to perform adaptive learning rate update. 
                         if (targetPrecision() != -1 && meanStepSize < targetPrecision() && !useSimulatedAnnealing()) {
-                            INFO("[Adaptive learning rate] The mean step size over the last %d updates (%f)", useLastN, meanStepSize);
-                            INFO("[Adaptive learning rate] is smaller than the target precision (%f). Done.", targetPrecision());
+                            INFO("[Adaptive learning] The mean step size over the last %d updates (%f)", useLastN, meanStepSize);
+                            INFO("[Adaptive learning] is smaller than the target precision (%f). Done.", targetPrecision());
                             done = true;
                         } else if (totalStepSize < meanStepSize) {
-                            INFO("[Adaptive learning rate] Total step size (%f) is smaller than mean step size (%f).", totalStepSize, meanStepSize);
-                            INFO("[Adaptive learning rate]   Increasing batch size from %d to %d.", m_wavenet->batchSize(), 2 * m_wavenet->batchSize());
-                            INFO("[Adaptive learning rate]   Reducing learning rate (alpha) from %f to %f.", m_wavenet->alpha(), (1./2.) * m_wavenet->alpha() * (totalStepSize/meanStepSize));
-                            m_wavenet->setBatchSize(  2     * m_wavenet->batchSize() );
-                            m_wavenet->setAlpha    ( (1./2.) * m_wavenet->alpha() * (totalStepSize/meanStepSize));
+                            INFO("[Adaptive learning] Total step size (%f) is smaller than mean step size (%f).", totalStepSize, meanStepSize);
+
+                            // Update batch size.
+                            if (useAdaptiveBatchSize()) {
+                               INFO("[Adaptive learning]   Increasing batch size from %d to %d.", m_wavenet->batchSize(), 2 * m_wavenet->batchSize());
+                               m_wavenet->setBatchSize( 2 * m_wavenet->batchSize() );
+                            }
+
+                            // Update learning rate.
+                            if (useAdaptiveLearningRate()) {
+                                INFO("[Adaptive learning]   Reducing learning rate (alpha) from %f to %f.", m_wavenet->alpha(), (1./2.) * m_wavenet->alpha() * (totalStepSize/meanStepSize));
+                                m_wavenet->setAlpha( (1./2.) * m_wavenet->alpha() * (totalStepSize/meanStepSize));
+                            }
+
                             tail = 0;
                         }
                         
@@ -216,6 +248,13 @@ bool Coach::run () {
                     }
                     
                 } 
+
+                // Print progress.
+                if (m_printLevel > 2 && ((event + 1) % eventPrint == 0  || event + 1 == m_numEvents)) {
+                    if (m_numEvents == -1) { INFO("    Event %*d/- (cost: %7.3f)",   eventDigits, event + 1, m_wavenet->lastCost()); }
+                    else                   { INFO("    Event %*d/%*d (cost: %7.3f)", eventDigits, event + 1, eventDigits, m_numEvents, m_wavenet->lastCost()); }
+                    if ((event + 1) == 10 * eventPrint) { eventPrint *= 10; }
+                }
 
                 // Increment event number. (Only level not in a for-loop, since
                 // the number of events may be unspecified, i.e. be -1.)
@@ -229,6 +268,11 @@ bool Coach::run () {
             if (done) { break; }
         }
         
+        // Clean up, by removing the last entry in the cost log, which isn't  
+        // properly scaled to batch size since the batch queue hasn't been flushed,  
+        // and therefore might bias result.
+        m_wavenet->costLog().pop_back(); 
+
         // Saving snapshot to file.
         m_wavenet->save(snap++);
     }
@@ -244,11 +288,9 @@ bool Coach::run () {
     
     outFileStream.close();
 
-    // Clean up, byremove the last entry in the cost log, which isn't properly 
-    // scaled to batch size since the batch queue hasn't been flushed, and 
-    // therefore might bias result.
-    m_wavenet->costLog().pop_back(); 
-    
+    // Clean up (?).
+    m_wavenet->clear();
+
     return true;   
 }
 

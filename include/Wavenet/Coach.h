@@ -12,6 +12,8 @@
 #include <iostream> /* std::cout */
 #include <string> /* std::string */
 #include <fstream> /* std::ofstream */
+#include <cmath> /* log10 */
+#include <cstdlib> /* system */
 
 // Wavenet include(s).
 #include "Wavenet/Utilities.h"
@@ -53,7 +55,7 @@ class Coach : Logger  {
 
 public:
     
-    /// Constructor(s).
+/// Constructor(s).
     Coach (const std::string& name) :
         m_name(name)
     {};
@@ -67,63 +69,98 @@ public:
     };
         
 
-    /// Set method(s).
-    inline void setName    (const std::string& name) { m_name = name; return; }
+/// Set method(s).
+    // Set the name.
+    inline void setName (const std::string& name) { m_name = name; return; }
+    // Set the base directory.
     inline void setBasedir (const std::string& basedir);
 
-    inline void setWavenet   (Wavenet* wavenet)         { m_wavenet   = wavenet;   return; }
+    // Specify wavenet instance to be trained.
+    inline void setWavenet (Wavenet* wavenet) { m_wavenet = wavenet; return; }
+    // Specify generator instance to provide training data.
     inline void setGenerator (GeneratorBase* generator) { m_generator = generator; return; }
     
-           void setNumEvents (const int&      numEvents);
+    // Set the number of events.
+    void setNumEvents (const int& numEvents);
+    // Set the number of epochs.
     inline void setNumEpochs (const unsigned& numEpochs) { m_numEpochs = numEpochs; return; }
-    inline void setNumInits  (const unsigned& numInits)  { m_numInits  = numInits;  return; }
-           void setNumCoeffs (const unsigned& numCoeffs);
+    // Set the number of initialisation.
+    inline void setNumInits  (const unsigned& numInits) { m_numInits = numInits; return; }
+    // Set the number of filter coefficients.
+    void setNumCoeffs (const unsigned& numCoeffs);
 
+    // Specify whether to use adaptive learning rate.
     inline void setUseAdaptiveLearningRate (const unsigned& useAdaptiveLearningRate = true) { m_useAdaptiveLearningRate = useAdaptiveLearningRate; return; }
-    inline void setUseSimulatedAnnealing   (const unsigned& useSimulatedAnnealing   = true) { m_useSimulatedAnnealing   = useSimulatedAnnealing;   return; }
-           void setTargetPrecision         (const double&   targetPrecision);
+    // Specify whether to use adaptive batch size
+    inline void setUseAdaptiveBatchSize (const unsigned& useAdaptiveBatchSize = true) { m_useAdaptiveBatchSize = useAdaptiveBatchSize; return; }
+    // Specify whether to use simulated annealing
+    inline void setUseSimulatedAnnealing (const unsigned& useSimulatedAnnealing = true) { m_useSimulatedAnnealing = useSimulatedAnnealing; return; }
+    // Set the target filter coefficient space precision.
+    void setTargetPrecision (const double& );
     
-    inline void setPrintLevel  (const bool& printLevel) { m_printLevel = printLevel; return; }
+    // Set the print level.
+    inline void setPrintLevel (const bool& printLevel) { m_printLevel = printLevel; return; }
     
 
-    /// Get method(s).
-    inline std::string name    () const { return m_name; }
+/// Get method(s).
+    // Returns the name.
+    inline std::string name () const { return m_name; }
+    // Returns the base directory.
     inline std::string basedir () const { return m_basedir; }
-    inline std::string outdir  () const { return m_basedir + m_name + "/"; }
+    // Returns the full output directory.
+    inline std::string outdir () const { return m_basedir + m_name + "/"; }
+    // If the output directory, and optional subdirectory, does't exist, create 
+    // it.
+    void checkMakeOutdir (const std::string& subdir = "") const;
     
-    inline Wavenet*       wavenet   () const { return m_wavenet; }
+    // Returns the member wavenet instance.
+    inline Wavenet* wavenet () const { return m_wavenet; }
+    // Returns the member generator instance.
     inline GeneratorBase* generator () const { return m_generator; }
 
-    inline int      numEvents  () const { return m_numEvents; }
-    inline unsigned numEpochs  () const { return m_numEpochs; }
-    inline unsigned numInits   () const { return m_numInits; }
-    inline unsigned numCoeffs  () const { return m_numCoeffs; }
+    // Returns the number of events.
+    inline int numEvents () const { return m_numEvents; }
+    // Returns the number of epochs.
+    inline unsigned numEpochs () const { return m_numEpochs; }
+    // Returns the number of initialisations.
+    inline unsigned numInits () const { return m_numInits; }
+    // Returns the number of filter coefficients.
+    inline unsigned numCoeffs () const { return m_numCoeffs; }
     
-    inline bool   useAdaptiveLearningRate () const { return m_useAdaptiveLearningRate; }
-    inline bool   useSimulatedAnnealing   () const { return m_useSimulatedAnnealing; }
-    inline double targetPrecision         () const { return m_targetPrecision; }
+    // Returns whether the instance is configured to use adaptive learning rate.
+    inline bool useAdaptiveLearningRate () const { return m_useAdaptiveLearningRate; }
+    // Returns whether the instance is configured to use adaptive learning rate.
+    inline bool useAdaptiveBatchSize () const { return m_useAdaptiveBatchSize; }
+    // Returns whether the instance is configured to use simulated annealing.
+    inline bool useSimulatedAnnealing () const { return m_useSimulatedAnnealing; }
+    // Returns the filtee coefficient space target precision.
+    inline double targetPrecision () const { return m_targetPrecision; }
     
+    // Returns the print level.
     inline unsigned printLevel () const { return m_printLevel; }
     
     
-    /// High-level training method(s).
-    // Main method for performing the training of the member wavenet object, 
-    // according to internal configuration of the current instance. Return true 
-    // if the training was completed succesfully.
+/// High-level training method(s).
+    /**
+     * Main method for performing the training of the member wavenet object, 
+     * according to internal configuration of the current instance. Return true 
+     * if the training was completed succesfully.
+     */
     bool run ();
     
 
 private:
-    
-    /// Data member(s).
+
+/// Data member(s).
     // Directory structure member(s).
     /**
-     * Unqiue name of the Coach instance.
+     * Unique name of the Coach instance.
      *
      * All output is saved under this name, in the 'outdir' which is given as 
      *   m_basedir/m_name/<here>
      */
     std::string m_name    = "";
+    
     /**
      * Base directory, in which to save the output
      *
@@ -138,6 +175,7 @@ private:
      * Pointer to the wavenet object to train.
      */
     Wavenet* m_wavenet = nullptr;
+
     /**
      * Pointer to the generator object providing the input for the training.
      */
@@ -145,9 +183,11 @@ private:
     
     // Training schedule member(s).
     /**
-     * Number of events for each epoch.
+     * Number of events for each epoch. If set to -1, the training will keep 
+     * going until the generator is no longer in a good condition
      */
     int m_numEvents = 1000;
+    
     /**
      * Number of epochs for each initialisation.
      * 
@@ -156,6 +196,7 @@ private:
      * used for all generators.
      */
      unsigned m_numEpochs = 1;
+    
     /**
      * Number of initialisations.
      *
@@ -167,6 +208,7 @@ private:
      * (which can, however, not be guaranteed).
      */
     unsigned m_numInits = 1;
+    
     /**
      * Number of wavelet filter coefficients to use in the training.
      *
@@ -181,9 +223,8 @@ private:
      * If the learning rate is adaptive, the Coach keeps track of the mean and 
      * total learning step size during the last N ('useLastN' in Coach.cxx) 
      * update steps. If the total step size is smaller than the mean step size, 
-     * the learning rate is reduced by 0.5 * (totalStepSize/meanStepSize) and 
-     * the batch size (@see Wavenet.h) is doubled. This is allows for finding a 
-     * more precise minimum.
+     * the learning rate is reduced by 0.5 * (totalStepSize/meanStepSize). This
+     * allows for finding a more precise minimum.
      *
      * If a target precision is set (@see m_targetPrecision), the training may
      * break early if the mean step size is smaller than the target precision. 
@@ -193,6 +234,25 @@ private:
      * the specified value which will make results irreproducible.
      */
     bool m_useAdaptiveLearningRate = false;
+
+    /**
+     * Whether to make the batch size adaptive.
+     *
+     * If the learning rate is adaptive, the Coach keeps track of the mean and 
+     * total learning step size during the last N ('useLastN' in Coach.cxx) 
+     * update steps. If the total step size is smaller than the mean step size, 
+     * the batch size is increase by a factor of two. This allows for finding a
+     * more precise minimum.
+     *
+     * If a target precision is set (@see m_targetPrecision), the training may
+     * break early if the mean step size is smaller than the target precision. 
+     * This may reduce training time. However, if simulated annealing is also 
+     * enabled the training won't break early, since then the minimum would have
+     * been found for a regularisation constant (lambda) which is smaller than
+     * the specified value which will make results irreproducible.
+     */
+    bool m_useAdaptiveBatchSize = false;
+    
     /**
      * Whether to use simulated annealing.
      *
@@ -225,6 +285,7 @@ private:
      * If simulated annealing is used, the training will not break early.
      */
     bool m_useSimulatedAnnealing = false;
+    
     /**
      * (Optional) target precision of the filter coefficient optimisation.
      *
