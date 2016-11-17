@@ -80,26 +80,6 @@ TGraph costGraph (const std::vector< double >& costLog) {
     return graph;
 }
 
-TGraph costGraph (const std::vector< arma::Col<double> >& filterLog, const std::vector< arma::Mat<double> >& X) {
-    
-    Wavenet wavenet;
-    const unsigned N = filterLog.size();
-    double x[N], y[N];
-    for (unsigned i = 0; i < N; i++) {
-        x[i] = i;
-        y[i] = 0;
-        wavenet.setFilter(filterLog.at(i));
-        for (const arma::Mat<double>& x : X) {
-            y[i] += wavenet.cost(coeffsFromActivations(wavenet.forward(x)));
-        }
-        y[i] /= (double) X.size();
-    }
-    
-    TGraph graph (N, x, y);
-    
-    return graph;
-}
-
 std::unique_ptr<TH1> MatrixToHist2D (const arma::Mat<double>& matrix, const double& range) {
     
     const unsigned N1 = size(matrix, 0);

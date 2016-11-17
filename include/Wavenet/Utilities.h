@@ -114,9 +114,6 @@ arma::Mat<double> coeffsFromActivations (const std::vector< std::vector< arma::f
 // Return ROOT TGraph of a cost log. By default, the internal cost log of the wavenet instance is used.
 TGraph costGraph (const std::vector< double >& costLog);
 
-// Return ROOT TGraph of a the cost log found by applying the provided list of filters to each of the matrices in the provided list of inputs. Requries external inputs.
-TGraph costGraph (const std::vector< arma::Col<double> >& filterLog, const std::vector< arma::Mat<double> >& X);    
-
 // Convert arma matrix to ROOT TH2 histogram.
 std::unique_ptr<TH1> MatrixToHist2D (const arma::Mat<double>& matrix, const double& range);
 
