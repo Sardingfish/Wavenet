@@ -43,14 +43,14 @@ public:
     // generators. The remaining virtual methods can be overwritten.
 
     // Get the next input from the generator.
-    virtual const arma::Mat<double>& next  () = 0;
+    virtual const arma::Mat<double>& next () = 0;
 
     // Whether the generator is in a good condition, i.e. whether we can safely 
     // produce the next generator input.
-    virtual bool good  () const = 0;
+    virtual bool good () = 0;
 
     // Open the generator.
-    virtual bool open  ();
+    virtual bool open ();
 
     // Close the generator.
     virtual bool close ();
