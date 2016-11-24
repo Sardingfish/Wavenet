@@ -2,7 +2,7 @@
  * @file   Example00.cxx
  * @author Andreas Sogaard
  * @date   24 November 2016
- * @brief  First Wavenet example.
+ * @brief  Minimal working example.
  */
 
  // Wavenet include(s).

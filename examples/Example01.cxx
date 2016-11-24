@@ -2,7 +2,7 @@
  * @file   Example01.cxx
  * @author Andreas Sogaard
  * @date   24 November 2016
- * @brief  Second Wavenet example.
+ * @brief  Annotated minimal working example.
  */
 
 // STL include(s).
