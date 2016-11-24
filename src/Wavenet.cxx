@@ -25,7 +25,7 @@ bool Wavenet::setFilter (const arma::Col<double>& filter) {
     m_filterLog.push_back(m_filter);
 
     // Clear operators cached with the previous filter.
-    clearCachedOperators();
+    clearCachedOperators_();
     
     // If the filter size is changes, resize the momentum vector accordingly.
     if (m_momentum.n_elem != m_filter.n_elem) {
@@ -242,10 +242,10 @@ bool Wavenet::train (arma::Mat<double> X) {
 }
 
 void Wavenet::clear () {
-    scaleMomentum(0.);
+    scaleMomentum_(0.);
     clearFilterLog();
     clearCostLog();
-    clearCachedOperators();
+    clearCachedOperators_();
     return;
 }
 
@@ -341,7 +341,7 @@ arma::Mat<double> Wavenet::basisFunction1D (const unsigned& nRows, const unsigne
     const unsigned m = log2(nRows);
 
     // Ensure matrix operators are cached.
-    if (!m_hasCachedOperators || size(m_cachedLowpassOperators, 0) < m) { cacheOperators(m - 1); }
+    if (!m_hasCachedOperators || size(m_cachedLowpassOperators, 0) < m) { cacheOperators_(m - 1); }
 
     // Perform inverse transform.
     arma::Mat<double> Y (nRows, 1, arma::fill::zeros);
@@ -366,7 +366,7 @@ arma::Mat<double> Wavenet::basisFunction2D (const unsigned& nRows, const unsigne
     const unsigned n = log2(nCols);
 
     // Ensure matrix operators are cached.
-    if (!m_hasCachedOperators || size(m_cachedLowpassOperators, 0) < std::max(m,n)) { cacheOperators(std::max(m,n) - 1); }
+    if (!m_hasCachedOperators || size(m_cachedLowpassOperators, 0) < std::max(m,n)) { cacheOperators_(std::max(m,n) - 1); }
 
     // Perform inverse transform.
     arma::Mat<double> Y (nRows, nCols, arma::fill::zeros);
@@ -422,10 +422,10 @@ Activations1D_t Wavenet::forward_ (const arma::Col<double>& x) {
     for (unsigned i = m; i --> 0; ) {
 
         // Store low-pass filter activations.
-        activations(i, 0) = lowpassfilter (x_current);
+        activations(i, 0) = lowpassfilter_ (x_current);
 
         // Store high-pass filter activations.
-        activations(i, 1) = highpassfilter(x_current);
+        activations(i, 1) = highpassfilter_(x_current);
 
         // Update vector as the low-pass filtered version, and proceed to the 
         // next level.
@@ -459,12 +459,12 @@ arma::Col<double> Wavenet::inverse_ (const arma::Col<double>& y) {
     for (unsigned i = 0; i < m; i++) {
 
         // Perform the inverse low-pass operation of the position space vector.
-        x  = inv_lowpassfilter (x);
+        x  = inv_lowpassfilter_ (x);
 
         // Perform the inverse high-pass operation on the appropriate wavelet 
         // coefficints, and add to the position space vector, to recover the
         // missing details at this level.
-        x += inv_highpassfilter(y( arma::span(pow(2, i), pow(2, i + 1) - 1) ));
+        x += inv_highpassfilter_(y( arma::span(pow(2, i), pow(2, i + 1) - 1) ));
     }
     
     return x;
@@ -477,7 +477,7 @@ std::vector< arma::Col<double> > Wavenet::backpropagate_ (const arma::Col<double
     const unsigned m = size(activations, 0) - 1; // Number of wavenet layers.
     
     // Cache filter coefficient weight matrices, if necessary.
-    if (!m_hasCachedWeights) { cacheWeights(m); }
+    if (!m_hasCachedWeights) { cacheWeights_(m); }
 
     // Initialise the gradient (or filter coefficient error) vector.
     arma::Col<double> gradient (N, arma::fill::zeros);
@@ -515,7 +515,7 @@ std::vector< arma::Col<double> > Wavenet::backpropagate_ (const arma::Col<double
        
         // Add errors to filter coefficients.
         for (unsigned k = 0; k < N; k++) {
-            gradient (k) += frobeniusProduct( lowpassweight (i, k), error_LP );
+            gradient (k) += frobeniusProduct( lowpassweight_ (i, k), error_LP );
         }
         
         // Compute error on high-pass matrix operator.
@@ -523,13 +523,13 @@ std::vector< arma::Col<double> > Wavenet::backpropagate_ (const arma::Col<double
       
         // Add errors to filter coefficients.
         for (unsigned k = 0; k < N; k++) {
-            gradient (k) += frobeniusProduct( highpassweight (i, k), error_HP );
+            gradient (k) += frobeniusProduct( highpassweight_ (i, k), error_HP );
         }
 
         // Go to next level, by performing a two single-layer inverse filter 
         // operations, and combining the result (i.e. performing one step in the 
         // inverse wavelet transform)
-        delta_LP = inv_lowpassfilter(delta_LP) + inv_highpassfilter(delta_HP);
+        delta_LP = inv_lowpassfilter_(delta_LP) + inv_highpassfilter_(delta_HP);
         if (i != m - 1) {
             // If at intermediate level, get high-pass errors from the 
             // corresponding wavelet coefficient errors.
@@ -726,7 +726,7 @@ void Wavenet::flushBatchQueue_ () {
     gradient /= float(m_batchQueue.size());
     
     // Update with batch-averaged gradient.
-    this->update(gradient);
+    this->update_(gradient);
 
     // Update cost log.
     m_costLog.back() /= float(m_batchQueue.size());
@@ -738,18 +738,18 @@ void Wavenet::flushBatchQueue_ () {
     return;
 }
 
-void Wavenet::addMomentum (const arma::Col<double>& gradient) {
+void Wavenet::addMomentum_ (const arma::Col<double>& gradient) {
     if (m_momentum.n_elem > 0) { m_momentum += gradient; }
     else                       { m_momentum  = gradient; }
     return;
 }
 
-void Wavenet::scaleMomentum (const double& factor) {
+void Wavenet::scaleMomentum_ (const double& factor) {
     m_momentum = m_momentum * factor;
     return;
 }
 
-void Wavenet::update (const arma::Col<double>& gradient) {
+void Wavenet::update_ (const arma::Col<double>& gradient) {
     
     // Compute effective inertia, if necessary, depending on set inertia time scale.
     const unsigned steps = m_costLog.size() - 1;
@@ -757,17 +757,17 @@ void Wavenet::update (const arma::Col<double>& gradient) {
     double effectiveInertita = (m_inertiaTimeScale > 0. ? m_inertia * (1. - exp( - float(steps) / m_inertiaTimeScale )) : m_inertia);
     
     // Update.
-    scaleMomentum( effectiveInertita ); 
-    addMomentum( - m_alpha * gradient);
+    scaleMomentum_( effectiveInertita ); 
+    addMomentum_( - m_alpha * gradient);
     setFilter( m_filter + m_momentum );
 
     return;
 }
 
-void Wavenet::cacheOperators (const unsigned& m) {
+void Wavenet::cacheOperators_ (const unsigned& m) {
     
     // Clear existing cache.
-    clearCachedOperators();
+    clearCachedOperators_();
 
     // Resize cache vectors.
     m_cachedLowpassOperators .set_size(m + 1, 1);
@@ -785,7 +785,7 @@ void Wavenet::cacheOperators (const unsigned& m) {
     return;
 }
 
-void Wavenet::clearCachedOperators () {
+void Wavenet::clearCachedOperators_ () {
 
     // Reset cache vectors.
     m_cachedLowpassOperators .reset();
@@ -797,13 +797,12 @@ void Wavenet::clearCachedOperators () {
     return;
 }
 
-void Wavenet::cacheWeights (const unsigned& m) {
+void Wavenet::cacheWeights_ (const unsigned& m) {
     
     DEBUG("Caching matrix weights (%d).", m);
     
     // Clear existing cache.
-    clearCachedWeights();
-    //if (!m_hasCachedOperators) { cacheOperators(m); }
+    clearCachedWeights_();
     
     // Initialise size variable(s).
     const unsigned N = m_filter.n_elem;
@@ -839,7 +838,7 @@ void Wavenet::cacheWeights (const unsigned& m) {
     return;
 }
 
-void Wavenet::clearCachedWeights () {
+void Wavenet::clearCachedWeights_ () {
 
     // Reset cache vectors.
     m_cachedLowpassWeights .reset();
@@ -851,67 +850,67 @@ void Wavenet::clearCachedWeights () {
     return;
 }
 
-arma::Col<double> Wavenet::lowpassfilter (const arma::Col<double>& x) {
+arma::Col<double> Wavenet::lowpassfilter_ (const arma::Col<double>& x) {
 
     // Get number of wavenet levels.
     const unsigned m = log2(x.n_elem);
 
     // Make sure that operators are cached at least up to level m.
-    if (!m_hasCachedOperators || size(m_cachedLowpassOperators, 0) < m) { cacheOperators(m); }
+    if (!m_hasCachedOperators || size(m_cachedLowpassOperators, 0) < m) { cacheOperators_(m); }
 
     // Apply low-pass filter using cached operator.
     return m_cachedLowpassOperators(m - 1, 0) * x;
 }
 
-arma::Col<double> Wavenet::highpassfilter (const arma::Col<double>& x) {
+arma::Col<double> Wavenet::highpassfilter_ (const arma::Col<double>& x) {
     
     // Get number of wavenet levels.
     const unsigned m = log2(x.n_elem);
     
     // Make sure that operators are cached at least up to level m.
-    if (!m_hasCachedOperators || size(m_cachedHighpassOperators, 0) < m) { cacheOperators(m); }
+    if (!m_hasCachedOperators || size(m_cachedHighpassOperators, 0) < m) { cacheOperators_(m); }
 
     // Apply high-pass filter using cached operator.
     return m_cachedHighpassOperators(m - 1, 0) * x;
 }
 
-arma::Col<double> Wavenet::inv_lowpassfilter (const arma::Col<double>& y) {
+arma::Col<double> Wavenet::inv_lowpassfilter_ (const arma::Col<double>& y) {
     
     // Get number of wavenet levels.
     const unsigned m = log2(y.n_elem);
     
     // Make sure that operators are cached at least up to level m.
-    if (!m_hasCachedOperators || size(m_cachedLowpassOperators, 0) <= m) { cacheOperators(m); }
+    if (!m_hasCachedOperators || size(m_cachedLowpassOperators, 0) <= m) { cacheOperators_(m); }
     
     // Apply inverse low-pass filter using cached operator.
     return m_cachedLowpassOperators(m, 0).t() * y;
 }
 
-arma::Col<double> Wavenet::inv_highpassfilter (const arma::Col<double>& y) {
+arma::Col<double> Wavenet::inv_highpassfilter_ (const arma::Col<double>& y) {
     
     // Get number of wavenet levels.
     const unsigned m = log2(y.n_elem);
     
     // Make sure that operators are cached at least up to level m.
-    if (!m_hasCachedOperators || size(m_cachedHighpassOperators, 0) <= m) { cacheOperators(m); }
+    if (!m_hasCachedOperators || size(m_cachedHighpassOperators, 0) <= m) { cacheOperators_(m); }
     
     // Apply inverse high-pass filter using cached operator.
     return m_cachedHighpassOperators(m, 0).t() * y;
 }
 
-const arma::Mat<double>& Wavenet::lowpassweight (const unsigned& level, const unsigned& filt) {
+const arma::Mat<double>& Wavenet::lowpassweight_ (const unsigned& level, const unsigned& filt) {
 
     // Make sure that weight matrices are cached at least up to 'level.
-    if (!m_hasCachedWeights || size(m_cachedLowpassWeights, 0) <= level) { cacheWeights(level); }
+    if (!m_hasCachedWeights || size(m_cachedLowpassWeights, 0) <= level) { cacheWeights_(level); }
 
     // Return low-pass weight matrix at 'level' for filter coefficient 'filt'.
     return m_cachedLowpassWeights(level, filt);
 }
 
-const arma::Mat<double>& Wavenet::highpassweight (const unsigned& level, const unsigned& filt) {
+const arma::Mat<double>& Wavenet::highpassweight_ (const unsigned& level, const unsigned& filt) {
     
     // Make sure that weight matrices are cached at least up to 'level.
-    if (!m_hasCachedWeights || size(m_cachedHighpassWeights, 0) <= level) { cacheWeights(level); }
+    if (!m_hasCachedWeights || size(m_cachedHighpassWeights, 0) <= level) { cacheWeights_(level); }
 
     // Return high-pass weight matrix at 'level' for filter coefficient 'filt'.
     return m_cachedHighpassWeights(level, filt);

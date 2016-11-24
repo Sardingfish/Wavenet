@@ -79,20 +79,21 @@ public:
      
 /// Constructor(s).
     Wavenet () {};
+
     Wavenet (const double& lambda) :
         m_lambda(lambda)
     {};
+
     Wavenet (const double& lambda, const double& alpha) :
         m_lambda(lambda), m_alpha(alpha)
     {};
-    Wavenet (const double& lambda, const double& alpha, const double& inertia) :
-        m_lambda(lambda), m_alpha(alpha), m_inertia(inertia)
-    {};
-    Wavenet (const double& lambda, const double& alpha, const double& inertia, const double& inertiaTimeScale) :
-        m_lambda(lambda), m_alpha(alpha), m_inertia(inertia), m_inertiaTimeScale(inertiaTimeScale)
-    {};
+
     Wavenet (const Wavenet& other) :
-        m_lambda(other.m_lambda), m_alpha(other.m_alpha), m_inertia(other.m_inertia), m_inertiaTimeScale(other.m_inertiaTimeScale), m_filter(other.m_filter)
+        m_lambda(other.m_lambda),
+        m_alpha(other.m_alpha),
+        m_inertia(other.m_inertia),
+        m_inertiaTimeScale(other.m_inertiaTimeScale),
+        m_filter(other.m_filter)
     {};
     
 
@@ -143,24 +144,50 @@ public:
     
 /// Set method(s).
     // Set the regularisation constant (lambda).
-    inline bool setLambda (const double& lambda) { assert(lambda >= 0); m_lambda = lambda; return true; }
+    inline bool setLambda (const double& lambda) {
+       assert(lambda >= 0);
+       m_lambda = lambda;
+       return true;
+    }
     // Set the learning rate (alpha).
-    inline bool setAlpha (const double& alpha) { assert(alpha > 0); m_alpha = alpha; return true; }
+    inline bool setAlpha (const double& alpha) {
+        assert(alpha > 0);
+        m_alpha = alpha;
+        return true;
+    }
     // Set the inertia.
-    inline bool setInertia (const double& inertia) { assert(inertia >= 0 && inertia < 1); m_inertia = inertia; return true; }
+    inline bool setInertia (const double& inertia) {
+        assert(inertia >= 0 && inertia < 1);
+        m_inertia = inertia;
+        return true;
+    }
     // Set the inertia time scale.
-    inline bool setInertiaTimeScale (const double& inertiaTimeScale) { assert(inertiaTimeScale > 0); m_inertiaTimeScale = inertiaTimeScale; return true; }
+    inline bool setInertiaTimeScale (const double& inertiaTimeScale) {
+        assert(inertiaTimeScale > 0);
+        m_inertiaTimeScale = inertiaTimeScale;
+        return true;
+    }
 
     // Set the vector of filter coefficients.
     bool setFilter (const arma::Col<double>& filter);
     // Set the vector momentum in filter coefficient space.
-    inline bool setMomentum (const arma::Col<double>& momentum) { assert(momentum.size() == m_filter.size()); m_momentum = momentum; return true; }
+    inline bool setMomentum (const arma::Col<double>& momentum) {
+        assert(momentum.size() == m_filter.size());
+        m_momentum = momentum;
+        return true;
+    }
 
     // Set the batch size.
-    inline bool setBatchSize (const unsigned& batchSize) { m_batchSize = batchSize; return true; }
+    inline bool setBatchSize (const unsigned& batchSize) {
+        m_batchSize = batchSize;
+        return true;
+    }
 
     // Specify whether the wavenet should learn wavelet functions
-    inline bool doWavelet (const bool& wavelet) { m_wavelet = wavelet; return true; }
+    inline bool doWavelet (const bool& wavelet) {
+        m_wavelet = wavelet;
+        return true;
+    }
     
 
 /// Print method(s).
@@ -292,7 +319,9 @@ public:
      *         map is stored in an Armadillo field, and is accessed as map(0,0),
      *         map(1,0), and map(2,0), resp.          
      */
-    arma::field< arma::Mat<double> > costMap (const std::vector< arma::Mat<double> >& X, const double& range, const unsigned& Ndiv);
+    arma::field< arma::Mat<double> > costMap (const std::vector< arma::Mat<double> >& X,
+                                              const double& range,
+                                              const unsigned& Ndiv);
     
 
 /// Basis function method(s).
@@ -331,7 +360,8 @@ public:
      *         space basis function corresponding to the specified wavelet 
      *         coefficient indices.
      */
-    arma::Mat<double> basisFunction2D (const unsigned& nRows, const unsigned& nCols, const unsigned& irow, const unsigned& icol);
+    arma::Mat<double> basisFunction2D (const unsigned& nRows, const unsigned& nCols,
+                                       const unsigned& irow,  const unsigned& icol);
 
     /**
      * @brief Generate basis function.
@@ -344,7 +374,8 @@ public:
      * @see basisFunction1D(...)
      * @see basisFunction2D(...)
      */
-    arma::Mat<double> basisFunction (const unsigned& nRows, const unsigned& nCols, const unsigned& irow, const unsigned& icol);
+    arma::Mat<double> basisFunction (const unsigned& nRows, const unsigned& nCols,
+                                     const unsigned& irow,  const unsigned& icol);
     
 
 protected: 
@@ -402,7 +433,8 @@ protected:
      *         errors for the backpropagation for each column. (2) A vector of 
      *         the error gradients for the filter coefficents.
      */
-    std::vector< arma::Col<double> > backpropagate_ (const arma::Col<double>& delta, Activations1D_t activations);
+    std::vector< arma::Col<double> > backpropagate_ (const arma::Col<double>& delta,
+                                                     Activations1D_t activations);
 
 
 /// 2D wavenet transform method(s).
@@ -463,7 +495,8 @@ protected:
      *                    progagating the errors back through the wavenet.
      * @return A vector of the error gradients for the filter coefficents.
      */
-    arma::Col<double> backpropagate_ (const arma::Mat<double>& Delta, Activations2D_t Activations);
+    arma::Col<double> backpropagate_ (const arma::Mat<double>& Delta,
+                                      Activations2D_t Activations);
 
 
 /// Low-level learning method(s).
@@ -474,7 +507,7 @@ protected:
      * update method with the average gradient, clears the batch queue, and 
      * appends the average cost of the examples in the batch to the cost log.
      * 
-     * @see update(arma::Col<double>)
+     * @see update_(arma::Col<double>)
      */
     void flushBatchQueue_ ();
 
@@ -485,14 +518,14 @@ protected:
      * If a momentum already exists, add the gradient to it. Otherwise, create a 
      * momentum given by the inpu gradient.
      */
-    void addMomentum (const arma::Col<double>& gradient);
+    void addMomentum_ (const arma::Col<double>& gradient);
    
     /**
      * @brief Scale the momentum
      * 
      * Multiply the (vector) filter coefficient momentum by a scalar factor.
      */
-    void scaleMomentum (const double& factor);
+    void scaleMomentum_ (const double& factor);
 
 
     /**
@@ -507,14 +540,14 @@ protected:
      * are specified, an effictive inertia is computed before performing the 
      * momentum update.
      *
-     * @see scaleMomentum(double)
-     * @see addMomentum(arma::Col<double>) 
+     * @see scaleMomentum_(double)
+     * @see addMomentum_(arma::Col<double>) 
      * @see setFilter(arma::Col<double>) 
      *
      * @param gradient The vector gradient in filter coefficient space according 
      *                 to which to update the filter coefficients.
      */
-    void update (const arma::Col<double>& gradient);
+    void update_ (const arma::Col<double>& gradient);
     
 
     /**
@@ -530,11 +563,11 @@ protected:
      * After successfully caching all requested matrix operators, the methods 
      * switches a flag to notify that the caching has taken place.
      *
-     * @see clearCachedOperators()
+     * @see clearCachedOperators_()
      *
      * @param m The scale (log2) up to which matrix operators should be cached. 
      */
-    void cacheOperators (const unsigned& m);
+    void cacheOperators_ (const unsigned& m);
    
     /**
      * @brief Clear matrix operator cache.
@@ -542,7 +575,7 @@ protected:
      * Resets cache vectors, and switch the flag to notify that the cache is 
      * empty.
      */
-    void clearCachedOperators ();
+    void clearCachedOperators_ ();
     
 
     /**
@@ -557,11 +590,11 @@ protected:
      * are then used to compute the weighted sum of the backprogated errors, for
      * each layer in the wavenet, which are attributed to each filter coefficient
      *
-     * @see clearCachedWeights()
+     * @see clearCachedWeights_()
      *
      * @param m The scale (log2) up to which matrix weights should be cached.
      */
-    void cacheWeights (const unsigned& m);
+    void cacheWeights_ (const unsigned& m);
    
     /**
      * @brief Clear matrix weights cache.
@@ -569,7 +602,7 @@ protected:
      * Resets cache vectors, and switch the flag to notify that the cache is 
      * empty.
      */
-    void clearCachedWeights ();
+    void clearCachedWeights_ ();
 
 
     /**
@@ -581,7 +614,7 @@ protected:
      * @param x The position space-like vector to be low-pass filtered.
      * @return The low-pass filtered vector.
      */
-    arma::Col<double> lowpassfilter      (const arma::Col<double>& x);
+    arma::Col<double> lowpassfilter_ (const arma::Col<double>& x);
    
     /**
      * @brief Apply high-pass filter.
@@ -592,7 +625,7 @@ protected:
      * @param x The position space-like vector to be high-pass filtered.
      * @return The high-pass filtered vector.
      */
-    arma::Col<double> highpassfilter     (const arma::Col<double>& x);
+    arma::Col<double> highpassfilter_ (const arma::Col<double>& x);
     
     /**
      * @brief Apply inverse low-pass filter.
@@ -603,7 +636,7 @@ protected:
      * @param y The momentum space-like vector to be inverse low-pass filtered.
      * @return The inverse low-pass filtered vector.
      */
-    arma::Col<double> inv_lowpassfilter  (const arma::Col<double>& y);
+    arma::Col<double> inv_lowpassfilter_ (const arma::Col<double>& y);
     
     /**
      * @brief Apply inverse high-pass filter.
@@ -614,7 +647,7 @@ protected:
      * @param y The momentum space-like vector to be inverse high-pass filtered.
      * @return The inverse high-pass filtered vector.
      */
-    arma::Col<double> inv_highpassfilter (const arma::Col<double>& y);
+    arma::Col<double> inv_highpassfilter_ (const arma::Col<double>& y);
 
     
     /**
@@ -628,7 +661,8 @@ protected:
      *             weight matrix.
      * @return The cached low-pass weight matrix.
      */
-    const arma::Mat<double>& lowpassweight  (const unsigned& level, const unsigned& filt);
+    const arma::Mat<double>& lowpassweight_ (const unsigned& level,
+                                             const unsigned& filt);
     
     /**
      * @brief Get the high-pass weight matrix.
@@ -641,7 +675,8 @@ protected:
      *             weight matrix.
      * @return The cached high-pass weight matrix.
      */
-    const arma::Mat<double>& highpassweight (const unsigned& level, const unsigned& filt);
+    const arma::Mat<double>& highpassweight_ (const unsigned& level,
+                                              const unsigned& filt);
 
 
 protected:
@@ -674,7 +709,7 @@ private:
      * early diverging solution, and avoid local regularisation-dominated 
      * minima.
      */
-    double m_lambda  = 10.0;
+    double m_lambda = 10.0;
 
     /**
      * @brief The learning rate, alpha.
@@ -684,14 +719,14 @@ private:
      * filter coefficient space and therefore faster solutions. However, larger
      * value of alpha might also lead to diverging solution (when combined with
      * sufficitently large values of lambda) and will lead to less precise 
-     * solutions. Good, stable values seem to be > 0.01. 
+     * solutions. Good, stable values seem to be > 0.001. 
      *
      * The 'useAdeptiveLearningRate' method allows for alpha to decrease as 
      * minima are reached. This would allow for fast traversal of the filter 
      * coefficient space early in the optimisation, as well as precise solution 
      * towards the end.
      */
-    double m_alpha   =  0.001;
+    double m_alpha = 0.001;
     
     /**
      * @brief The filter coefficient space momentum inertia.
@@ -708,7 +743,7 @@ private:
      * faster and more stable in cases of steep cost contours (large values of 
      * lambda) and may help to avoid local, sub-optimal minima.
      */
-    double m_inertia =  0.;
+    double m_inertia = 0.;
     
     /**
      * @brief The time scale of inertia onset.
@@ -815,7 +850,9 @@ private:
     /**
      * @brief Whether the instane is configured to learn wavelet functions.
      * 
-     * Alternative is any orthonormal function basis which can be expressed in terms of identical, successive filter (but not necessarily low- and high-pass type filters.)
+     * Alternative is any orthonormal function basis which can be expressed in
+     * terms of identical, successive filter (but not necessarily low- and high-
+     * pass type filters.)
      */
     bool m_wavelet = true;
     
