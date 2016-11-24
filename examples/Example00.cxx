@@ -1,4 +1,11 @@
-// Wavenet include(s).
+/**
+ * @file   Example00.cxx
+ * @author Andreas Sogaard
+ * @date   24 November 2016
+ * @brief  First Wavenet example.
+ */
+
+ // Wavenet include(s).
 #include "Wavenet/Generators.h" /* wavenet::NeedleGenerator */
 #include "Wavenet/Wavenet.h" /* wavenet::Wavenet */
 #include "Wavenet/Coach.h" /* wavevent::Coach */

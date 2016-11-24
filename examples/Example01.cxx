@@ -1,3 +1,10 @@
+/**
+ * @file   Example01.cxx
+ * @author Andreas Sogaard
+ * @date   24 November 2016
+ * @brief  Second Wavenet example.
+ */
+
 // STL include(s).
 #include <string> /* std::string */
 #include <cmath> /* sqrt */
