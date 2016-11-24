@@ -24,7 +24,6 @@ int main (int argc, char* argv[]) {
 
     // Create Coach instance.
     wavenet::Coach coach ("Example00");
-    coach.setNumCoeffs(2);
     coach.setGenerator(&ng);
     coach.setWavenet  (&wn);
     

@@ -1,40 +1,49 @@
-// STL include(s).
+/**
+ * @file   Example02.cxx
+ * @author Andreas Sogaard
+ * @date   24 November 2016
+ * @brief  Tweaking Wavenet and Coach configurations; computing cost maps.
+ */
+
+ // STL include(s).
 #include <string> /* std::string */
 #include <vector> /* std::vector */
 
 #ifdef USE_ROOT
 // ROOT include(s).
-#include "TGraph.h"
-#include "TH1F.h"
-#include "TH2F.h"
-#include "TCanvas.h"
 #include "TStyle.h"
-#include "TEllipse.h"
-//#include "TLine.h"
-#include "TMarker.h"
-#include "TLatex.h"
-#include "TColor.h"
+#include "TCanvas.h"
+#include "TH1.h"
 #endif // USE_ROOT
 
 // Wavenet include(s).
-#include "Wavenet/Logger.h" /* FCTINFO, FCTWARNING */
+#include "Wavenet/Logger.h" /* FCTINFO, FCTERROR */
 #include "Wavenet/Generators.h" /* wavenet::NeedleGenerator */
 #include "Wavenet/Wavenet.h" /* wavenet::Wavenet */
 #include "Wavenet/Coach.h" /* wavevent::Coach */
 
 /**
- * Example02: Find the best wavelet basis with 2 filter coefficients for needle-like input.
+ * Example02: Tweaking Wavenet and Coach configurations; computing cost maps.
  *
- * Requirements: ROOT
+ * Requirements: ROOT (non-essential)
  *
- * This first example shows a minimal setup, where ...
+ * The first part of this example looks suspiciously like Example00 and 
+ * Example01, except that we're tweaking the default values slightly (mainly to 
+ * show of the syntax).
  *
+ * The second part is devoted to computing cost maps for the chosen class of 
+ * training examples. These cost maps are used in Example03 (requires ROOT) to 
+ * display the combined cost contours in filter coefficient space, as well as 
+ * the paths of the filter coefficient configurations through this space during 
+ * training.
  *
+ * If ROOT is installed, the generator training examples used for computing the 
+ * cost map are saved as PDF files.
  */
 int main (int argc, char* argv[]) {
 
     FCTINFO("===========================================================");
-    FCTINFO("Running Wavenet Example01.");
+    FCTINFO("Running Wavenet Example02.");
     FCTINFO("-----------------------------------------------------------");
 
     #ifndef USE_ROOT
@@ -49,200 +58,143 @@ int main (int argc, char* argv[]) {
     // Set the number of filter coefficients.
     const unsigned int numCoeffs = 2;
 
-    // Set number of initialisations, i.e. runs with different initial conditions. Default value is 1.
-    const unsigned int numInits = 20;
+    // Specify the number of initialisations, i.e. runs with different initial 
+    // conditions.
+    const unsigned int numInits = 10;
 
     // Create a Generator instance, here 'NeedleGenerator', and specify shape.
     wavenet::NeedleGenerator ng;
-    ng.setShape({16,16});
+    ng.setShape({32, 32});
     
-    // Create a 'Wavenet' instance.
-    // For this example, we're tuning the settings slightly cf. the default values.
+    // Create a 'Wavenet' instance. For this example, we're tuning the settings 
+    // slightly cf. the default values.
     wavenet::Wavenet wn;
-    wn.setAlpha(0.001);  // Learning rate. Default value is 0.01
-    wn.setBatchSize(10); // Batch size, i.e. the number of input examples used in each batch of the SGD. Default value is 1.
+    wn.setAlpha(0.0005); // Learning rate. Default value is 0.001
+    wn.setLambda(20.);   // Regularisation constant. Default value is 10.
+    wn.setBatchSize(10); // Batch size. Default value is 1.
     
-
-    // Create a 'Coach' instance.
-    // For this example, we're also tuning the settings slightly.
+    // Create a 'Coach' instance. For this example, we're also tuning the 
+    // settings slightly.
     wavenet::Coach coach (name);
     coach.setNumCoeffs(numCoeffs);
     coach.setGenerator(&ng);
     coach.setWavenet  (&wn);
 
-    coach.setNumEvents(2000); // Number of events used in each "epoch". Default value is 1000.
-    coach.setNumInits (numInits);
+    coach.setNumEvents(5000);     // Number of events for each epoch. Default value is 1000.
+    coach.setNumEpochs(2);        // Number of epochs for each initialisation. Default value is 1.
+    coach.setNumInits (numInits); // Number of initialisations. Default value is 1.
+    
+    coach.setUseAdaptiveLearningRate(true); // Use adaptive learning rate.
+    coach.setUseAdaptiveBatchSize   (true); // Use adaptive batch size.
+    coach.setTargetPrecision(0.00001);      // Stop early if reaching target precision.
     
     // Run the training.
     bool good = coach.run();
 
+    // Check whether an error occurred.
     if (!good) {
-        FCTWARNING("Uhh-oh! Something went wrong.");
+        FCTERROR("Uhh-oh! Something went wrong.");
         return 0;
     }
 
-    // Draw the cost map.
-    
-    // ...
+    // The last bit of this example focuses on creating a _cost map_: a map of
+    // the cost (regularisation and sparsity, or just one of these) for a small
+    // set of training examples, computed as by scanning over two filter
+    // coefficients. In this, the lowest possible dimension of phase space, it
+    // is possible to perform an exhaustive search of the filter coefficient
+    // space and in this way study to contours of the cost space in which our
+    // learning takes places. Looking at the cost map and how filter coefficient
+    // configurations traverse it during learning can help us confirm that the
+    // wavenet behaves the way it should. However, computing the cost for each
+    // point in a, say, 300 x 300 grid is very time consuming, and for more than
+    // two filter coefficients this becomes practically impossible (which is why
+    // we need the wavenet in the first place!). This example computes the cost
+    // maps for the regularisation alone, the sparsity alone, and the combined
+    // regularisation and sparsity cost, and saves them to file as Armadillo
+    // matrices. We can then, in a later example, read these cost maps at try to
+    // make some nice plots.
+     
+    // Whether we should overwrite an existing cost map. This is useful when you
+    // change the configuration behind it, e.g. the regularisation constant
+    // lambda or the class of training data, and want to update it. However,
+    // computing a cost map with a reasonable degree of granularity (say,
+    // 300 x 300 filter coefficient resolution) can take some time, so for your
+    // own sake try to do this sparingly.
     const bool overwrite = false;
-    arma::Mat<double> costMap, costMapSparsity, costMapRegularisation;
+
+    // Initialise the names of the cost map files.
     std::string costMapName               = coach.outdir() + "costMap.mat";
     std::string costMapSparsityName       = coach.outdir() + "costMapSparsity.mat";
     std::string costMapRegularisationName = coach.outdir() + "costMapRegularisation.mat";
     
+    // Determine whether we should perform the actual calculation.
     if (!wavenet::fileExists(costMapName) or overwrite) {
-        // If the cost map files do not already exist, we need to produce them.
-        // This is done by...
 
-        // Examples...
+        // If the cost map files do not already exist, we need to produce them.
+        
+        // Specify the number of training examples to be used when computing the
+        // cost maps. More examples given smoother sparsity contours, but take 
+        // longer to run.
         const unsigned int numExamples = 10;
-        std::vector< arma::Mat<double> > examples;
+
+        // Initialise a vector of matrices to hold the training examples.
+        std::vector< arma::Mat<double> > examples (numExamples);
+
+        // Loop and generated the necessary training examples.
         for (unsigned i = 0; i < numExamples; i++) {
-            // Append example signal with which to compute cost map.
-            examples.push_back( ng.next() );
+
+            // Store the next examples to in the vector.
+            examples.at(i) = ng.next();
 
             #ifdef USE_ROOT
-            // Draw example inputs to PDF.
-            TCanvas cExample ("cExample", "", 700, 600);
+            // If ROOT is enabled, we draw each of the used training examples as
+            // save them to file. In this way, it is completely clear how our 
+            // class of training data looks, and exactly which ones have gone 
+            // into computing the cost map(s).
+
+            // Remove default statistics box.
+            gStyle->SetOptStat(0);
+
+            // Initialise TCanvas in which to draw.
+            TCanvas c ("c", "", 700, 600);
+
+            // Convert the training example matrix to a ROOT histogram, either 
+            // TH1F or TH2F depending on the generator shape.
             std::unique_ptr<TH1> exampleInput = wavenet::MatrixToHist(examples.at(i), 3.2);
+
+            // Draw the current training example histogram.
             exampleInput->Draw("COL Z");
-            cExample.SaveAs((coach.outdir() + "exampleInput." + std::to_string(i + 1) +".pdf").c_str());
+
+            // Save the plot as PDF file in the output directory of the Coach 
+            // instance.
+            c.SaveAs((coach.outdir() + "exampleInput." + std::to_string(i + 1) +".pdf").c_str());
             #endif // USE_ROOT
         }
     
 
-        // Define...
-        arma::field< arma::Mat<double> > costs;
-        
-        costs = wn.costMap(examples, 1.2, 300);
+        // Compute the cost maps by looping @c examples, scanning the two filter
+        // coefficient across the range [-1.2, 1.2], with a resolution of 300 
+        // along each axis.
+        std::vector< arma::Mat<double> > costs = wn.costMap(examples, 1.2, 300);
 
-        costs(0,0).save(costMapName);
-        costs(1,0).save(costMapSparsityName);
-        costs(2,0).save(costMapRegularisationName);
-        
-        costMap = costs(0,0);
-
-    } else {
-        // If the cost maps have already been produced, just load them from file.
-        costMap              .load(costMapName);
-        costMapSparsity      .load(costMapSparsityName);
-        costMapRegularisation.load(costMapRegularisationName);
-        
+        // Save each of the returned cost maps to file.
+        costs.at(0).save(costMapName);
+        costs.at(1).save(costMapSparsityName);
+        costs.at(2).save(costMapRegularisationName);
     }
 
-    // Initialise the 'Snapshot' object that we're going to use to read the results of the optimisation.
-    // The snapshots for each initialisation above is stored 'snapshots/' subdirectory in the base directory of the responsible Coach instance (by default './output/')
-    // If we specify a pattern (by the %-bit in the string), the snapshot can automatically iterate though successivle snapshots.
-    // The format chosen below is the one used by default when the Coach writes the snapshots to file.
-    const std::string pattern = coach.outdir() + "snapshots/" +  name + ".%06u.snap";
-    wavenet::Snapshot snap (pattern);
+    // Now you have the cost maps for a given type of input (although the type 
+    // of input is of secondary importance in two filter coefficient dimensions 
+    // which has a single global minimum which is the same for all types of 
+    // input). 
 
-    #ifdef USE_ROOT
+    // If you have ROOT installed, try taking a look at Example03 where we plot 
+    // the cost map, the path of the filter coefficients in this map during the 
+    // training in this example, as well as graphs of the costs during training.
 
-    // Create one ROOT TGraph, showing the evolution of the filter coefficients, for each initialisation.
-    std::vector< TGraph > filterGraphs (numInits);
-    while (snap.exists() and snap.number() < numInits) {
-        
-        // Load the Wavenet configuration from the current snapshot.
-        wn.load(snap.file());
-
-        // Get the filter log from training.
-        auto filterLog = wn.filterLog();
-        
-        // Create filter graph for this initialisation.
-        const unsigned int numSteps = filterLog.size();
-        double x[numSteps], y[numSteps];
-        for (unsigned i = 0; i < numSteps; i++) {
-            x[i] = arma::as_scalar(filterLog.at(i).row(0));
-            y[i] = arma::as_scalar(filterLog.at(i).row(1));
-        }
-        
-        // Store it in the vector.
-        filterGraphs.at(snap.number()) = TGraph(numSteps, x, y);
-        
-        // Next.
-        snap++;   
-    }
-
-    // Define colour palette.
-    int kMyRed = 1756; // color index
-    TColor *MyRed =  new TColor(kMyRed,  224./255.,   0./255.,  42./255.);
-    int kMyBlue = 1757;
-    TColor *MyBlue = new TColor(kMyBlue,   3./255.,  29./255.,  66./255.);
-    
-    const int Number = 2; 
-    double Red[Number]    =  {   3./255., 0.98 }; 
-    double Green[Number]  =  {  29./255., 0.98 }; 
-    double Blue[Number]   =  {  66./255., 0.98 }; 
-    double Length[Number] =  { 0.50, 1.00 }; 
-    int nb = 104;
-    TColor::CreateGradientColorTable(Number, Length, Red, Green, Blue, nb);
-    
-    // Define ROOT TCanvas.
-    TCanvas c ("c", "", 700, 600);
-    c.SetLogz(true);
-    std::unique_ptr<TH1> J = wavenet::MatrixToHist(costMap, 1.2);
-    J->SetContour(104); 
-    gStyle->SetOptStat(0);
-    J->SetMaximum(100.);
-    
-    // Perform styling.
-    J->GetXaxis()->SetTitle("Filter coefficient a_{1}");
-    J->GetYaxis()->SetTitle("Filter coefficient a_{2}");
-    J->GetZaxis()->SetTitle("Cost (sparsity + regularisation) [a.u.]");
-    
-    J->GetXaxis()->SetTitleOffset(1.2);
-    J->GetYaxis()->SetTitleOffset(1.3);
-    J->GetZaxis()->SetTitleOffset(1.4);
-    
-    c.SetTopMargin   (0.09);
-    c.SetBottomMargin(0.11);
-    c.SetLeftMargin  (0.10 + (1/3.)*(1/7.));
-    c.SetRightMargin (0.10 + (2/3.)*(1/7.));
-    
-    c.SetTickx();
-    c.SetTicky();
-    
-    // Draw the cost map.
-    J->Draw("CONT1 Z");
-    c.Update();
-    
-    // Draw unit circle (one of the five conditions on the filter coefficients).
-    TEllipse normBoundary;
-    normBoundary.SetFillStyle(0);
-    normBoundary.SetLineStyle(2);
-    normBoundary.SetLineColor(kMyRed);
-    normBoundary.DrawEllipse(0., 0., 1., 1., 0., 360., 0.);
-    
-    // Draw the filter evolution graphs, and markers at each end.
-    for (unsigned m = 0; m < numInits; m++) {
-        // Filter evolution graph.
-        filterGraphs.at(m).Draw("L same");
-
-        // Draw markers: Red dots are the initial filter coefficients; blue dots are the final ones.
-        TMarker marker;
-        double x, y;
-
-        // -- Initial marker.
-        marker.SetMarkerColor(kRed);
-        marker.SetMarkerStyle(8);
-        marker.SetMarkerSize (0.3);
-        filterGraphs.at(m).GetPoint(0, x, y);
-        marker.DrawMarker(x, y);
-        
-        // -- Final marker.
-        marker.SetMarkerColor(kBlue);
-        marker.SetMarkerStyle(19);
-        marker.SetMarkerSize (0.3);
-        filterGraphs.at(m).GetPoint(filterGraphs.at(m).GetN() - 1, x, y);
-        marker.DrawMarker(x, y);
-    }
-    
-    
-    // Save the final cost map as PDF.
-    c.SaveAs((coach.outdir() + "CostMap.pdf").c_str());
-
-    # endif // USE_ROOT
+    // Once you are confident with how things work, you can try changing the 
+    // training parameters, the number of filter coefficients, the type of 
+    // training data -- you name it!
 
     FCTINFO("-----------------------------------------------------------");
     FCTINFO("Done.");
@@ -251,4 +203,3 @@ int main (int argc, char* argv[]) {
     return 1;
 
 }
-

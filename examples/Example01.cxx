@@ -10,7 +10,7 @@
 #include <cmath> /* sqrt */
 
 // Wavenet include(s).
-#include "Wavenet/Logger.h" /* FCTINFO, FCTWARNING */
+#include "Wavenet/Logger.h" /* FCTINFO, FCTERROR */
 #include "Wavenet/Generators.h" /* wavenet::NeedleGenerator */
 #include "Wavenet/Wavenet.h" /* wavenet::Wavenet */
 #include "Wavenet/Coach.h" /* wavevent::Coach */
@@ -93,7 +93,7 @@ int main (int argc, char* argv[]) {
 
     // Check whether an error occured.
     if (!good) {
-        FCTWARNING("Uhh-oh! Something went wrong.");
+        FCTERROR("Uhh-oh! Something went wrong.");
         return 0;
     }
 
