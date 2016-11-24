@@ -319,7 +319,7 @@ public:
      *         map is stored in an Armadillo field, and is accessed as map(0,0),
      *         map(1,0), and map(2,0), resp.          
      */
-    arma::field< arma::Mat<double> > costMap (const std::vector< arma::Mat<double> >& X,
+    std::vector< arma::Mat<double> > costMap (const std::vector< arma::Mat<double> >& X,
                                               const double& range,
                                               const unsigned& Ndiv);
     
@@ -756,7 +756,8 @@ private:
      * then grow to the specified inertia value as 
      *   i_{eff} = i * (1 - \exp(-n/\tau))
      * where i is the specified inertia value, \tau is the inertia time scale,
-     * n is the number of steps completed.
+     * n is the number of steps completed. If \tau = 0, the bare inertia is 
+     * used.
      */
     double m_inertiaTimeScale = 0.;
     

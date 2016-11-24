@@ -275,12 +275,13 @@ double Wavenet::cost (const arma::Mat<double>& Y) {
     return cost(y);
 }
 
-arma::field< arma::Mat<double> > Wavenet::costMap (const std::vector< arma::Mat<double> >& X, const double& range, const unsigned& Ndiv) {
+std::vector< arma::Mat<double> > Wavenet::costMap (const std::vector< arma::Mat<double> >& X, const double& range, const unsigned& Ndiv) {
 
     // Initialise the Armadillo field of output cost map matrices.
-    arma::field< arma::Mat<double> > costs (3,1); // { Combined, Sparsity, Regularisation }
-    costs.for_each( [Ndiv](arma::Mat<double>& m) { m.zeros(Ndiv, Ndiv); } );
-
+    std::vector< arma::Mat<double> > costs (3); // { Combined, Sparsity, Regularisation }
+    for (arma::Mat<double>& M : costs) {
+        M.zeros(Ndiv, Ndiv);
+    }
     // Initialise number of training examples.
     const unsigned nExample = X.size();
     
@@ -306,17 +307,17 @@ arma::field< arma::Mat<double> > Wavenet::costMap (const std::vector< arma::Mat<
                 arma::Mat<double> Y = coeffsFromActivations(Activations);
 
                 // Compute costs.
-                costs(0,0).submat(arma::span(i,i),arma::span(j,j)) += cost(Y);
-                costs(1,0).submat(arma::span(i,i),arma::span(j,j)) += SparseTerm(Y);
-                costs(2,0).submat(arma::span(i,i),arma::span(j,j)) += lambda() * RegTerm(m_filter, m_wavelet);
+                costs.at(0).submat(arma::span(i,i),arma::span(j,j)) += cost(Y);
+                costs.at(1).submat(arma::span(i,i),arma::span(j,j)) += SparseTerm(Y);
+                costs.at(2).submat(arma::span(i,i),arma::span(j,j)) += lambda() * RegTerm(m_filter, m_wavelet);
             }
         }
     }
 
     // Normalise costs by the number of training examples.
-    costs(0,0) /= (double) nExample;
-    costs(1,0) /= (double) nExample;
-    costs(2,0) /= (double) nExample;
+    costs.at(0) /= (double) nExample;
+    costs.at(1) /= (double) nExample;
+    costs.at(2) /= (double) nExample;
     
     return costs;
 }
@@ -753,7 +754,6 @@ void Wavenet::update_ (const arma::Col<double>& gradient) {
     
     // Compute effective inertia, if necessary, depending on set inertia time scale.
     const unsigned steps = m_costLog.size() - 1;
-    //double effectiveInertita = (m_inertiaTimeScale > 0. ? m_inertia * m_inertiaTimeScale / (m_inertiaTimeScale + float(steps)): m_inertia);
     double effectiveInertita = (m_inertiaTimeScale > 0. ? m_inertia * (1. - exp( - float(steps) / m_inertiaTimeScale )) : m_inertia);
     
     // Update.
