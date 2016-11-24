@@ -159,7 +159,7 @@ private:
      * All output is saved under this name, in the 'outdir' which is given as 
      *   m_basedir/m_name/<here>
      */
-    std::string m_name    = "";
+    std::string m_name = "";
     
     /**
      * Base directory, in which to save the output
@@ -223,8 +223,8 @@ private:
      * If the learning rate is adaptive, the Coach keeps track of the mean and 
      * total learning step size during the last N ('useLastN' in Coach.cxx) 
      * update steps. If the total step size is smaller than the mean step size, 
-     * the learning rate is reduced by 0.5 * (totalStepSize/meanStepSize). This
-     * allows for finding a more precise minimum.
+     * the learning rate is reduced by 0.5. This allows for finding a more 
+     * precise minimum.
      *
      * If a target precision is set (@see m_targetPrecision), the training may
      * break early if the mean step size is smaller than the target precision. 

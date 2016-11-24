@@ -120,7 +120,7 @@ bool Coach::run () {
     const unsigned useLastN = 10;
     // Definition bare, specified regularsation constant, for use with simulated
     // annealing.
-    const double lambdaBare = m_wavenet->lambda(); /* @TODO: Used? */
+    const double lambdaBare = m_wavenet->lambda(); 
     
     // Define snapshot object, for saving the final configuration for each 
     // initialisation.
@@ -182,7 +182,7 @@ bool Coach::run () {
                 // Main training call.
                 bool status = m_wavenet->train( m_generator->next() );
 
-                // In case something goes wrong
+                // In case something goes wrong.
                 if (!status) {
                     done = true;
                     break;
@@ -237,8 +237,8 @@ bool Coach::run () {
 
                             // Update learning rate.
                             if (useAdaptiveLearningRate()) {
-                                INFO("[Adaptive learning]   Reducing learning rate (alpha) from %f to %f.", m_wavenet->alpha(), (1./2.) * m_wavenet->alpha() * (totalStepSize/meanStepSize));
-                                m_wavenet->setAlpha( (1./2.) * m_wavenet->alpha() * (totalStepSize/meanStepSize));
+                                INFO("[Adaptive learning]   Reducing learning rate (alpha) from %f to %f.", m_wavenet->alpha(), (1./2.) * m_wavenet->alpha() ); //* (totalStepSize/meanStepSize));
+                                m_wavenet->setAlpha( (1./2.) * m_wavenet->alpha() ); // * (totalStepSize/meanStepSize));
                             }
 
                             tail = 0;
@@ -288,7 +288,7 @@ bool Coach::run () {
     
     outFileStream.close();
 
-    // Clean up (?).
+    // Clean up.
     m_wavenet->clear();
 
     return true;   
