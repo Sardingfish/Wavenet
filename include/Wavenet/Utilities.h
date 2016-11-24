@@ -1,5 +1,5 @@
-#ifndef WAVENET_UTILS_H
-#define WAVENET_UTILS_H
+#ifndef WAVENET_UTILITIES_H
+#define WAVENET_UTILITIES_H
 
 /**
  * @file   Utilities.h
@@ -127,7 +127,7 @@ inline bool isEmpty (const std::string& s) {
  * 
  * Taken from [http://stackoverflow.com/a/236803]
  */
-std::vector<std::string> split (const std::string &s, char delim) {
+inline std::vector<std::string> split (const std::string &s, char delim) {
     std::vector<std::string> elems;
     std::stringstream ss;
     ss.str(s);
@@ -218,4 +218,4 @@ arma::Mat<double> HistToMatrix   (const TH1* hist);
 
 } // namespace
 
-#endif // WAVENET_UTILS_H
+#endif // WAVENET_UTILITIES_H
