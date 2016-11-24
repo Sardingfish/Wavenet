@@ -3,186 +3,164 @@
 namespace wavenet {
 
 
-double SparseTerm (const arma::Col<double>& y) {
+double SparseTerm (const arma::Col<double>& c) {
     
     /**
-     * Using the Gini coefficient as the metric for sparsity.
+     * For wavelet coefficients {c} ordered by increasing absolute value
+     * (|c_{i}| < |c_{i+1}|) the Gini coefficient can be written as 
+     * G({c}) = f({c})/g({c}) with:
+     *   f({c}) = \sum_{i = 0}^{N - 1} (2 i - N - 1) |c_{i}|
+     *   g({c})  = N * \sum_{i = 0}^{N - 1} |c_{i}|
+     * where N is the number of wavelet coefficients, N = |{c}|.
+     *
+     * Since, by this definition, large values means a very inequal (sparse) 
+     * distribution and low value means a very equal (non-sparse) distribution, 
+     * we choose to use 1 - G({c}) as our sparsity metric, since the 
+     * minimisation then leads to sparse dsitributions.
      */
 
-    const int N = y.n_elem;
+    // Initialise the number of wavelet coefficients. 
+    const int N = c.n_elem;
     
-    arma::Col<double> ySortAbs = sort(abs(y));
+    // Initialise vector of wavelet coefficients sorted by absoute value.
+    arma::Col<double> cSortAbs = sort(abs(c));
+
+    // Initialise vector of summation indices.
     arma::Row<double> indices  = arma::linspace< arma::Row<double> >(1, N, N);
     
-    double f = - dot( (2*indices - N - 1), ySortAbs);
-    double g = N * sum(ySortAbs);
+    // Compute numerator (f) and denominator (g) terms.
+    double f = dot( (2*indices - N - 1), cSortAbs);
+    double g = N * sum(cSortAbs);
     
-    return f/g + 1.;
+    // Return sparsity measure.
+    return 1. - f/g;
 }
 
-double SparseTerm (const arma::Mat<double>& Y) {
-    const arma::Col<double> y = vectorise(Y);
-    return SparseTerm(y);
+double SparseTerm (const arma::Mat<double>& C) {
+
+    // Vectoris input matrix.
+    const arma::Col<double> c = vectorise(C);
+
+    // Get sparsity term on vector form.
+    return SparseTerm(c);
 }
 
 
-arma::Col<double> SparseTermDeriv (const arma::Col<double>& y) {
+arma::Col<double> SparseTermDeriv (const arma::Col<double>& c) {
    
-    /**
-     * Gini coefficient is written as: G({a}) = f({a})/g({a}) with :
-     *   f({a}) = sum_i (2i - N - 1)|a_i|
-     * for ordered a_i (a_i < a_{i+1}), and:
-     *   g({a})  = N * sum_i |a_i|
-     * Then: delta(i) = d/da_i G({a}) = f'*g - f*g' / g^2
+     /**
+     * For wavelet coefficients {c} ordered by increasing absolute value
+     * (|c_{i}| < |c_{i+1}|) the Gini coefficient can be written as 
+     * G({c}) = f({c})/g({c}) with:
+     *   f({c}) = \sum_{i = 0}^{N - 1} (2 i - N - 1) |c_{i}|
+     *   g({c})  = N * \sum_{i = 0}^{N - 1} |c_{i}|
+     * where N is the number of wavelet coefficients, N = |{c}|.
+     *
+     * Using 1 - G({c)) as the sparsity metric, the derviative is then:
+     *   delta(i) = \frac{d}{da_{i}}( 1 - G({a}) ) = - (f'*g - f*g') / g^2
     **/
         
-    // Define some convenient variables.
-    const int N = y.n_elem;
-    arma::Col<double> yAbs  = abs(y);
-    arma::Col<double> ySign = sign(y);
-    arma::uvec idxSortAbs = sort_index(yAbs, "ascend");
-    arma::Col<double> ySortAbs = yAbs.elem(idxSortAbs);
+    // Initialise the number of wavelet coefficients.
+    const int N = c.n_elem;
+
+    // Initialise vector of absolute wavelet coefficient values.
+    arma::Col<double> cAbs  = abs(c);
+
+    // Initialise vector of wavelet coefficient signs, such that 
+    // c = cAbs % cSign.
+    arma::Col<double> cSign = sign(c);
+
+    // Get indices of wavelet coefficient sorted by ascending absolute value
+    arma::uvec idxSortAbs = sort_index(cAbs, "ascend");
+
+
+    // Initialise vector of wavelet coefficients sorted by ascending absolute 
+    // value.
+    arma::Col<double> cSortAbs = cAbs.elem(idxSortAbs);
+
+    // Initialise vector of summation indices.
     arma::Col<double> indices  = arma::linspace< arma::Col<double> >(1, N, N);
     
-    // Get numerator and denominator for Gini coefficient.
-    double f = - dot( (2*indices - N - 1), ySortAbs );
-    double g = N * sum(ySortAbs);
+    // Compute numerator (f) and denominator (g) terms in the Gini coefficient.
+    double f = dot( (2*indices - N - 1), cSortAbs );
+    double g = N * sum(cSortAbs);
     
-    // df/d|a| for sorted a.
-    arma::Col<double> dfSort = - (2*indices - N - 1);
+    // Compute df/d|c| for sorted {c}.
+    arma::Col<double> dfSort = (2*indices - N - 1);
     
-    // df/d|a| for a with original ordering.
+    // Compute df/d|c| for {c} with original ordering.
     arma::Col<double> df (N, arma::fill::zeros);
     df.elem(idxSortAbs) = dfSort;
     
-    // df/da for a with original ordering.
-    df = df % ySign; // Elementwise multiplication.
+    // Compute df/dc for {c} with original ordering.
+    df = df % cSign; // Elementwise multiplication.
     
-    // df/da for a with original ordering.
-    arma::Col<double> dg = N * ySign;
+    // Compute dg/dc for {c} with original ordering.
+    arma::Col<double> dg = N * cSign;
     
-    // Combined derivative.
-    arma::Col<double> D = (df * g - f * dg)/pow(g,2.);
+    // Compute combined derivative.
+    arma::Col<double> gradient = - (df * g - f * dg)/pow(g, 2.);
     
-    return D;
+    return gradient;
 }
 
-arma::Mat<double> SparseTermDeriv (const arma::Mat<double>& Y) {
-    arma::Col<double> y = vectorise(Y);
-    arma::Col<double> D = SparseTermDeriv(y);
-    return reshape(D, size(Y));
+arma::Mat<double> SparseTermDeriv (const arma::Mat<double>& C) {
+
+    // Vectorise matrix input.
+    arma::Col<double> c = vectorise(C);
+
+    // Get sparsity term derivative on vector form.
+    arma::Col<double> Gradient = SparseTermDeriv(c);
+
+    // Reshape output vector to original matrix shape.
+    return reshape(Gradient, size(C));
 }
 
 double RegTerm (const arma::Col<double>& a, const bool& doWavelet) {
     
+    // Initialise number of filter coefficients.
     const int N = a.n_elem;
+
+
+    // Define Kroenecker delta vector, with zeros everywhere except central 
+    // entry, which is one
     arma::Col<double> kroenecker_delta (N+1, arma::fill::zeros);
     kroenecker_delta(N/2) = 1;
     
-    // Regularisation term.
+    // Compute regularisation term by term.
     double R = 0.; 
+
 
     /**
      * (C2): Orthogonality of scaling functions
      *
      * Mathematical condition:
      *   \sum_{k} a_{k} a_{k + 2m} = #delta_{0,m} \quad \forall m \in \mathbb{Z}
-     *
-     * Implementation:
-     *   Let a be the vector of filter coefficients, of length N. 
-     *
-     *   Let N = 4. Then
-     *
-     *         |  0  0  0  0  0  0  0  0  0  0  0  0  |
-     *         |  0  0  0  0  0  0  0  0  0  0  0  0  |
-     *     M = |  0  0  0  0  0  0  0  0  0  0  0  0  |
-     *         |  0  0  0  0  0  0  0  0  0  0  0  0  |
-     *         |  0  0  0  0  0  0  0  0  0  0  0  0  |
-     *
-     *     For i = 0:
-     *         |  0  0  0  0  a0 a1 a2 a3 0  0  0  0  |
-     *         |  0  0  0  0  0  0  0  0  0  0  0  0  |
-     *     M = |  0  0  0  0  0  0  0  0  0  0  0  0  |
-     *         |  0  0  0  0  0  0  0  0  0  0  0  0  |
-     *         |  0  0  0  0  0  0  0  0  0  0  0  0  |
-     *
-     *     (Shift by 2 * (0 - 4/2) = -4)
-     *         |  0  0  0  0  0  0  0  0  a0 a1 a2 a3 |
-     *         |  0  0  0  0  0  0  0  0  0  0  0  0  |
-     *     M = |  0  0  0  0  0  0  0  0  0  0  0  0  |
-     *         |  0  0  0  0  0  0  0  0  0  0  0  0  |
-     *         |  0  0  0  0  0  0  0  0  0  0  0  0  |
-     *
-     *     For i = 1:
-     *         |  0  0  0  0  0  0  0  0  a0 a1 a2 a3 |
-     *         |  0  0  0  0  a0 a1 a2 a3 0  0  0  0  |
-     *     M = |  0  0  0  0  0  0  0  0  0  0  0  0  |
-     *         |  0  0  0  0  0  0  0  0  0  0  0  0  |
-     *         |  0  0  0  0  0  0  0  0  0  0  0  0  |
-     *
-     *     (Shift by 2 * (1 - 4/2) = -2)
-     *         |  0  0  0  0  0  0  0  0  a0 a1 a2 a3 |
-     *         |  0  0  0  0  0  0  a0 a1 a2 a3 0  0  |
-     *     M = |  0  0  0  0  0  0  0  0  0  0  0  0  |
-     *         |  0  0  0  0  0  0  0  0  0  0  0  0  |
-     *         |  0  0  0  0  0  0  0  0  0  0  0  0  |
-     *
-     *     For i = 2:
-     *         |  0  0  0  0  0  0  0  0  a0 a1 a2 a3 |
-     *         |  0  0  0  0  0  0  a0 a1 a2 a3 0  0  |
-     *     M = |  0  0  0  0  a0 a1 a2 a3 0  0  0  0  |
-     *         |  0  0  0  0  0  0  0  0  0  0  0  0  |
-     *         |  0  0  0  0  0  0  0  0  0  0  0  0  |
-     *
-     *     (Shift by 2 * (2 - 4/2) = 0)
-     *         |  0  0  0  0  0  0  0  0  a0 a1 a2 a3 |
-     *         |  0  0  0  0  0  0  a0 a1 a2 a3 0  0  |
-     *     M = |  0  0  0  0  a0 a1 a2 a3 0  0  0  0  |
-     *         |  0  0  0  0  0  0  0  0  0  0  0  0  |
-     *         |  0  0  0  0  0  0  0  0  0  0  0  0  |
-     *
-     *     (...)
-     *
-     *         |  0  0  0  0  0  0  0  0  a0 a1 a2 a3 |
-     *         |  0  0  0  0  0  0  a0 a1 a2 a3 0  0  |
-     *     M = |  0  0  0  0  a0 a1 a2 a3 0  0  0  0  |
-     *         |  0  0  a0 a1 a2 a3 0  0  0  0  0  0  |
-     *         |  a0 a1 a2 a3 0  0  0  0  0  0  0  0  |
-     *
-     *   Take sub-matrix
-     *              |  0  0  0  0  \| 0  0  0  0  |\ a0 a1 a2 a3 |
-     *              |  0  0  0  0  \| 0  0  a0 a1 |\ a2 a3 0  0  |
-     *     M -> M = |  0  0  0  0  \| a0 a1 a2 a3 |\ 0  0  0  0  |
-     *              |  0  0  a0 a1 \| a2 a3 0  0  |\ 0  0  0  0  |
-     *              |  a0 a1 a2 a3 \| 0  0  0  0  |\ 0  0  0  0  |
-     *
-     *              |  0  0  0  0  |
-     *              |  0  0  a0 a1 |
-     *            = |  a0 a1 a2 a3 |
-     *              |  a2 a3 0  0  |
-     *              |  0  0  0  0  |
-     *
-     *   Finally, multiply
-     *
-     *             |  0  0  0  0  |   | a0 |   |         0         |    | 0 |
-     *             |  0  0  a0 a1 |   | a1 |   | a0 * a2 + a1 * a3 |    | 0 |
-     *     M * a = |  a0 a1 a2 a3 | * | a2 | = |        |a|^2      | == | 1 | = kroenecker_delta
-     *             |  a2 a3 0  0  |   | a3 |   | a0 * a2 + a1 * a3 |    | 0 |
-     *             |  0  0  0  0  |            |         0         |    | 0 |
-     *
      */
-    arma::Mat<double> M (N+1, 3*N, arma::fill::zeros);
-    
-    for (unsigned i = 0; i < N+1; i++) {
-        M.submat(arma::span(i,i), arma::span(N,2*N-1)) = a.t();
-        M.row(i) = rowshift(M.row(i), 2 * (N/2 - i));
-    }
-    M = M.submat(arma::span::all, arma::span(N,2*N-1));
-    
-    R += sum(square(M * a - kroenecker_delta));
-    
+    float R2 = 0.;
+    // Perform sum over index m. Summation range taken to be [-N/2, N/2] since 
+    // all other values will always result in a_{k + 2m} == 0 for k in [0,N).
+    for (const int& m : arma::linspace(-N/2, N/2, N + 1)) {
 
-    // Wavelet part.
+        // Initialise Kroenecker delta value for the current value of m.
+        float delta = (m == 0 ? 1 : 0);
+
+        // Perform sum over index k.
+        float term = 0.;
+        for (unsigned k = 0; k < N; k++) {
+
+            // Add term a_{k}: a_{k + 2m}
+            if (a.in_range(k + 2*m)) {
+                term += a(k) * a(k + 2*m);
+            }            
+        }
+
+        // Take squared deviation from Kroenecker delta.
+        R2 += sq(term - delta);
+    }
+    R += R2;
+
+    // Wavelet-specific regularisation terms.
     if (doWavelet) {
 
         // Compute high-pass coefficients.
@@ -191,6 +169,7 @@ double RegTerm (const arma::Col<double>& a, const bool& doWavelet) {
             b(i) = pow(-1, i) * a(N - i - 1);
         }
         
+
         /**
          * (C1): Dilation equation.
          *
@@ -206,14 +185,28 @@ double RegTerm (const arma::Col<double>& a, const bool& doWavelet) {
          * Mathematical condition:
          *   \sum_{k} b_{k} b_{k + 2m} = \delta_{0,m} \quad \forall m \in \mathbb{Z}
          */
-        arma::Mat<double> M3 (N+1, 3*N, arma::fill::zeros);
-        for (unsigned i = 0; i < N+1; i++) {
-            M3.submat(arma::span(i,i), arma::span(N,2*N-1)) = b.t();
-            M3.row(i) = rowshift(M3.row(i), 2 * (N/2 - i));
-        }
-        M3 = M3.submat(arma::span::all, arma::span(N,2*N-1));
+        float R3 = 0.;
+        // Perform sum over index m. Summation range taken to be [-N/2, N/2] since 
+        // all other values will always result in b_{k + 2m} == 0 for k in [0,N).
+        for (const int& m : arma::linspace(-N/2, N/2, N + 1)) {
 
-        R += sum(square(M3 * b - kroenecker_delta));
+            // Initialise Kroenecker delta value for the current value of m.
+            float delta = (m == 0 ? 1 : 0);
+
+            // Perform sum over index k.
+            float term = 0.;
+            for (unsigned k = 0; k < N; k++) {
+
+                // Add term:  b_{k} b_{k + 2m}
+                if (b.in_range(k + 2*m)) {
+                    term += b(k) * b(k + 2*m);
+                }            
+            }
+
+            // Take squared deviation from Kroenecker delta.
+            R3 += sq(term - delta);
+        }
+        R += R3;
 
         
         /**
@@ -230,15 +223,32 @@ double RegTerm (const arma::Col<double>& a, const bool& doWavelet) {
          *
          * Mathematical condition:
          *   \sum_{k} a_{k} b_{k + 2m} = 0 \quad \forall m \in \mathbb{Z}
+         * 
+         * Note:
+         *   This condition is automatically satisfied by the definition of 
+         *     b_{k} = (-1)^{k} a_{N - k - 1}
+         *   which is why it is not imposed explicitly.
          */
-        /* This should be automatically satisfied (confirm).
-        arma::Mat<double> M5 (N+1, 3*N, arma::fill::zeros);
-        for (unsigned i = 0; i < N+1; i++) {
-            M5.submat(arma::span(i,i), arma::span(N,2*N-1)) = b.t();
-            M5.row(i) = rowshift(M5.row(i), 2 * (N/2 - i));
+        /*
+        float R5 = 0.;
+        // Perform sum over index m. Summation range taken to be [-N/2, N/2] since 
+        // all other values will always result in b_{k + 2m} == 0 for k in [0,N).
+        for (const int& m : arma::linspace(-N/2, N/2, N + 1)) {
+
+            // Perform sum over index k.
+            float term = 0.;
+            for (unsigned k = 0; k < N; k++) {
+
+                // Add term a_{k}: a_{k + 2m}
+                if (b.in_range(k + 2*m)) {
+                    term += a(k) * b(k + 2*m);
+                }            
+            }
+
+            // Take squared deviation from Kroenecker delta.
+            R5 += sq(term - 0);
         }
-        M5 = M5.submat(arma::span::all, arma::span(N,2*N-1));
-        R += sum(square(M5 * a));
+        R += R5;
         */
         
     }
@@ -248,121 +258,160 @@ double RegTerm (const arma::Col<double>& a, const bool& doWavelet) {
 
 arma::Col<double> RegTermDeriv (const arma::Col<double>& a, const bool& doWavelet) {
     
-    // Taking the derivative of each term in the sum of squared
-    // deviations from the Kroeneker deltea, in the regularion term
-    // of the cost function.
-    //  - First term is the outer derivative.
-    //  - Second term is the inner derivative.
-    
-    const int N = a.n_elem;
-    arma::Col<double> D (N, arma::fill::zeros); // Derivative
+    /**
+     * Taking the derivative of each term in the sum of squared deviations from 
+     * the Kroeneker delta, in the regularisation objective function.
+     *
+     * Since the regularisation terms are generally on the form (...)^2, the 
+     * corresponding derivative will be on the form 2 x (...) x d/da (...)
+     */ 
 
-    // -- Get outer derivative
-    arma::Mat<double> M (N+1, 3*N, arma::fill::zeros);
-    
-    for (unsigned i = 0; i < N+1; i++) {
-        M.submat(arma::span(i,i), arma::span(N,2*N-1)) = a.t();
-        M.row(i) = rowshift(M.row(i), 2 * (N/2 - i));
-    }
-    M = M.submat(arma::span::all, arma::span(N,2*N-1));
-    
-    arma::Col<double> kroenecker_delta (N+1, arma::fill::zeros);
-    kroenecker_delta(N/2) = 1;
-    
-    arma::Col<double> outer = 2 * (M * a - kroenecker_delta);
-    
-    // -- Get inner derivative.
-    arma::Mat<double> inner (N + 1, N, arma::fill::zeros);
-    
-    for (int l = 0; l < N; l++) {
-        for (int i = 0; i < N + 1; i++) {
-            
-            int d = 2 * abs(i - (int) N/2);
-            if (l + d < N) {
-                inner(i, l) += a(l + d);
+    // Initialise number of filter coefficients.
+    const int N = a.n_elem;
+
+    // Initialise filter coefficient gradient vector.
+    arma::Col<double> gradient (N, arma::fill::zeros); 
+
+
+    /**
+     * (C2): Orthogonality of scaling functions
+     *
+     * Mathematical expression:
+     *   \nabla R_{2}(\{a\}) = \hat{e}_{i} \times \sum_{m} 2 \times 
+     *                         ([\sum_{k} a_{k} a_{k + 2m}] - \delta_{m,0}) 
+     *                         \times (a_{i + 2m} + a_{i - 2m})
+     */
+    // Loop over summation index m. Summation range taken to be [-N/2, N/2] 
+    // since all other values will always result in a_{k + 2m} == 0 for k in 
+    // [0,N).
+    for (const int& m : arma::linspace(-N/2, N/2, N + 1)) {
+
+        // Initialise pre-factor.
+        double prefactor = 0.;
+
+        // Loop over summation index k.
+        for (int k = 0; k < N; k++) {
+            if (a.in_range(k + 2 * m)) {
+                prefactor += a(k) * a(k + 2 * m);
             }
-            if (l - d >= 0) {
-                inner(i, l) += a(l - d);
-            }
-            
         }
+
+        // Substract kroenecker delta: \delta_{0,m}
+        prefactor -= (m == 0 ? 1. : 0);
+
+        // Multiply by lowered power of 2.
+        prefactor *= 2.;
+    
+        // Initialise inner derivative vector
+        arma::Col<double> inner_derivative (N, arma::fill::zeros);
+
+        // Loop over filter coefficient index.
+        for (int i = 0; i < N; i++) {
+            if (a.in_range(i + 2 * m)) { 
+                inner_derivative(i) += a(i + 2 * m);
+            }
+            if (a.in_range(i - 2 * m)) {
+                inner_derivative(i) += a(i - 2 * m);
+            }
+        }
+        
+        // Add term to total gradient.
+        gradient += prefactor * inner_derivative;
     }
-    
-    D += (outer.t() * inner).t();
-    
-    // Wavelet part.
+
+
+    // Wavelet-specific regularisation terms.
     if (doWavelet) {
 
+        // Compute high-pass filter coefficients.
         arma::Col<double> b     (N, arma::fill::zeros);
         arma::Col<double> bsign (N, arma::fill::zeros);
         for (unsigned i = 0; i < N; i++) {
             b    (i) = pow(-1, i) * a(N - i - 1);
-            bsign(i) = pow(-1, N - i - 1);
+            bsign(i) = pow(-1, N - i - 1); // Used in (C4).
         }
-        arma::Col<double> kroenecker_delta (N+1, arma::fill::zeros);
-        kroenecker_delta(N/2) = 1;
-        
-        // C1
-        D += 2 * (sum(a) - sqrt(2)) * arma::Col<double> (N, arma::fill::ones);
-        
-        // C3
-        // -- Get outer derivative
-        arma::Mat<double> M3 (N+1, 3*N, arma::fill::zeros);
-        for (unsigned i = 0; i < N+1; i++) {
-            M3.submat(arma::span(i,i), arma::span(N,2*N-1)) = b.t();
-            M3.row(i) = rowshift(M3.row(i), 2 * (N/2 - i));
-        }
-        M3 = M3.submat(arma::span::all, arma::span(N,2*N-1));
-        arma::Col<double> outer3 = 2 * (M3 * b - kroenecker_delta);
-        
-        // -- Get inner derivative.
-        arma::Mat<double> inner3 (N + 1, N, arma::fill::zeros);
-        for (int l = 0; l < N; l++) {
-            for (int i = 0; i < N + 1; i++) {
-                int d = 2 * abs(i - (int) N/2);
-                if (N - 1 - l + d < N) {
-                    inner3(i, l) += pow(-1, N - 1 - l) * b(N - 1 - l + d);
-                }
-                if (N - 1 - l - d >= 0) {
-                    inner3(i, l) += pow(-1, N - 1 - l) * b(N - 1 - l - d);
-                }
-            }
-        }
-        D += (outer3.t() * inner3).t();
         
 
-        // C4
-        D += 2 * (sum(b) - 0) * bsign;
+        /**
+         * (C1): Dilation equation.
+         *
+         * Mathematical expression:
+         *   \nabla R_{1}(\{a\}) = \hat{e}_{i} \times 2 \times 
+         *                         ([\sum_{k} a_{k}] - \sqrt{2})
+         */
+        gradient += 2 * (sum(a) - sqrt(2)) * arma::Col<double> (N, arma::fill::ones);
         
-        // C5
-        /* This should be automatically satisfied (confirm).
-        // -- Get outer derivative
-        arma::Mat<double> M5 (N+1, 3*N, arma::fill::zeros);
-        for (unsigned i = 0; i < N+1; i++) {
-            M5.submat(arma::span(i,i), arma::span(N,2*N-1)) = b.t();
-            M5.row(i) = rowshift(M5.row(i), 2 * (N/2 - i));
-        }
-        M5 = M5.submat(arma::span::all, arma::span(N,2*N-1));
-        arma::Col<double> outer5 = 2 * (M * b - kroenecker_delta);
-        
-        // -- Get inner derivative.
-        arma::Mat<double> inner5 (N + 1, N, arma::fill::zeros);
-        for (int l = 0; l < N; l++) {
-            for (int i = 0; i < N + 1; i++) {
-                int d = 2 * abs(i - (int) N/2);
-                if (l + d < N) {
-                    inner5(i, l) += b(l + d);
-                }
-                if (l - d >= 0) {
-                    inner5(i, l) += b(l - d);
+
+        /**
+         * (C3): Orthonormality of wavelet functions.
+         *
+         * Mathematical expression:
+         *   \nabla R_{3}(\{a\}) = \hat{e}_{i} \times \sum_{m} 2 \times 
+         *                         ([\sum_{k} b_{k} b_{k + 2m}] - \delta_{m,0}) 
+         *                         \times (a_{i + 2m} + a_{i - 2m})
+         */
+        // Loop over summation index m. Summation range taken to be [-N/2, N/2] 
+        // since all other values will always result in b_{k + 2m} == 0 for k in
+        // [0,N).
+        for (const int& m : arma::linspace(-N/2, N/2, N + 1)) {
+
+            // Initialise pre-factor.
+            double prefactor = 0.;
+
+            // Loop over summation index k.
+            for (int k = 0; k < N; k++) {
+                if (b.in_range(k + 2 * m)) {
+                    prefactor += b(k) * b(k + 2 * m);
                 }
             }
+
+            // Substract kroenecker delta: \delta_{0,m}
+            prefactor -= (m == 0 ? 1. : 0);
+
+            // Multiply by lowered power of 2.
+            prefactor *= 2.;
+        
+            // Initialise inner derivative vector
+            arma::Col<double> inner_derivative (N, arma::fill::zeros);
+
+            // Loop over filter coefficient index.
+            for (int i = 0; i < N; i++) {
+                if (a.in_range(i + 2 * m)) { 
+                    inner_derivative(i) += a(i + 2 * m);
+                }
+                if (a.in_range(i - 2 * m)) {
+                    inner_derivative(i) += a(i - 2 * m);
+                }
+            }
+            
+            // Add term to total gradient.
+            gradient += prefactor * inner_derivative;
         }
-        waveletTerm += (outer5.t() * inner5).t();
-        */
+
+        
+        /**
+         * (C4): High-pass filter.
+         *
+         * Mathematical expression:
+         *   \nabla R_{4}(\{a\}) = \hat{e}_{i} \times \sum_{m} 2 \times 
+         *                         ([\sum_{k} b_{k}]) \times (-1)^{N - i - 1}
+         */
+        gradient += 2 * (sum(b) - 0) * bsign;
+        
+
+        /**
+         * (C5): Orthogonality of scaling and wavelet functions.
+         *
+         * The corresponding condition is automatically satisfied by the 
+         * definition of 
+         *     b_{k} = (-1)^{k} a_{N - k - 1}
+         * which means that the derivative is identically equal to zero.
+         */
+        // gradient += arma::Col<double> (N, arma::fill::zeros);
+
     }
     
-    return D/2.;
+    return gradient;
 }
 
 } // namespace
