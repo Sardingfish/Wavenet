@@ -288,8 +288,9 @@ bool Coach::run () {
     
     outFileStream.close();
 
-    // Clean up.
-    m_wavenet->clear();
+    // We're not clearing the wavenet object, since it might be useful to look 
+    // at the filter- and cost log immediately after training (i.e. without 
+    // interacting with Snapshots).
 
     return true;   
 }
