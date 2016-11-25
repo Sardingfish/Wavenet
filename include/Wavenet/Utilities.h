@@ -9,7 +9,9 @@
  */
 
 // STL include(s).
-#include <cmath> /* log2, sqrt */
+#include <cmath> /* log2, log10, sqrt */
+#include <algorithm> /* std::max */
+#include <cstdio> /* snprintf */
 #include <sys/stat.h> /* struct stat */
 #include <cassert> /* assert */
 #include <memory> /* std::unique_ptr */
@@ -123,7 +125,7 @@ inline bool isEmpty (const std::string& s) {
 }
 
 /**
- * Split a delimeter-separated string into elements .
+ * Split a delimeter-separated string into elements.
  * 
  * Taken from [http://stackoverflow.com/a/236803]
  */
@@ -136,6 +138,23 @@ inline std::vector<std::string> split (const std::string &s, char delim) {
         elems.push_back(item);
     }
     return elems;
+}
+
+/**
+ * Format a floating point number to a string.
+ */
+inline std::string formatNumber (const double&   f,
+                                 const unsigned& precision = 2,
+                                 const bool& significantDigits = false,
+                                 const unsigned& leadingPlaces = 0) {
+    const unsigned l = 100;
+    char buffer [l];
+    int cx = snprintf ( buffer, l, "%*.*f",
+        leadingPlaces,
+        (f == 0 ? 0 : (significantDigits ? std::max(int(precision) - 1 - int(log10(f/2. + EPS)), 0) : precision)), \
+        f );
+    std::string s = buffer;
+    return s;
 }
 
 
