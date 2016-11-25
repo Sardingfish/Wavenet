@@ -29,10 +29,6 @@
 #include "Wavenet/GeneratorBase.h"
 
 
-/**
- * @TODO: - (Optional) Change compilation structure, such that changes in header propagate directly
- */
-
 namespace wavenet {
 
 /**
@@ -331,7 +327,7 @@ private:
 private:
 
     /// Data member(s).
-    // The name of the CSV from which to generate the input.
+    // The name of the CSV files from which to generate the input.
     std::vector<std::string> m_filenames = {};
 
     // The index for the current file to use.
@@ -477,7 +473,7 @@ private:
 private:
 
     /// Data member(s).
-    // The names of the HepMC from which to generate the input.
+    // The names of the HepMC files from which to generate the input.
     std::vector<std::string> m_filenames = {};
 
     // The index for the current file to use.
