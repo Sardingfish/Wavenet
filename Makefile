@@ -1,5 +1,7 @@
 # ----------------------------------------------------------------------------------
-# External paths, to be set by user.
+# External paths, to be set by user. Remember to also set the DYLD_LIBRARY_PATH. 
+# If the packages were installed using the macros in the './scripts/' directory, 
+# this environment variables can be set by calling '$ source scripts/setup.sh'.
 ARMAPATH  =
 HEPMCPATH =
 
@@ -39,7 +41,8 @@ GARBAGE = $(OBJDIR)/*.o $(EXEDIR)/* $(LIBDIR)/*.so
 
 # Dependencies
 CXXFLAGS  = --std=c++11 -O3 -fPIC -funroll-loops -I$(INCDIR)
-LINKFLAGS = -O3 -L$(LIBDIR)
+LINKFLAGS = -L$(LIBDIR)
+LIBS      =
 
 # -- Armadillo (necessary)
 ifeq ($(strip $(ARMAPATH)),)
@@ -61,13 +64,14 @@ else
     ifeq ($(wildcard $(ARMAPATH)/include),)
         $(error No 'include' directory was found in ARMAPATH ($(ARMAPATH)))
     endif
-    ifeq ($(wildcard $(ARMAPATH)/libarmadillo*),)
-        $(error No library of type '/libarmadillo*' was found in ARMAPATH ($(ARMAPATH)))
+    ifeq ($(wildcard $(ARMAPATH)/lib),)
+        $(error No 'lib' directory was found in ARMAPATH ($(ARMAPATH)))
     endif
 
     # If everything checks out, add flags.
-    CXXFLAGS += -I$(ARMAPATH)/include
-    LINKFLAGS += -L$(ARMAPATH) -march=native -lArmadillo -DARMA_DONT_USE_WRAPPER -DARMA_NO_DEBUG -lblas -llapack
+    CXXFLAGS += -I$(ARMAPATH)/include -march=native -DARMA_DONT_USE_WRAPPER -DARMA_NO_DEBUG
+    LINKFLAGS += -L$(ARMAPATH)/lib
+    LIBS += -lArmadillo -lblas -llapack
 endif
 
 # -- HepMC (optional
@@ -98,7 +102,8 @@ else
 
     # If everything checks out, add flags.
     CXXFLAGS += -I$(HEPMCPATH)/include -DUSE_HEPMC
-    LINKFLAGS += -L$(HEPMCPATH)/lib -lHepMC
+    LINKFLAGS += -L$(HEPMCPATH)/lib
+    LIBS += -lHepMC
 endif
 
 # -- ROOT (optional)
@@ -111,7 +116,8 @@ ifeq ($(strip $(ROOTPATH)),)
 else
     # Check to make sure that the provided paths is sensible?
     CXXFLAGS += $(ROOTCFLAGS) -DUSE_ROOT
-    LINKFLAGS += -L$(ROOTSYS)/lib $(ROOTLIBS)
+    LINKFLAGS += -L$(ROOTSYS)/lib
+    LIBS += $(ROOTLIBS)
 endif
 
 
@@ -120,15 +126,15 @@ all: $(PACKAGENAME) $(PROGS)
 
 $(PACKAGENAME) : $(OBJS) 
 	@mkdir -p $(LIBDIR)
-	$(CXX) -shared -O3 -o $(LIBDIR)/lib$@.so $(LINKFLAGS) $(OBJS)
+	$(CXX) $(LINKFLAGS) -shared -O3 -o $(LIBDIR)/lib$@.so $(OBJS) $(LIBS)
 
-$(OBJDIR)/%.o : $(SRCDIR)/%.$(SRCEXT)
+$(OBJDIR)/%.o : $(SRCDIR)/%.$(SRCEXT) $(INCDIR)/$(PACKAGENAME)/%.$(INCEXT)
 	@mkdir -p $(OBJDIR)
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
 $(EXEDIR)/%.exe : $(PROGDIR)/%.$(SRCEXT)
 	@mkdir -p $(EXEDIR)
-	$(CXX) $< -o $@ $(CXXFLAGS) $(LINKFLAGS) -l$(PACKAGENAME)
+	$(CXX) $< $(LINKFLAGS) -o $@ $(CXXFLAGS) $(LIBS) -l$(PACKAGENAME)
 
 clean : 
 	@rm -f $(GARBAGE)
