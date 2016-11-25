@@ -50,7 +50,7 @@ int main (int argc, char* argv[]) {
 }
 ```
 
-This is the same code as in [`examples/Example00.cxx`](examples/Example00.cxx).
+This is the same code as in [examples/Example00.cxx](examples/Example00.cxx).
 
 ### Structure
 
