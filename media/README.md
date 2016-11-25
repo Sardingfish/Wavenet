@@ -1,6 +1,6 @@
 ## Example graphical outputs
 
-![alt text](https://github.com/asogaard/Wavenet/blob/master/media/FilterGraph.pdf "Filter graph.")
+![Filter graph](https://github.com/asogaard/Wavenet/blob/master/media/FilterGraph.png "Filter graph.")
 
 ### Configuration
 * __Training data__: NeedleGenerator
