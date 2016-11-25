@@ -1,5 +1,7 @@
 ## Example graphical outputs
 
+![alt text](https://github.com/asogaard/Wavenet/blob/master/media/FilterGraph.pdf "Filter graph.")
+
 ### Configuration
 * __Training data__: NeedleGenerator
 * __Number of filter coefficients__: 2
