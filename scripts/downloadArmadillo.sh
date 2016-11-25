@@ -18,7 +18,10 @@ if [ -d "${EXTERNPATH}/${NAMEVERSION}" ]; then
 
 else
 
-    echo -e "\n NOTE: Armadillo relies on other libraries (in particular LAPACK and BLAS) for performing the matrix algebra. These are automatically installed with MacOS, but Linux users might need to install them manually. See here for details: http://arma.sourceforge.net/download.html"
+    echo -e "\n NOTE: Armadillo relies on other libraries (in particular LAPACK and BLAS) for"
+    echo -e " performing the matrix algebra. These are automatically installed with MacOS,"
+    echo -e " but Linux users might need to install them manually. See here for details:"
+    echo -e "   http://arma.sourceforge.net/download.html"
     echo -e "\n\033[1m Downloading ${NAMEVERSION} to '${EXTERNPATH}'.\033[0m"
     
     # Make sure that externals directory exists.
