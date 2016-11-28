@@ -2,39 +2,55 @@
 
 __C++ package for learning of optimal wavelet bases using a neural network approach.__
 
-The basis is expressed as a filter bank, or a set of filter coefficients, (known from wavelet analyses) and the learning is implemented using a neural network with gradient descent. The compound entity is called a "Wavenet"<sup>1</sup> below, and is desribed in more detail in the companion note [1]
+The basis is expressed as a filter bank, or a set of filter coefficients, (known from wavelet analyses) and the learning is implemented using a neural network with gradient descent. The compound entity is called a "Wavenet"<sup>1</sup> below and is desribed in more detail in the companion note [1].
 
 This package implements the wavenet transform using matrix algebra, for which we rely on the Armadillo C++ linear algebra  library [2]. If the HepMC package [3] for experimental particile physics event records is installed, a specialised Generator class, convertinng `HepMC::GenEvent`'s to Armadillo matrices, can be used. Finally, if the ROOT library [4] is installed, some of the bundled examples allow for producing output graphics showing the results of the learning process
 
 ...
 
 
-### Dependencies
+## Dependencies
+---
 
-* __LAPACK, BLAS, and Boost__ [1]. _Recommended._ Pre-installed on MacOS systems. On Linux, install as
+* __LAPACK__, __BLAS__, and __Boost__ [5-7]. _Recommended._ Pre-installed on MacOS systems. On Linux, install using the APT as
 ```
 # Linux
-sudo apt-get install liblapack-dev
-sudo apt-get install libblas-dev
-sudo apt-get install libboost-dev
+$ sudo apt-get install liblapack-dev
+$ sudo apt-get install libblas-dev
+$ sudo apt-get install libboost-dev
 ```
-* __Armadillo__ [2]. _Necessary._ Available on Linux as 
+* __Armadillo__ [2]. _Necessary._ Available on Linux using APT as 
 ```
 # Linux
-sudo apt-get install libarmadillo-dev
+$ sudo apt-get install libarmadillo-dev
 ```
 on MacOS using [Homebrew](http://brew.sh/) as
 ```
 # MacOS
-brew install homebrew/science/armadillo
+$ brew install homebrew/science/armadillo
 ```
-and through manual installation, cf. [the official webpage](http://arma.sourceforge.net/download.html). If installed in this way, the variable `ARMAPATH` at the top of the [Makefile](Makefile) needs to be updated to the installation directory. In addtion, if the package is not installed in standard locations (e.g. `/usr/local/`) see caveat below
-* __ROOT__ [3]. _Recommended._ 
-* __HepMC__ [4]. _Optional._
+and through manual installation, cf. [the official webpage](http://arma.sourceforge.net/download.html). If installed in this way, the variable `ARMAPATH` at the top of the [Makefile](Makefile) needs to be updated to the installation directory. See also the caveat below.
+* __ROOT__ [4]. _Recommended._ ...
+* __HepMC__ [3]. _Optional._ Event record for simulated high energy physics. Can be installed manual, cf. [the official webpage](http://hepmc.web.cern.ch/hepmc/). Alternatively, the _Wavenet_ package comes bundled with a utility script for downloading and installing HepMC. Simply call
+```
+$ source scripts/downloadHepMC.sh
+```
+See also the caveat below.
 
 
+### Caveat: `DYLD_LIBRARY_PATH`
 
-### Installation
+If the external shared libraries Armadillo and (optionally) HepMC are not installed in standard locations (e.g. `/usr/local/`) the compiler might be unable to find these by default. This is the case if the packages are installed using the bundled utility download scripts. If this case, you need to call
+```
+$ source scripts/setup.sh
+```
+which updates the environment variable `DYLD_LIBRARY_PATH` to point to `./external/` where the scripts install the external packages by default. This needs to be done in every new shell, so it might be smart to perform this call as part of the bash initialisation (i.e. put it in `~/.bash_profile` or similar.)
+
+If the packages are installed in another non-standard location, manually, make sure to set the appropriate environment variable(s) yourself.
+
+
+## Installation
+---
 
 (_Note_: Please read this section in its entirety, including the caveats below, to avoid head aches when installing the package.)
 
@@ -67,19 +83,18 @@ The
 ... BLAS, LAPACK ...
 
 
-#### Caveat 3: DYLD_LIBRARY_PATH
-
-... shared libraries, call `$ source scripts/setup.sh` to set environment variables to packages downloaded using the bundled scripts. Otherwise, make sure to do it manually, probably in `~/.bash_profile` or simiar.
 
 
 
-### Structure
+## Structure
+---
 
 ...
 
 
 
-### Example
+## Example
+---
 
 ...
 
@@ -115,22 +130,27 @@ This is the same code as in [examples/Example00.cxx](examples/Example00.cxx).
 
 
 
-### Licence
+## Licence
+---
+...
+
+
+## Contributions
+---
 
 ...
 
 
-### Contributions
+## References
 
-...
+[1] A. Søgaard, _Learning optimal wavelet bases using a neural network approach_, 2016. [arXiv:xxxx.yyyyy]  
+[2] Armadillo, ...  
+[3] M. Dobbs and J. Bech-Hansen, _...HepMC..._, 2006. [....]  
+[4] ..., _...ROOT..._, yyyy. [....]  
+[5] LAPACK
+[6] BLAS
+[7] Boost
 
-
-### References
-
-[1] A. Søgaard, _Learning optimal wavelet bases using a neural network approach_, 2015. [arXiv:xxxx.yyyyy]
-[2] Armadillo, ...
-[3] M. Dobbs and J. Bech-Hansen, _...HepMC..._, 2006. [....]
-[4] ..., _...ROOT..._, yyyy. [....]
 
 ---
 
