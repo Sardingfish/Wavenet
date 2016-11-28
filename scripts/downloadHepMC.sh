@@ -7,10 +7,12 @@ UNAME=`uname`
 EXTERNPATH="external"
 
 # Name and version of library to install.
-NAMEVERSION="HepMC-2.06.09"
+#NAMEVERSION="HepMC-2.06.09"
+NAMEVERSION="hepmc2.06.09"
 
 # URL from which to download HepMC.
-URL="http://lcgapp.cern.ch/project/simu/HepMC/download/${NAMEVERSION}.tar.gz"
+#URL="http://lcgapp.cern.ch/project/simu/HepMC/download/${NAMEVERSION}.tar.gz"
+URL="http://hepmc.web.cern.ch/hepmc/releases/${NAMEVERSION}.tgz"
 
 if [ -d "${EXTERNPATH}/${NAMEVERSION}" ]; then 
 
@@ -34,8 +36,8 @@ else
     fi
 
     # Unzip and remove tarball.
-    tar -xvzf ${NAMEVERSION}.tar.gz
-    rm ${NAMEVERSION}.tar.gz
+    tar -xvzf ${NAMEVERSION}.tgz
+    rm ${NAMEVERSION}.tgz
 
     # Make sure that build directory exist (should be separate from unzipped tarball contents).
     mkdir -p ${NAMEVERSION}-build/install
