@@ -2,7 +2,7 @@
 
 __C++ package for learning of optimal wavelet bases using a neural network approach.__
 
-The basis is expressed as a filter bank, or a set of filter coefficients, (known from wavelet analyses) and the learning is implemented using a neural network with gradient descent. The compound entity is called a "Wavenet"<sup>1</sup> below and is desribed in more detail in the companion note [1].
+The basis is expressed as a filter bank, or a set of filter coefficients, (known from wavelet analyses) and the learning is implemented using a neural network with gradient descent. The compound entity is called a _Wavenet_<sup>1</sup> below and is desribed in more detail in the companion note [1].
 
 This package implements the wavenet transform using matrix algebra, for which we rely on the Armadillo C++ linear algebra  library [2]. If the HepMC package [3] for experimental particile physics event records is installed, a specialised Generator class, convertinng `HepMC::GenEvent`'s to Armadillo matrices, can be used. Finally, if the ROOT library [4] is installed, some of the bundled examples allow for producing output graphics showing the results of the learning process
 
@@ -15,7 +15,6 @@ This package implements the wavenet transform using matrix algebra, for which we
 
 __LAPACK__, __BLAS__, and __Boost__ [5-7]. _Recommended._ Improves performance of matrix algebra in Armadillo (below). Pre-installed on MacOS systems. On Linux, install using APT as
 ```
-# Linux
 $ sudo apt-get install liblapack-dev
 $ sudo apt-get install libblas-dev
 $ sudo apt-get install libboost-dev
@@ -23,12 +22,10 @@ $ sudo apt-get install libboost-dev
 
 __Armadillo__ [2]. _Necessary._ Available on Linux using APT as 
 ```
-# Linux
 $ sudo apt-get install libarmadillo-dev
 ```
 on MacOS using [Homebrew](http://brew.sh/) as
 ```
-# MacOS
 $ brew install homebrew/science/armadillo
 ```
 and through manual installation, cf. [the official webpage](http://arma.sourceforge.net/download.html). If installed in this way, the variable `ARMAPATH` at the top of the [Makefile](Makefile) needs to be updated to the installation directory. Alternatively, the _Wavenet_ package comes bundled with a utility script for downloading and installing Armadillo. Simply call
@@ -130,8 +127,8 @@ This is the same code as in [examples/Example00.cxx](examples/Example00.cxx).
 ## References
 
 [1] A. Søgaard, _Learning optimal wavelet bases using a neural network approach_, 2016. [arXiv:xxxx.yyyyy]  
-[2] Armadillo, ...  
-[3] M. Dobbs and J. Bech-Hansen, _...HepMC..._, 2006. [....]  
+[2] C. Sanderson and R. Curtin, _Armadillo: a template-based C++ library for linear algebra_, Journal of Open Source Software, __1__ (2016), 26.
+[3] M. Dobbs and J. B. Hansen, _The HepMC C++ Monte Carlo Event Record for High Energy Physics_, Comput. Phys. Commun. __134__ (2001) 41 [....]  
 [4] ..., _...ROOT..._, yyyy. [....]  
 [5] LAPACK
 [6] BLAS
