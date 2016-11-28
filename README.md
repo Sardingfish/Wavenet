@@ -10,16 +10,18 @@ This package implements the wavenet transform using matrix algebra, for which we
 
 
 ## Dependencies
----
+(_Note_: Please read this section in its entirety, including the caveat below, to avoid head aches when installing the actual _Wavenet_ package.)
 
-* __LAPACK__, __BLAS__, and __Boost__ [5-7]. _Recommended._ Pre-installed on MacOS systems. On Linux, install using the APT as
+
+__LAPACK__, __BLAS__, and __Boost__ [5-7]. _Recommended._ Improves performance of matrix algebra in Armadillo (below). Pre-installed on MacOS systems. On Linux, install using APT as
 ```
 # Linux
 $ sudo apt-get install liblapack-dev
 $ sudo apt-get install libblas-dev
 $ sudo apt-get install libboost-dev
 ```
-* __Armadillo__ [2]. _Necessary._ Available on Linux using APT as 
+
+__Armadillo__ [2]. _Necessary._ Available on Linux using APT as 
 ```
 # Linux
 $ sudo apt-get install libarmadillo-dev
@@ -29,9 +31,17 @@ on MacOS using [Homebrew](http://brew.sh/) as
 # MacOS
 $ brew install homebrew/science/armadillo
 ```
-and through manual installation, cf. [the official webpage](http://arma.sourceforge.net/download.html). If installed in this way, the variable `ARMAPATH` at the top of the [Makefile](Makefile) needs to be updated to the installation directory. See also the caveat below.
-* __ROOT__ [4]. _Recommended._ ...
-* __HepMC__ [3]. _Optional._ Event record for simulated high energy physics. Can be installed manual, cf. [the official webpage](http://hepmc.web.cern.ch/hepmc/). Alternatively, the _Wavenet_ package comes bundled with a utility script for downloading and installing HepMC. Simply call
+and through manual installation, cf. [the official webpage](http://arma.sourceforge.net/download.html). If installed in this way, the variable `ARMAPATH` at the top of the [Makefile](Makefile) needs to be updated to the installation directory. Alternatively, the _Wavenet_ package comes bundled with a utility script for downloading and installing Armadillo. Simply call
+```
+$ source scripts/downloadArmadillo.sh
+```
+See also the caveat below.
+
+
+__ROOT__ [4]. _Recommended._ High energy physics framework. Used for plotting graphical results. Must be installed manuallu, following the instructions on [the official webpage](https://root.cern.ch/).
+
+
+__HepMC__ [3]. _Optional._ Event record for high energy physics collision simulations. Can be installed manually, cf. [the official webpage](http://hepmc.web.cern.ch/hepmc/). Alternatively, the _Wavenet_ package comes bundled with a utility script for downloading and installing HepMC. Simply call
 ```
 $ source scripts/downloadHepMC.sh
 ```
@@ -50,9 +60,8 @@ If the packages are installed in another non-standard location, manually, make s
 
 
 ## Installation
----
 
-(_Note_: Please read this section in its entirety, including the caveats below, to avoid head aches when installing the package.)
+Generally, this package is developed for UNIX-based operating system. Therefore, getting it installed in  MacOS and Linux should be relatively smooth. Windows is supported, but feel free to give it a try if you're feeling brave.
 
 To install the base package itself, simply do:
 ```
@@ -72,34 +81,15 @@ $ source scripts/downloadHepMC.sh
 This _should_ install both libraries in the [./externals/] directory and update the Makefile accordingly. See also Caveat 3 below.
 
 
-#### Caveat 1: OS support
-
-Generally, this package is developed for UNIX-based operating system. Therefore, getting it installed in  MacOS and Linux should be relatively smooth. Windows is supported, but feel free to give it a try if you're feeling brave.
-
-
-#### Caveat 2: Linux
-
-The 
-... BLAS, LAPACK ...
-
-
-
-
-
 ## Structure
----
 
 ...
 
 
 
 ## Example
----
 
-...
-
-Minimal working example:
-
+Below is a minimal working example of the _Wavenet_ code in action:
 ```
 #include "Wavenet/Generators.h" /* wavenet::NeedleGenerator */
 #include "Wavenet/Wavenet.h" /* wavenet::Wavenet */
@@ -125,19 +115,15 @@ int main (int argc, char* argv[]) {
     return 1;
 }
 ```
-
 This is the same code as in [examples/Example00.cxx](examples/Example00.cxx).
 
 
 
 ## Licence
----
 ...
 
 
 ## Contributions
----
-
 ...
 
 
