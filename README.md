@@ -1,6 +1,6 @@
 # Wavenet
 
-__C++ package for learning of optimal wavelet bases using a neural network approach.__
+__C++ package for learning optimal wavelet bases using a neural network approach.__
 
 The basis is expressed as a filter bank, or a set of filter coefficients, (known from wavelet analyses) and the learning is implemented using a neural network with gradient descent. The compound entity is called a _Wavenet_<sup>1</sup> below and is desribed in more detail in the companion note [1].
 
@@ -127,11 +127,11 @@ This is the same code as in [examples/Example00.cxx](examples/Example00.cxx).
 ## References
 
 [1] A. Søgaard, _Learning optimal wavelet bases using a neural network approach_, 2016. [arXiv:xxxx.yyyyy]  
-[2] C. Sanderson and R. Curtin, _Armadillo: a template-based C++ library for linear algebra_, Journal of Open Source Software, __1__ (2016), 26.
-[3] M. Dobbs and J. B. Hansen, _The HepMC C++ Monte Carlo Event Record for High Energy Physics_, Comput. Phys. Commun. __134__ (2001) 41 [....]  
+[2] C. Sanderson and R. Curtin, _Armadillo: a template-based C++ library for linear algebra_, Journal of Open Source Software __1__ (2016) 26.  
+[3] M. Dobbs and J. B. Hansen, _The HepMC C++ Monte Carlo Event Record for High Energy Physics_, Comput. Phys. Commun. __134__ (2001) 41  
 [4] ..., _...ROOT..._, yyyy. [....]  
-[5] LAPACK
-[6] BLAS
+[5] E. Anderson _et al._, _LAPACK Users' Guide_, 3rd ed., SIAM (1999). [[http://www.netlib.org/lapack](http://www.netlib.org/lapack)]  
+[6] L. S. Blackford _et al._, _An Updated Set of Basic Linear Algebra Subprograms (BLAS)_, ACM Trans. Math. Soft., __28-2__ (2002) 135—151  
 [7] Boost
 
 
