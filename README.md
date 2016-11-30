@@ -10,7 +10,7 @@ This package implements the wavenet transform using matrix algebra, for which we
 
 ## Installation
 
-Generally, this package is developed for UNIX-based operating system. Therefore, getting it installed in  MacOS and Linux should be relatively smooth. Windows is supported, but feel free to give it a try if you're feeling brave.
+Generally, this package is developed for UNIX-based operating system. Therefore, getting it installed in  MacOS and Linux should be relatively smooth. Windows is not supported, but feel free to give it a try if you're feeling brave.
 
 To install the base package itself, simply do:
 ```
@@ -28,8 +28,6 @@ and run the _Wavenet_ package. How this is done is described below
 
 
 ### Dependencies
-(_Note_: Please read this section in its entirety, including the caveat below, to avoid headaches when installing the actual _Wavenet_ package.)
-
 
 __LAPACK__, __BLAS__, and __Boost__ [5-7]. _Recommended._ Improves performance of matrix algebra in Armadillo (below). Pre-installed on MacOS systems. On Linux, install using APT as
 ```
