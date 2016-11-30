@@ -145,10 +145,11 @@ This is the same code as in [examples/Example00.cxx](examples/Example00.cxx). Fo
 [1] A. Søgaard, _Learning optimal wavelet bases using a neural network approach_, 2016. [arXiv:xxxx.yyyyy]  
 [2] C. Sanderson and R. Curtin, _Armadillo: a template-based C++ library for linear algebra_, Journal of Open Source Software __1__ (2016) 26.  
 [3] M. Dobbs and J. B. Hansen, _The HepMC C++ Monte Carlo Event Record for High Energy Physics_, Comput. Phys. Commun. __134__ (2001) 41  
-[4] ..., _...ROOT..._, yyyy. [....]  
+[4] R. Brun and F. Rademakers, _ROOT - An Object Oriented Data Analysis Framework_,
+Proceedings AIHENP'96 Workshop, Lausanne, Sep. 1996, Nucl. Inst. & Meth. in Phys. Res. A __389__ (1997) 81-86. See also [http://root.cern.ch/](http://root.cern.ch/).  
 [5] E. Anderson _et al._, _LAPACK Users' Guide_, 3rd ed., SIAM (1999). [[http://www.netlib.org/lapack](http://www.netlib.org/lapack)]  
 [6] L. S. Blackford _et al._, _An Updated Set of Basic Linear Algebra Subprograms (BLAS)_, ACM Trans. Math. Soft., __28-2__ (2002) 135—151. [[http://www.netlib.org/blas](http://www.netlib.org/blas)]  
-[7] Boost
+[7] _Boost C++ Libraries_, [http://www.boost.org](http://www.boost.org).
 
 
 ---
