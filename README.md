@@ -34,7 +34,7 @@ on MacOS using [Homebrew](http://brew.sh/) as
 ```
 $ brew install homebrew/science/armadillo
 ```
-and through manual installation, cf. [the official webpage](http://arma.sourceforge.net/download.html). If installed in this way, the variable `ARMAPATH` at the top of the [Makefile](Makefile) needs to be updated to the installation directory.
+and through manual installation, cf. [the official webpage](http://arma.sourceforge.net/download.html). If installed in this way, the variable `ARMAPATH` at the top of the [Makefile](Makefile) needs to be updated to the installation directory and the `DYLD_LIBRARY_PATH` environment variable might need to be set manually, see below.
 
 
 __ROOT__ [4]. _Recommended._ High energy physics framework. Used for plotting graphical results. Must be installed manually, following the instructions on [the official webpage](https://root.cern.ch/).
@@ -46,16 +46,16 @@ $ source scripts/downloadHepMC.sh
 ```
 This scripts installs the HepMC package to `./external/` and updates the appropriate path in the Makefile. See also the caveat below.
 
-Alternatively, can be installed manually, cf. [the official webpage](http://hepmc.web.cern.ch/hepmc/). If installed in this way, the variable `HEPMCPATH` at the top of the [Makefile](Makefile) needs to be updated to the installation directory.
+Alternatively, can be installed manually, cf. [the official webpage](http://hepmc.web.cern.ch/hepmc/). If installed in this way, the variable `HEPMCPATH` at the top of the [Makefile](Makefile) needs to be updated to the installation directory and the `DYLD_LIBRARY_PATH` environment variable might need to be set manually, see below.
 
 
 ### Caveat: `DYLD_LIBRARY_PATH`
 
-If the external shared libraries Armadillo and (optionally) HepMC are not installed in standard locations (e.g. `/usr/local/`) the compiler might be unable to find these by default. This is the case if the packages are installed using the bundled utility download scripts. If this case, you need to call
+If the external shared libraries, Armadillo and (optionally) HepMC, are not installed in standard locations (e.g. `/usr/local/`) the programs might be unable to find these by default. This is the case if the packages are installed using the bundled utility download scripts. In this case, you need to call
 ```
 $ source scripts/setup.sh
 ```
-which updates the environment variable `DYLD_LIBRARY_PATH` to point to `./external/` where the scripts install the external packages by default. This needs to be done in every new shell, so it might be smart to perform this call as part of the bash initialisation (i.e. put it in `~/.bash_profile` or similar.)
+which updates the environment variable `DYLD_LIBRARY_PATH` to point to the install directories in `./external/`, where the scripts install the external packages by default. This needs to be done in every new shell, so it might be smart to perform this call as part of the bash initialisation (i.e. put it in `~/.bash_profile` or similar). If you forget, the programs will let you know by throwing errors when you try to run.
 
 If the packages are installed in another non-standard location, manually, make sure to set the appropriate environment variable(s) yourself.
 
