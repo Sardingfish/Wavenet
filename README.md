@@ -20,7 +20,13 @@ $ sudo apt-get install libboost-dev
 ```
 
 
-__Armadillo__ [2]. _Necessary._ Available on Linux using APT as 
+__Armadillo__ [2]. _Necessary._ The _Wavenet_ package comes bundled with a utility script for downloading and installing Armadillo. Simply call
+```
+$ source scripts/downloadArmadillo.sh
+```
+This scripts installs the Armadillo package to `./external/` and updates the appropriate path in the Makefile. See also the caveat below.
+
+Alternatively, available on Linux using APT as 
 ```
 $ sudo apt-get install libarmadillo-dev
 ```
@@ -28,21 +34,19 @@ on MacOS using [Homebrew](http://brew.sh/) as
 ```
 $ brew install homebrew/science/armadillo
 ```
-and through manual installation, cf. [the official webpage](http://arma.sourceforge.net/download.html). If installed in this way, the variable `ARMAPATH` at the top of the [Makefile](Makefile) needs to be updated to the installation directory. Alternatively, the _Wavenet_ package comes bundled with a utility script for downloading and installing Armadillo. Simply call
-```
-$ source scripts/downloadArmadillo.sh
-```
-This scripts installs the Armadillo package to `./external/` and updates the appropriate path in the Makefile. See also the caveat below.
+and through manual installation, cf. [the official webpage](http://arma.sourceforge.net/download.html). If installed in this way, the variable `ARMAPATH` at the top of the [Makefile](Makefile) needs to be updated to the installation directory.
 
 
-__ROOT__ [4]. _Recommended._ High energy physics framework. Used for plotting graphical results. Must be installed manuallu, following the instructions on [the official webpage](https://root.cern.ch/).
+__ROOT__ [4]. _Recommended._ High energy physics framework. Used for plotting graphical results. Must be installed manually, following the instructions on [the official webpage](https://root.cern.ch/).
 
 
-__HepMC__ [3]. _Optional._ Event record for high energy physics collision simulations. Can be installed manually, cf. [the official webpage](http://hepmc.web.cern.ch/hepmc/). If installed in this way, the variable `HEPMCPATH` at the top of the [Makefile](Makefile) needs to be updated to the installation directory. Alternatively, the _Wavenet_ package comes bundled with a utility script for downloading and installing HepMC. Simply call
+__HepMC__ [3]. _Optional._ Event record for high energy physics collision simulations. The _Wavenet_ package comes bundled with a utility script for downloading and installing HepMC. Simply call
 ```
 $ source scripts/downloadHepMC.sh
 ```
 This scripts installs the HepMC package to `./external/` and updates the appropriate path in the Makefile. See also the caveat below.
+
+Alternatively, can be installed manually, cf. [the official webpage](http://hepmc.web.cern.ch/hepmc/). If installed in this way, the variable `HEPMCPATH` at the top of the [Makefile](Makefile) needs to be updated to the installation directory.
 
 
 ### Caveat: `DYLD_LIBRARY_PATH`
