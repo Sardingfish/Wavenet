@@ -2,15 +2,14 @@
 
 __C++ package for learning optimal wavelet bases using a neural network approach.__
 
-The basis is expressed as a filter bank, or a set of filter coefficients, (known from wavelet analyses) and the learning is implemented using a neural network with gradient descent. The compound entity is called a _Wavenet_<sup>1</sup> below and is desribed in more detail in the companion note [1].
+The functional basis is expressed by a set of filter coefficients (known from wavelet analyses) and the learning is implemented using a neural network with gradient descend. The composite entity is called a _Wavenet_<sup>1</sup> below and is desribed in more detail in the companion note [1].
 
 This package implements the wavenet transform using matrix algebra, for which we rely on the Armadillo C++ linear algebra  library [2]. If the HepMC package [3] for experimental particile physics event records is installed, a specialised Generator class, convertinng `HepMC::GenEvent`'s to Armadillo matrices, can be used. Finally, if the ROOT library [4] is installed, some of the bundled examples allow for producing output graphics showing the results of the learning process
 
-...
 
 
 ## Dependencies
-(_Note_: Please read this section in its entirety, including the caveat below, to avoid head aches when installing the actual _Wavenet_ package.)
+(_Note_: Please read this section in its entirety, including the caveat below, to avoid headaches when installing the actual _Wavenet_ package.)
 
 
 __LAPACK__, __BLAS__, and __Boost__ [5-7]. _Recommended._ Improves performance of matrix algebra in Armadillo (below). Pre-installed on MacOS systems. On Linux, install using APT as
@@ -19,6 +18,7 @@ $ sudo apt-get install liblapack-dev
 $ sudo apt-get install libblas-dev
 $ sudo apt-get install libboost-dev
 ```
+
 
 __Armadillo__ [2]. _Necessary._ Available on Linux using APT as 
 ```
@@ -56,6 +56,7 @@ which updates the environment variable `DYLD_LIBRARY_PATH` to point to `./extern
 If the packages are installed in another non-standard location, manually, make sure to set the appropriate environment variable(s) yourself.
 
 
+
 ## Installation
 
 Generally, this package is developed for UNIX-based operating system. Therefore, getting it installed in  MacOS and Linux should be relatively smooth. Windows is supported, but feel free to give it a try if you're feeling brave.
@@ -78,9 +79,27 @@ $ source scripts/downloadHepMC.sh
 This _should_ install both libraries in the [./externals/] directory and update the Makefile accordingly. See also Caveat 3 below.
 
 
+
 ## Structure
 
-...
+The central object in this package is the [Wavenet](include/Wavenet/Wavenet.h) class, which performs
+
+1. forward transforms of input (1- or 2-dimensional) data into a set of neural network node activations or wavelet coefficients,
+* inverse transforms or a set of wavelet coefficients into a "position-space" signal,
+* backpropagation of sparisty errors on the wavelet coefficient, and
+* learning updates based on the backpropagated errors from training examples.
+
+The function for computing the sparsity- and regularisation costs, as well as the associated gradients, are located in [include/Wavenet/CostFunctions.h](include/Wavenet/CostFunctions.h).
+
+The [LowpassOperator](include/Wavenet/LowpassOperator.h) and [HighpassOperator](include/Wavenet/HighpassOperator.h) classes, both deriving from the basic [MatrixOperator](include/Wavenet/MatrixOperator.h) class, are responsible for the implementation of the low- and high-pass filter operations in the _Wavenet_ transforms.
+
+The [Coach](include/Wavenet/Coach.h) class manages the training<sup>1</sup> of Wavenet objects, possibly utilising more advanced learning methods such as adaptive learning rates and batch sizes as well as a variant of simulated annealing.
+
+The training examples which go into the training are provided by a collection of [Generators](include/Wavenet/Generators.h), all deriving from the [GeneratorBase](include/Wavenet/GeneratorBase.h) class. By default, five generators come bundled with the package: `NeedleGenerator`, `UniformGenerator`, `GaussianGenerator`, `CSVGenerator`, and (optionally) `HepMCGenerator`. For specialised use, the user can added additional generator classes by following the provided examples.
+
+The Wavenet objects can be save to, and loaded from, file using the [Snapshot](include/Wavenet/Snapshot.h) class, which also allows for easy iteration between save files from successive iterations, which the Coach class automatically takes care of.
+
+The remaining files ([Logger](include/Wavenet/Logger.h), [Type](include/Wavenet/Type.h), and [Utilities](include/Wavenet/Utilities.h)) take care of pretty printing, type checking, and convenient utility functions.
 
 
 
@@ -112,16 +131,14 @@ int main (int argc, char* argv[]) {
     return 1;
 }
 ```
-This is the same code as in [examples/Example00.cxx](examples/Example00.cxx).
+This is the same code as in [examples/Example00.cxx](examples/Example00.cxx). For examples of graphical output generated with this package, please see [media](media).
 
 
 
 ## Licence
-...
 
+© Andreas Søgaard 2016. Licensed under an [MIT License](LICENSE). If you use this package in your work (commerical, research, or otherwise), please give proper credit to the authors, e.g. through [1].
 
-## Contributions
-...
 
 
 ## References
@@ -131,7 +148,7 @@ This is the same code as in [examples/Example00.cxx](examples/Example00.cxx).
 [3] M. Dobbs and J. B. Hansen, _The HepMC C++ Monte Carlo Event Record for High Energy Physics_, Comput. Phys. Commun. __134__ (2001) 41  
 [4] ..., _...ROOT..._, yyyy. [....]  
 [5] E. Anderson _et al._, _LAPACK Users' Guide_, 3rd ed., SIAM (1999). [[http://www.netlib.org/lapack](http://www.netlib.org/lapack)]  
-[6] L. S. Blackford _et al._, _An Updated Set of Basic Linear Algebra Subprograms (BLAS)_, ACM Trans. Math. Soft., __28-2__ (2002) 135—151  
+[6] L. S. Blackford _et al._, _An Updated Set of Basic Linear Algebra Subprograms (BLAS)_, ACM Trans. Math. Soft., __28-2__ (2002) 135—151. [[http://www.netlib.org/blas](http://www.netlib.org/blas)]  
 [7] Boost
 
 
