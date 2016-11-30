@@ -70,17 +70,6 @@ That was easy.
 
 If you have already installed the depencies above manually, or intend to, do so now, update the appropriate paths in the [Makefile](Makefile) and update `DYLD_LIBRARY_PATH` if necessary (see also the caveat above). Otherwise, use the bundled installation scripts as described above.
 
-However, since the package relies of external libraries for working, in particular Armadillo, some care has to be taken to interface these correctly with the package. There are generally two ways to do this:
-
-1. __Manually__: If you already have Armadillo (and HepMC) installed, or want to do it manually, simply specify the path(s) to the installation directories in the [Makefile](Makefile). If these are not in standard locations (e.g. `/usr/local/`), see Caveat 3 below.
-2. __Using installation scripts__: The package comes bundled with a few utilities scripts, located in [./scripts/](./scripts/), which should allow you to install Armadillo (and HepMC) with little hassle. Simply do:
-```
-$ source scripts/downloadArmadillo.sh
-# and, optionally
-$ source scripts/downloadHepMC.sh
-```
-This _should_ install both libraries in the [./externals/] directory and update the Makefile accordingly. See also Caveat 3 below.
-
 
 
 ## Structure
