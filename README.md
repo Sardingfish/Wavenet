@@ -8,7 +8,26 @@ This package implements the wavenet transform using matrix algebra, for which we
 
 
 
-## Dependencies
+## Installation
+
+Generally, this package is developed for UNIX-based operating system. Therefore, getting it installed in  MacOS and Linux should be relatively smooth. Windows is supported, but feel free to give it a try if you're feeling brave.
+
+To install the base package itself, simply do:
+```
+$ git clone https://github.com/asogaard/Wavenet.git
+$ cd Wavenet
+```
+That was easy. 
+
+However, as mentioned above, the package depends on a few external packages that need to be installed and configured before you can
+```
+$ make
+```
+and run the _Wavenet_ package. How this is done is described below
+
+
+
+### Dependencies
 (_Note_: Please read this section in its entirety, including the caveat below, to avoid headaches when installing the actual _Wavenet_ package.)
 
 
@@ -24,7 +43,7 @@ __Armadillo__ [2]. _Necessary._ The _Wavenet_ package comes bundled with a utili
 ```
 $ source scripts/downloadArmadillo.sh
 ```
-This scripts installs the Armadillo package to `./external/` and updates the appropriate path in the Makefile. See also the caveat below.
+This scripts installs the Armadillo package to `./external/` and updates the appropriate path (`ARMAPATH`) in the Makefile. See also the caveat below.
 
 Alternatively, available on Linux using APT as 
 ```
@@ -44,7 +63,7 @@ __HepMC__ [3]. _Optional._ Event record for high energy physics collision simula
 ```
 $ source scripts/downloadHepMC.sh
 ```
-This scripts installs the HepMC package to `./external/` and updates the appropriate path in the Makefile. See also the caveat below.
+This scripts installs the HepMC package to `./external/` and updates the appropriate path (`HEPMCPATH`) in the Makefile. See also the caveat below.
 
 Alternatively, can be installed manually, cf. [the official webpage](http://hepmc.web.cern.ch/hepmc/). If installed in this way, the variable `HEPMCPATH` at the top of the [Makefile](Makefile) needs to be updated to the installation directory and the `DYLD_LIBRARY_PATH` environment variable might need to be set manually, see below.
 
@@ -59,20 +78,6 @@ which updates the environment variable `DYLD_LIBRARY_PATH` to point to the insta
 
 If the packages are installed in another non-standard location, manually, make sure to set the appropriate environment variable(s) yourself.
 
-
-
-## Installation
-
-Generally, this package is developed for UNIX-based operating system. Therefore, getting it installed in  MacOS and Linux should be relatively smooth. Windows is supported, but feel free to give it a try if you're feeling brave.
-
-To install the base package itself, simply do:
-```
-$ git clone https://github.com/asogaard/Wavenet.git
-$ cd Wavenet
-```
-That was easy. 
-
-If you have already installed the depencies above manually, or intend to, do so now, update the appropriate paths in the [Makefile](Makefile) and update `DYLD_LIBRARY_PATH` if necessary (see also the caveat above). Otherwise, use the bundled installation scripts as described above.
 
 
 
