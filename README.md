@@ -32,17 +32,17 @@ and through manual installation, cf. [the official webpage](http://arma.sourcefo
 ```
 $ source scripts/downloadArmadillo.sh
 ```
-See also the caveat below.
+This scripts installs the Armadillo package to `./external/` and updates the appropriate path in the Makefile. See also the caveat below.
 
 
 __ROOT__ [4]. _Recommended._ High energy physics framework. Used for plotting graphical results. Must be installed manuallu, following the instructions on [the official webpage](https://root.cern.ch/).
 
 
-__HepMC__ [3]. _Optional._ Event record for high energy physics collision simulations. Can be installed manually, cf. [the official webpage](http://hepmc.web.cern.ch/hepmc/). Alternatively, the _Wavenet_ package comes bundled with a utility script for downloading and installing HepMC. Simply call
+__HepMC__ [3]. _Optional._ Event record for high energy physics collision simulations. Can be installed manually, cf. [the official webpage](http://hepmc.web.cern.ch/hepmc/). If installed in this way, the variable `HEPMCPATH` at the top of the [Makefile](Makefile) needs to be updated to the installation directory. Alternatively, the _Wavenet_ package comes bundled with a utility script for downloading and installing HepMC. Simply call
 ```
 $ source scripts/downloadHepMC.sh
 ```
-See also the caveat below.
+This scripts installs the HepMC package to `./external/` and updates the appropriate path in the Makefile. See also the caveat below.
 
 
 ### Caveat: `DYLD_LIBRARY_PATH`
@@ -66,8 +66,11 @@ To install the base package itself, simply do:
 $ git clone https://github.com/asogaard/Wavenet.git
 $ cd Wavenet
 ```
+That was easy. 
 
-That was easy. However, since the package relies of external libraries for working, in particular Armadillo, some care has to be taken to interface these correctly with the package. There are generally two ways to do this:
+If you have already installed the depencies above manually, or intend to, do so now, update the appropriate paths in the [Makefile](Makefile) and update `DYLD_LIBRARY_PATH` if necessary (see also the caveat above). Otherwise, use the bundled installation scripts as described above.
+
+However, since the package relies of external libraries for working, in particular Armadillo, some care has to be taken to interface these correctly with the package. There are generally two ways to do this:
 
 1. __Manually__: If you already have Armadillo (and HepMC) installed, or want to do it manually, simply specify the path(s) to the installation directories in the [Makefile](Makefile). If these are not in standard locations (e.g. `/usr/local/`), see Caveat 3 below.
 2. __Using installation scripts__: The package comes bundled with a few utilities scripts, located in [./scripts/](./scripts/), which should allow you to install Armadillo (and HepMC) with little hassle. Simply do:
@@ -89,7 +92,7 @@ The central object in this package is the [Wavenet](include/Wavenet/Wavenet.h) c
 * backpropagation of sparisty errors on the wavelet coefficient, and
 * learning updates based on the backpropagated errors from training examples.
 
-The function for computing the sparsity- and regularisation costs, as well as the associated gradients, are located in [include/Wavenet/CostFunctions.h](include/Wavenet/CostFunctions.h).
+The function for computing the sparsity- and regularisation costs, as well as the associated gradients, are located in [CostFunctions](include/Wavenet/CostFunctions.h).
 
 The [LowpassOperator](include/Wavenet/LowpassOperator.h) and [HighpassOperator](include/Wavenet/HighpassOperator.h) classes, both deriving from the basic [MatrixOperator](include/Wavenet/MatrixOperator.h) class, are responsible for the implementation of the low- and high-pass filter operations in the _Wavenet_ transforms.
 
