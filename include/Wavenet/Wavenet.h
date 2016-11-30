@@ -51,7 +51,7 @@ namespace wavenet {
  * Furthermore, utilising the parallels between the matrix formulation of the 
  * wavelet transform and fully connected neural network, we can construe the 
  * wavelet transform as a complex, dyadic neural network, and use stochastic  
- * gradient descend with backpropagation to optimize the filter coefficients in 
+ * gradient descent with backpropagation to optimize the filter coefficients in 
  * terms of the joint regularisation and sparsity objective function. This joint
  * interpretation means that, instead of optimising each entry in the neural
  * network weight matrices (which are independent and numerous), the weight
@@ -65,7 +65,7 @@ namespace wavenet {
  * and caching low- and high-pass matrix operators. From the neural network 
  * domain the class has as members a regularisation constant (lambda), a 
  * learning rate (alpha) as well more advanced learning options such as batch 
- * gradient descend, momentum, adaptive learning rates and batch sizes, as well 
+ * gradient descent, momentum, adaptive learning rates and batch sizes, as well 
  * as a version of simulated annealing.
  *
  * Since the transform and backprogation methods are completely dynamic, no
@@ -238,7 +238,7 @@ public:
      * using weight matrices, and finally (5) appends the combined vector 
      * gradient in filter coefficient space to the batch queue. If the batch 
      * queue has reached the target size (which may be 1, with default setting, 
-     * in which case batch gradient descend is not used), the method will also 
+     * in which case batch gradient descent is not used), the method will also 
      * trigger an update of the wavenet object by flushing the batch queue.
      * 
      * @see forward_(...)
@@ -420,7 +420,7 @@ protected:
      * of wavelet coefficients, propagate the errors back through the wavenet. 
      * In this way, each entry in the matrix operators, and by implication the
      * wavelet filter coefficients, are assigned (several) error terms, the sum 
-     * of which indicates the direction of steepest descend in the space of 
+     * of which indicates the direction of steepest descent in the space of 
      * filter coefficients.
      *
      * @param delta The computed errors on the wavelet coefficient vector for a 
@@ -810,9 +810,9 @@ private:
 
     // Learning container member(s).
     /**
-     * @brief The size of the batches used in the gradient descend.
+     * @brief The size of the batches used in the gradient descent.
      * 
-     * If the batch size is kept at 1, no batch gradient descend is performed 
+     * If the batch size is kept at 1, no batch gradient descent is performed 
      * and each training example will trigger an update of the filter 
      * coefficients. If the batch size is larger than one, the filter 
      * coefficient gradient arising from each training example will be stored in 

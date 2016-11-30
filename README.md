@@ -2,9 +2,9 @@
 
 __C++ package for learning optimal wavelet bases using a neural network approach.__
 
-The functional basis is expressed by a set of filter coefficients (known from wavelet analyses) and the learning is implemented using a neural network with gradient descend. The composite entity is called a _Wavenet_<sup>1</sup> below and is desribed in more detail in the companion note [1].
+The functional basis is expressed in terms of a set of filter coefficients (known from wavelet analyses) and the learning is implemented using a neural network with gradient descent. The composite entity is called a _Wavenet_<sup>1</sup> below and is desribed in more detail in the companion note [1].
 
-This package implements the wavenet transform using matrix algebra, for which we rely on the Armadillo C++ linear algebra  library [2]. If the HepMC package [3] for experimental particile physics event records is installed, a specialised Generator class, convertinng `HepMC::GenEvent`'s to Armadillo matrices, can be used. Finally, if the ROOT library [4] is installed, some of the bundled examples allow for producing output graphics showing the results of the learning process
+This package implements the wavenet transform using matrix algebra, for which we rely on the Armadillo C++ linear algebra  library [2]. If the HepMC package [3] for experimental particile physics event records is installed, a specialised Generator class, converting `HepMC::GenEvent`'s to Armadillo matrices, can be used. Finally, if the ROOT library [4] is installed, some of the bundled examples allow for producing output graphics showing the results of the learning process
 
 
 
