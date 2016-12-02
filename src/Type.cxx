@@ -23,7 +23,7 @@ std::string demangle(const char* name) {
 
 #else
 
-namespace Wavenet {
+namespace wavenet {
 
 // does nothing if not g++
 std::string demangle(const char* name) {
